@@ -1,0 +1,108 @@
+/* This is the main file for global styles. */
+
+/* VARIABLES */
+:root {
+    --MainBlue: hsl(225, 94%, 67%);
+    --DarkBlue: hsl(237, 52%, 36%);
+    --LightBlue: hsl(220, 100%, 90%);
+    
+    --White: hsl(0, 0%, 100%);
+    --Black: hsl(0, 0%, 12%);
+    --Gray: hsl(228, 11%, 46%);
+    --BlueGray: hsl(226, 28%, 73%);
+
+    /* Default light mode */
+    --bg-color: var(--White);
+    --sec-bg-color: var(--LightBlue);
+    --text-color: var(--DarkBlue);
+
+    --shadow-color: rgba(16, 185, 129, 0.15);
+}
+
+.dark-mode {
+  --bg-color: var(--Black);
+  --sec-bg-color: var(--DarkBlue);
+  --text-color: var(--White);
+}
+
+
+
+/* GLOBAL STYLES: MOBILE FIRST */
+/* Semantic HTML */
+* {
+    max-width: 100vw;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    width: calc(100vw - 4rem);
+    height: calc(100vh - 2rem);
+    margin: 1rem 2rem;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    overflow-x: hidden;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+button {
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+footer {
+    margin-top: 1rem;
+    padding: 2rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    width: 100%;
+    background-color: var(--Gray);
+    margin: 1rem auto;
+    display: block; 
+}
+
+footer section:first-child {
+    gap: 0.75rem;
+}
+
+footer b {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+footer a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.2s ease;
+}
+
+footer a:hover {
+    color: var(--MainGreen);
+}
+
+label {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
