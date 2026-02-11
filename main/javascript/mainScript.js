@@ -7,6 +7,7 @@ const toggleBtnDesktop = document.getElementById('themeToggleDesktop');
 const settingImg = document.getElementById('settingImg');
 const settingImgM = document.getElementById('settingImgM');
 const menuBtn = document.getElementById('menuBtn');
+const closeBtn = document.getElementById('closeBtn');
 
 // Add event listeners to theme toggle button
 if (toggleBtnMobile) {
@@ -60,6 +61,9 @@ function updateThemeIcons(isDark) {
     }
     if (menuBtn) {
         menuBtn.src = isDark ? '../assets/images/icon-menu-dark.svg' : '../assets/images/icon-menu.svg';
+    }
+    if (closeBtn) {
+        closeBtn.src = isDark ? '../assets/images/icon-menu-close-dark.png' : '../assets/images/icon-menu-close.svg';
     }
 }
 
