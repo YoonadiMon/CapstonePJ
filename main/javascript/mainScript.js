@@ -60,3 +60,15 @@ function updateThemeIcons(isDark) {
 }
 
 //  // Separate diff parts of main script like this
+
+function showMenu() {
+    sidebarNav.style.transform = "translateX(0)";
+    cover.classList.add('cover');
+    document.body.classList.add('stopScroll');
+}
+
+function hideMenu() {
+    sidebarNav.style.transform = "translateX(100%)";
+    cover.classList.remove('cover');
+    document.body.classList.remove('stopScroll');
+}

@@ -120,6 +120,9 @@ footer a:hover {
 .c-text {
     color: var(--text-color);
 }
+.c-footer-info-section:hover {
+    cursor: text;
+}
 
 /* --- --- BUTTONS --- --- */
 
@@ -157,6 +160,16 @@ footer a:hover {
 /* --- --- NAV BAR --- --- */
 
 /* mobile: side bar */
+.cover {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    z-index: 998; 
+}
+
 .c-navbar-side {
     display: flex;
     padding: 0.5rem 0.75rem;
@@ -183,12 +196,12 @@ footer a:hover {
 
 .c-navbar-side-menu .close-btn {
     position: absolute;
-    left: 75%;
-    top: 3rem;
+    left: 65%;
+    top: 5rem;
 }
 
 .c-navbar-side-items {
-    height: 80%;
+    height: 75%;
     position: relative;
     top: 10%;
     display: flex;
@@ -204,7 +217,7 @@ footer a:hover {
 }
 
 .c-navbar-side-items a {
-    padding-left: 8rem;
+    padding-left: 5rem;
     margin-bottom: 4rem;
     width: 100%;
     font-size: 2rem;
@@ -218,8 +231,7 @@ footer a:hover {
 }
 
 .c-navbar-side-more {
-    position: flex;
-    margin-bottom: 1rem;
+    margin-bottom: 1.2rem;
 }
 
 .c-navbar-more {
@@ -327,6 +339,23 @@ footer a:hover {
 .c-footer-links-section div > * {
     margin-bottom: 0.8rem;
 }
+
+/* --- ---  ICON --- --- */
+
+.c-icon-btn {
+    width: 3rem;
+    padding: 0.5rem;
+  }
+  
+  .c-icon-btn-small {
+    font-size: 1rem;
+    padding: 0.25rem;
+  }
+  
+  .c-icon-btn-large {
+    font-size: 2rem;
+    padding: 0.75rem;
+  }
 
 /* --- --- BREAKPOINTS FOR RESPONSIVENESS --- --- */
 
