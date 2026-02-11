@@ -19,6 +19,7 @@
     --bg-color: var(--White);
     --sec-bg-color: var(--LightBlue);
     --text-color: var(--Black);
+    --footer-color: var(--MainBlue);
 
     --shadow-color: rgba(16, 185, 129, 0.15);
 }
@@ -27,6 +28,7 @@
   --bg-color: var(--Black);
   --sec-bg-color: var(--DarkBlue);
   --text-color: var(--White);
+  --footer-color: var(--DarkerMainBlue);
 }
 
 /* GLOBAL STYLES: MOBILE FIRST */
@@ -41,12 +43,19 @@
 }
 
 body {
-    width: calc(100vw - 4rem);
+    width: 100vw;
     height: calc(100vh - 2rem);
-    margin: 1rem 2rem;
+    /* align-items: center; */
+    display: flex;
+    flex-direction: column;
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow-x: hidden;
+}
+
+header, main, hr {
+    margin: 1rem 2rem;
+    padding: 0 2rem;
 }
 
 header {
@@ -57,6 +66,16 @@ header {
     margin-bottom: 1rem;
 }
 
+footer {
+    background-color: var(--footer-color);
+    width: 1000px;
+    margin-top: 1rem;
+    padding: 2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
 button {
     cursor: pointer;
     background: none;
@@ -65,18 +84,10 @@ button {
     padding: 0.4rem 0.8rem;
 }
 
-footer {
-    margin-top: 1rem;
-    padding: 2rem 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
 hr {
     border: 0;
     height: 1px;
-    width: 100%;
+    width: 90%;
     background-color: var(--Gray);
     margin: 1rem auto;
     display: block; 
@@ -231,6 +242,30 @@ footer a:hover {
     width: 3rem;
 }
 
+/* --- --- LOGO --- --- */
+
+/* header logo */
+.c-logo-section  {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* space between icon & text */
+    font-size: 1.25rem; 
+    font-weight: 700;
+    color: var(--Black);
+    cursor: pointer;
+}
+
+.c-logo {
+    width: 1.5rem;  
+}
+
+.c-logo-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+}
+
 /* --- --- FOOTER --- --- */
 
 .c-navbar-desktop {
@@ -310,7 +345,7 @@ Desktop (e.g., ~1150px - 1200px) */
     }
 
     footer {
-        width: 90vw;
+        width: 100vw;
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: space-between;
