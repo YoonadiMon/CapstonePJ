@@ -2,7 +2,10 @@
 
 /* VARIABLES */
 :root {
+    --side-nav-bar-width: 350px;
+
     --MainBlue: hsl(225, 94%, 67%);
+    --DarkerMainBlue: hsl(225, 100%, 40%);
     --DarkBlue: hsl(237, 52%, 36%);
     --DarkerBlue: hsl(240, 60%, 20%);
     --LightBlue: hsl(220, 100%, 90%);
@@ -25,8 +28,6 @@
   --sec-bg-color: var(--DarkBlue);
   --text-color: var(--White);
 }
-
-
 
 /* GLOBAL STYLES: MOBILE FIRST */
 /* Semantic HTML */
@@ -103,6 +104,12 @@ footer a:hover {
     color: var(--MainGreen);
 }
 
+/* --- --- COMMONS --- --- */
+
+.c-text {
+    color: var(--text-color);
+}
+
 /* --- --- BUTTONS --- --- */
 
 /* Primary button */
@@ -112,7 +119,7 @@ footer a:hover {
 }
 
 .c-btn-primary:hover, c.btn-small:hover, c.btn-big:hover {
-  background-color: var(--DarkBlue); 
+  background-color: var(--DarkerMainBlue); 
 }
 
 /* Secondary button */
@@ -135,4 +142,221 @@ footer a:hover {
 .c-btn-big {
   padding: 0.9em 1.6em;
   font-size: 1.2rem;
+}
+/* --- --- NAV BAR --- --- */
+
+/* mobile: side bar */
+.c-navbar-side {
+    display: flex;
+    padding: 0.5rem 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.c-navbar-side input {
+    width: 45vw;
+    margin-right: 1rem;
+}
+
+.c-navbar-side-menu {
+    background: var(--sec-bg-color);
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: var(--side-nav-bar-width);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.c-navbar-side-menu .close-btn {
+    position: absolute;
+    left: 75%;
+    top: 3rem;
+}
+
+.c-navbar-side-items {
+    height: 80%;
+    position: relative;
+    top: 10%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 1rem;
+    
+}
+
+.c-navbar-side-items .c-navbar-side-more a {
+    padding-left: 1rem;
+}
+
+.c-navbar-side-items a {
+    padding-left: 8rem;
+    margin-bottom: 4rem;
+    width: 100%;
+    font-size: 2rem;
+    justify-self: left;
+    color: var(--Black);
+    text-decoration: none;
+}
+
+.c-navbar-more {
+    display: none;
+}
+
+.c-navbar-side-more {
+    position: flex;
+    margin-bottom: 1rem;
+}
+
+.c-navbar-more {
+    font-size: 1.25rem;
+    color: var(--Black);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+}
+
+.c-navbar-more *, .c-navbar-side-more * {
+    margin-left: 0.6rem;
+    
+}
+.c-navbar-more img, .c-navbar-more a img  {
+    width: 1.4rem;
+}
+
+.c-navbar-side-more img, .c-navbar-side-more a img {
+    width: 3rem;
+}
+
+/* --- --- FOOTER --- --- */
+
+.c-navbar-desktop {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+}
+
+.c-navbar-desktop a {
+    margin: 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    text-decoration: none;
+}
+
+.c-navbar-desktop a:hover {
+    color: var(--MainGreen);
+}
+
+/* Profile, chatbox, dark/light mode */
+.c-navbar-desktop-icons {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    color: var(--Black);
+    cursor: pointer;
+}
+
+.c-footer-info-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* space between icon & text */
+    font-size: 1.25rem; 
+    font-weight: 700;
+    color: var(--Black);
+    cursor: pointer;
+}
+
+.c-footer-info-section {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.c-footer-links-section {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.c-footer-links-section div > * {
+    margin-bottom: 0.8rem;
+}
+
+/* --- --- BREAKPOINTS FOR RESPONSIVENESS --- --- */
+
+/* Mobile (e.g., ~320px - 576px) -> default
+Tablet (e.g., ~760px - 992px)
+Desktop (e.g., ~1150px - 1200px) */
+
+@media (min-width: 760px) {
+    /* Tablet styles here */
+    .c-navbar-more .search-bar {
+        width: 150px;
+    }
+
+    * {
+        font-size: 16px;
+    }
+
+    footer {
+        width: 90vw;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+    
+    footer section {
+        flex: 1;
+        min-width: 45%;
+        margin-bottom: 1.5rem;
+    }
+
+    .c-navbar-desktop {
+        display: flex;
+    }
+    .c-navbar-side {
+        display: none;
+    }
+    .c-navbar-more {
+        display: flex;
+    }
+
+}
+
+@media (min-width: 1150px) {
+    /* Desktop styles here */
+    .c-navbar-more .search-bar {
+        width: 180px;
+    }
+
+    * {
+        font-size: 16px;
+    }
+
+    footer section {
+        flex: 1;
+        min-width: auto;
+        margin-bottom: 0;
+    }
+
+    .c-navbar-desktop {
+        display: flex;
+    }
+    .c-navbar-side {
+        display: none;
+    }
+    .c-navbar-more {
+        display: flex;
+    }
 }
