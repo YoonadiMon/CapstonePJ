@@ -41,7 +41,7 @@ function updateThemeIcons(isDark) {
     if (toggleBtnMobile) {
         const img1 = toggleBtnMobile.querySelector('img');
         if (img1) {
-            img1.src = isDark ? '../assets/images/dark-mode-icon-mobile.svg' : '../assets/images/light-mode-icon.svg';
+            img1.src = isDark ? '../assets/images/dark-mode-icon.svg' : '../assets/images/light-mode-icon.svg';
             img1.alt = isDark ? 'Dark Mode Icon' : 'Light Mode Icon';
         }
     }

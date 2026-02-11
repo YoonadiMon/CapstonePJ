@@ -222,7 +222,7 @@ footer a:hover {
     width: 100%;
     font-size: 2rem;
     justify-self: left;
-    color: var(--Black);
+    color: var(--text-color);
     text-decoration: none;
 }
 
