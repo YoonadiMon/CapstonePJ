@@ -6,25 +6,54 @@
 
     <link rel="stylesheet" href="main/style/style.css">
     <title>Document</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 20px;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            margin: 0 2rem;
+        }
+        footer {
+            position: absolute;
+            bottom: 0;
+        }
+        h1 {
+            font-size: 2.5rem;
+        }
+    </style>
 </head>
 <body>
-    <h1>
-        Text
-    </h1>
-    <button id="themeToggle" class="c-btn-primary">Change Theme</button>
-
-    <a href="main/html/provider/pHome.html">
-        <button class="c-btn-secondary">Go to Provider</button>
-    </a>
-    <br>
-    <a href="main/templates/templates/collectorTemp.html">
-        <button class="c-btn-secondary">Go to Collector</button>
-    </a>
-    <a href="main/templates/templates/adminTemp.html">
-        <button class="c-btn-secondary">Go to Admin</button>
-    </a>
+    <h1>Landing Page</h1>
+    <main>
+        <h3>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Deleniti quis, itaque explicabo asperiores doloribus unde modi placeat iusto nesciunt inventore nam debitis accusamus eius? Nam dolorem quibusdam aperiam magni tenetur?
+        </h1>
+        <button id="themeToggleDesktop" class="c-btn-primary">Change Theme</button>
     
-
+        <a href="main/html/provider/pHome.html">
+            <button class="c-btn-secondary">Go to Provider Home Page</button>
+        </a>
+        <a href="main/templates/templates/collectorTemp.html">
+            <button class="c-btn-secondary">Go to Collector Template Page</button>
+        </a>
+        <a href="main/templates/templates/adminTemp.html">
+            <button class="c-btn-secondary">Go to Admin Template Page</button>
+        </a>
+    </main>
+    
+    
+    <footer>
+        <p>&copy; 2026 AfterVolt. All rights reserved.</p>
+    </footer>
     <script src="main/javascript/mainScript.js"></script>
 </body>
 </html>

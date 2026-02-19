@@ -12,9 +12,11 @@ const closeBtn = document.getElementById('closeBtn');
 // Add event listeners to theme toggle button
 if (toggleBtnMobile) {
     toggleBtnMobile.addEventListener('click', toggleTheme);
+    console.log('Mobile theme toggle button found and event listener added.');
 }
 if (toggleBtnDesktop) {
     toggleBtnDesktop.addEventListener('click', toggleTheme);
+    console.log('Desktop theme toggle button found and event listener added.');
 }
 
 // Load saved theme on page load
@@ -42,28 +44,28 @@ function updateThemeIcons(isDark) {
     if (toggleBtnMobile) {
         const img1 = toggleBtnMobile.querySelector('img');
         if (img1) {
-            img1.src = isDark ? '../../assets/images/dark-mode-icon.svg' : '../../assets/images/light-mode-icon.svg';
+            img1.src = isDark ? '/main/assets/images/dark-mode-icon.svg' : '/main/assets/images/light-mode-icon.svg';
             img1.alt = isDark ? 'Dark Mode Icon' : 'Light Mode Icon';
         }
     }
     if (toggleBtnDesktop) {
         const img2 = toggleBtnDesktop.querySelector('img');
         if (img2) {
-            img2.src = isDark ? '../../assets/images/dark-mode-icon.svg' : '../../assets/images/light-mode-icon.svg';
+            img2.src = isDark ? '/main/assets/images/dark-mode-icon.svg' : '/main/assets/images/light-mode-icon.svg';
             img2.alt = isDark ? 'Dark Mode Icon' : 'Light Mode Icon';
         }
     }
     if (settingImg) {
-        settingImg.src = isDark ? '../../assets/images/setting-dark.svg' : '../../assets/images/setting-light.svg';
+        settingImg.src = isDark ? '/main/assets/images/setting-dark.svg' : '/main/assets/images/setting-light.svg';
     }
     if (settingImgM) {
-        settingImgM.src = isDark ? '../../assets/images/setting-dark.svg' : '../../assets/images/setting-light.svg';
+        settingImgM.src = isDark ? '/main/assets/images/setting-dark.svg' : '/main/assets/images/setting-light.svg';
     }
     if (menuBtn) {
-        menuBtn.src = isDark ? '../../assets/images/icon-menu-dark.svg' : '../../assets/images/icon-menu.svg';
+        menuBtn.src = isDark ? '/main/assets/images/icon-menu-dark.svg' : '/main/assets/images/icon-menu.svg';
     }
     if (closeBtn) {
-        closeBtn.src = isDark ? '../../assets/images/icon-menu-close-dark.png' : '../../assets/images/icon-menu-close.svg';
+        closeBtn.src = isDark ? '/main/assets/images/icon-menu-close-dark.png' : '/main/assets/images/icon-menu-close.svg';
     }
 }
 
