@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Provider View</title>
+    <link rel="icon" type="image/png" href="/main/assets//images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+    <link rel="stylesheet" href="/main/style/cJobsDetail.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/collector/cHome.html" class="c-logo-link">
+                <img src="/main/assets//images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links -->
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets//images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn"
+                id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+
+                <img src="/main/assets//images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()"
+                    class="close-btn" id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets//images/light-mode-icon.svg" alt="Light Mode Icon">
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets//images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="/main/html/collector/cHome.html">Home</a>
+                    <a href="/main/html/collector/cMyJobs.html">My Jobs</a><br>
+                    <a href="/main/html/collector/cInProgress.html">Ongoing Jobs</a><br>
+                    <a href="/main/html/collector/cCompletedJobs.html">History</a>
+                    <a href="/main/html/common/About.html">About</a><br>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/collector/cHome.html">Home</a>
+            <a href="/main/html/collector/cMyJobs.html">My Jobs</a><br>
+            <a href="/main/html/collector/cInProgress.html">Ongoing Jobs</a><br>
+            <a href="/main/html/collector/cCompletedJobs.html">History</a>
+            <a href="/main/html/common/About.html">About</a><br>
+        </nav>
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets//images/light-mode-icon.svg" alt="Light Mode Icon">
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets//images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+
+    </header>
+    <hr>
+
+    <!-- Main Content -->
+    <main class="job-details-main">
+        <!-- Back Button OUTSIDE -->
+        <div class="back-wrapper">
+            <button class="back-btn" onclick="window.history.back()">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M15 10L5 10M5 10L9 14M5 10L9 6" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" />
+                </svg>
+                Back
+            </button>
+        </div>
+
+        <div class="job-details-container">
+
+            <div class="job-details-header">
+
+                <div class="job-title-row">
+                    <h1 id="jobTitle">JOB001</h1>
+                    <span id="jobStatus" class="job-status-badge pending">
+                        Pending
+                    </span>
+                </div>
+
+                <div class="job-details-actions">
+                    <button class="btn-accept" onclick="acceptJob()">Accept</button>
+                    <button class="btn-reject" onclick="rejectJob()">Reject</button>
+                </div>
+
+            </div>
+
+
+            <!-- Overview Section -->
+            <section class="job-overview">
+                <h2> Details Overview</h2>
+                <div class="overview-grid">
+                    <div class="overview-card provider-card">
+
+                        <h3>Provider</h3>
+                        <div class="provider-info">
+                            <p><strong>Name:</strong> <span id="providerName">Emma LXC</span></p>
+                            <p><strong>Address:</strong> <span id="providerAddress">43300, Selangor, Malaysia</span></p>
+                            <p><strong>Date:</strong> <span id="providerDate">27/2/2026</span></p>
+                        </div>
+                    </div>
+
+                    <div class="overview-card items-card">
+
+                        <h3>Items</h3>
+                        <ul id="itemList"></ul>
+                        <div class="total-weight">
+                            <strong>Total Weight:</strong> <span id="totalWeight">0</span> kg
+                        </div>
+                    </div>
+
+                    <div class="overview-card brands-card">
+
+                        <h3>Brand & Model</h3>
+                        <ul id="brandList"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Items Section -->
+            <section class="items-section">
+
+                <div id="itemsContainer"></div>
+            </section>
+        </div>
+    </main>
+
+
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/collector/cHome.html">
+                <img src="/main/assets//images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+
+
+        <!-- Image Modal -->
+        <div id="imageModal" class="img-modal-overlay" onclick="closeImageModal()">
+            <div class="img-modal-box" onclick="event.stopPropagation()">
+                <button class="img-modal-close" onclick="closeImageModal()">✕</button>
+                <img id="modalImg" src="" alt="Full Item Image" class="img-modal-img" />
+                <p id="modalCaption" class="img-modal-caption"></p>
+            </div>
+        </div>
+
+
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>My Jobs</b><br>
+                <a href="/main/html/collector/cMyJobs.html">My Jobs</a><br>
+                <a href="/main/html/collector/cInProgress.html">In Progess</a><br>
+                <a href="/main/html/collector/cCompletedJobs.html">Completed Jobs</a>
+            </div>
+            <div>
+                <b>Support</b><br>
+                <a href="/main/html/collector/cReportIssues.html">Report Issue</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/About.html">About</a><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <script src="/main/javascript/mainScript.js"></script>
+    <script src="/main/javascript/cJobDetails.js"></script>
+</body>
+
+</html>
