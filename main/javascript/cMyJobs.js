@@ -184,21 +184,21 @@ function createJobCard(job) {
     card.innerHTML = `
         <div class="job-card-header">
             <span class="job-card-status ${job.status}">
-                ${isJob001 ? '🔥 ' : ''}${job.status.toUpperCase()}
+                ${isJob001 ? ' ' : ''}${job.status.toUpperCase()}
             </span>
             <h2 class="job-card-title">${job.id}</h2>
         </div>
         <div class="job-card-details">
             <div class="job-card-item">
-                <span class="job-card-label">📦 Items:</span>
+                <span class="job-card-label"> Items:</span>
                 <span class="job-card-value">${job.items}</span>
             </div>
             <div class="job-card-item">
-                <span class="job-card-label">⚖️ Weight:</span>
+                <span class="job-card-label"> Weight:</span>
                 <span class="job-card-value">${job.weight} kg</span>
             </div>
             <div class="job-card-item">
-                <span class="job-card-label">📅 Date:</span>
+                <span class="job-card-label"> Date:</span>
                 <span class="job-card-value">${formattedDate}</span>
             </div>
         </div>
@@ -270,7 +270,7 @@ for (let day = 1; day <= daysInMonth; day++) {
 
     const currentDate = new Date(year, month, day);
 
-    // ✅ FIXED DATE FORMAT
+    //  FIXED DATE FORMAT
     const yearStr = currentDate.getFullYear();
     const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
     const dayStr = String(currentDate.getDate()).padStart(2, '0');
