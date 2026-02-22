@@ -1,5 +1,4 @@
 hr {
-    
     height: 1px;
     width: 90%;
     background-color: var(--Gray);
@@ -7,10 +6,24 @@ hr {
     display: block; 
 }
 
+:root {
+    --card-bg:           var(--White);
+    --border-color:      hsl(220, 20%, 88%);
+    --shadow-card:       0 2px 12px rgba(30, 50, 120, 0.08);
+    --shadow-hover:      0 4px 20px rgba(30, 50, 120, 0.14);
+    --StatusYellowLight: hsl(42, 100%, 92%);
+    --StatusGreen: hsl(142, 70%, 40%);
+}
+
+.dark-mode {
+    --card-bg:           hsl(230, 20%, 16%);
+    --border-color:      hsl(230, 18%, 24%);
+    --shadow-card:       0 2px 12px rgba(0, 0, 10, 0.4);
+    --shadow-hover:      0 4px 20px rgba(0, 0, 10, 0.55);
+    --StatusYellowLight: hsl(42, 60%, 18%);
+}
 
 /* Jobs Content Styles */
-
-/* LAYOUT: Two-column layout with sidebar and content */
 
 .jobs-container {
     display: flex;
@@ -19,7 +32,6 @@ hr {
     min-height: calc(100vh - 200px);
 }
 
-/* SIDEBAR STYLES */
 .jobs-sidebar {
     flex: 1;
     min-width: 250px;
@@ -43,7 +55,6 @@ hr {
     background-color: var(--Gray);
 }
 
-/* Search Box */
 .jobs-search-box {
     display: flex;
     gap: 0.5rem;
@@ -83,7 +94,6 @@ hr {
     background-color: var(--Gray);
 }
 
-/* Status Filter Section */
 .jobs-filter-section {
     background-color: var(--sec-bg-color);
     border-radius: 8px;
@@ -117,7 +127,6 @@ hr {
     background-color: var(--Gray);
 }
 
-/* Filter Options */
 .jobs-filter-options {
     display: flex;
     flex-direction: column;
@@ -167,7 +176,6 @@ hr {
     font-size: 0.9rem;
 }
 
-/* Calendar Section */
 .jobs-calendar-section {
     background-color: var(--sec-bg-color);
     border-radius: 8px;
@@ -205,7 +213,6 @@ hr {
     text-align: center;
 }
 
-/* Calendar Grid */
 .jobs-calendar {
     display: flex;
     flex-direction: column;
@@ -266,9 +273,6 @@ hr {
     color: var(--White);
 }
 
-
-
-/* MAIN CONTENT STYLES */
 .jobs-content {
     flex: 2;
     min-width: 300px;
@@ -280,21 +284,24 @@ hr {
     gap: 1.5rem;
 }
 
-/* Job Card */
+/* ─── JOB CARD — only bg, border, shadow changed ────────────────
+   was: background var(--LightBlue), no border, no shadow
+   now: var(--card-bg) + subtle border + shadow, same as clnProgress
+──────────────────────────────────────────────────────────────── */
 .job-card {
-    background-color: var(--LightBlue);
+    background-color: var(--card-bg);
+    border: 1.5px solid var(--border-color);
     border-radius: 8px;
     padding: 1.5rem;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
     display: flex;
     flex-direction: column;
 }
 
 .job-card:hover {
-    transform: translateY(-4px);
     border-color: var(--MainBlue);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-hover);
 }
 
 .job-card-header {
@@ -303,41 +310,77 @@ hr {
     gap: 0.8rem;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid var(--Gray);
+    border-bottom: 1px solid var(--border-color);
 }
 
+/* ─── STATUS BADGE — soft pill matching clnProgress .badge ──────
+   was: solid fill (MainBlue / DarkBlue / BlueGray)
+   now: light tinted bg + matching text + dot indicator
+──────────────────────────────────────────────────────────────── */
 .job-card-status {
-    display: inline-block;
-    padding: 0.35rem 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.25rem 0.7rem;
     border-radius: 6px;
     font-size: 0.85rem;
     font-weight: 600;
     text-transform: capitalize;
 }
 
+.job-card-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
 .job-card-status.ongoing {
-    background-color: var(--MainBlue);
-    color: var(--White);
+    background-color: var(--StatusYellowLight);
+    color: hsl(42, 80%, 28%);
 }
 
 .job-card-status.accepted {
-    background-color: var(--DarkBlue);
+    background-color: var(--StatusGreen);
     color: var(--White);
 }
 
 .job-card-status.pending {
+    background-color: var(--sec-bg-color);
+    color: var(--DarkerMainBlue);
+    border: 1px solid var(--border-color);
+}
+
+/* dark-mode badge overrides */
+.dark-mode .job-card-status.ongoing {
+    background-color: var(--StatusYellowLight);
+    color: hsl(42, 90%, 65%);
+}
+
+.dark-mode .jobs-calendar-header{
     background-color: var(--BlueGray);
-    color: var(--text-color);
+}
+
+.dark-mode .job-card-status.accepted {
+    background-color: var(--StatusGreen);
+    color: var(--White);
+}
+
+.dark-mode .job-card-status.pending {
+    background-color: var(--sec-bg-color);
+    color: var(--BlueGray);
 }
 
 .job-card-title {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--Black);
+    color: var(--text-color);
     margin: 0;
 }
 
-/* Job Card Details */
 .job-card-details {
     flex: 1;
     display: flex;
@@ -364,11 +407,10 @@ hr {
 }
 
 .job-card-value {
-    color: var(--Black);
+    color: var(--text-color);
     font-weight: 600;
 }
 
-/* More Button */
 .job-card-more-btn {
     background-color: var(--BlueGray);
     color: var(--text-color);
@@ -387,7 +429,6 @@ hr {
     background-color: var(--Gray);
 }
 
-/* Empty State */
 .jobs-empty-state {
     grid-column: 1 / -1;
     text-align: center;
@@ -400,8 +441,7 @@ hr {
     margin-bottom: 0.5rem;
 }
 
-/* RESPONSIVE DESIGN */
-/* RESPONSIVE DESIGN */
+/* RESPONSIVE — unchanged from original */
 @media (max-width: 1199px) {
     .jobs-container {
         flex-direction: column;
@@ -412,12 +452,10 @@ hr {
     .jobs-sidebar {
         max-width: 100%;
         width: 100%;
-        /* REMOVED: order: 2 - keeps sidebar on top */
     }
 
     .jobs-content {
         width: 100%;
-        /* REMOVED: order: 1 - content stays below */
     }
 
     .jobs-grid {
@@ -438,7 +476,6 @@ hr {
         box-shadow: 0 2px 12px rgba(0,0,0,0.1);
     }
 
-    /* Compact sections */
     .jobs-filter-section,
     .jobs-calendar-section {
         padding: 1rem;
@@ -453,7 +490,6 @@ hr {
         padding: 0.7rem 0.5rem;
     }
 
-    /* Calendar stays visible but compact */
     .jobs-calendar-section {
         padding: 0.8rem;
     }
@@ -467,7 +503,6 @@ hr {
         font-size: 0.95rem;
     }
 
-    /* Single column cards */
     .jobs-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
@@ -490,16 +525,16 @@ hr {
     .jobs-container {
         padding: 0;
     }
-    
+
     .job-card {
         padding: 1rem;
         margin: 0 0.25rem;
     }
-    
+
     .jobs-filter-options {
         gap: 0.6rem;
     }
-    
+
     .jobs-back-btn {
         display: none;
     }
@@ -511,5 +546,3 @@ hr {
         box-shadow: 0 2px 12px rgba(0,0,0,0.1);
     }
 }
-
-
