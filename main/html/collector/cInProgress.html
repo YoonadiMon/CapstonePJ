@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Provider View</title>
+    <link rel="icon" type="image/png" href="/main/assets//images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+    <link rel="stylesheet" href="/main/style/clnProgress.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+
+
+
+
+
+</head>
+
+<body>
+
+
+
+    <!-- ─── POPUP: Start Journey ─── -->
+    <div class="popup-overlay" id="startPopup">
+        <div class="popup">
+            <div class="popup-icon">🚗</div>
+            <h3>Start Journey</h3>
+            <p>Drive safe! Your journey has begun. Follow the route and complete each session in order.</p>
+            <div class="popup-actions">
+                <button class="btn btn-primary" onclick="confirmStartJourney()">Let's Go!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── POPUP: Complete Session ─── -->
+    <div class="popup-overlay" id="completePopup">
+        <div class="popup">
+            <div class="popup-icon">✅</div>
+            <h3>Confirm Completion</h3>
+            <p id="completePopupMsg">Are you sure you want to mark this session as completed?</p>
+            <div class="popup-actions">
+                <button class="btn btn-ghost" onclick="closePopup('completePopup')">Cancel</button>
+                <button class="btn btn-complete" onclick="confirmComplete()">Yes, Complete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── POPUP: Report Issue ─── -->
+    <div class="popup-overlay" id="reportPopup">
+        <div class="popup" style="text-align:left; max-width:480px;">
+            <h3 style="text-align:center; margin-bottom:6px;"> Report an Issue</h3>
+            <p style="text-align:center; margin-bottom:18px;">Describe the issue so an admin can assist you promptly.</p>
+
+            <div class="form-group">
+                <label>Reason</label>
+                <select id="issueReason" onchange="toggleBreakdownAddress()">
+                    <option value="">Select a reason…</option>
+                    <option value="vehicle_breakdown">Vehicle Breakdown</option>
+                    <option value="accident">Accident</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="breakdownAddressGroup" style="display:none;">
+                <label>Breakdown Address</label>
+                <input type="text" id="breakdownAddress" placeholder="e.g. Jalan Ampang, KL">
+            </div>
+
+            <div class="form-group">
+                <label>Note (optional)</label>
+                <textarea id="issueNote" placeholder="Add any extra details…"></textarea>
+            </div>
+
+            <div class="popup-actions">
+                <button class="btn btn-ghost" onclick="closePopup('reportPopup')">Cancel</button>
+                <button class="btn btn-danger" onclick="submitReport()">Submit Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── TOAST ─── -->
+    <div class="toast" id="toast"></div>
+
+
+
+
+    <div id="cover" class="" onclick="hideMenu()"></div>
+
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/collector/cHome.html" class="c-logo-link">
+                <img src="/main/assets//images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links -->
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets//images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn"
+                id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+
+                <img src="/main/assets//images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()"
+                    class="close-btn" id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets//images/light-mode-icon.svg" alt="Light Mode Icon">
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets//images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="/main/html/collector/cHome.html">Home</a>
+                    <a href="/main/html/collector/cMyJobs.html">My Jobs</a><br>
+                    <a href="/main/html/collector/cInProgress.html">Ongoing Jobs</a><br>
+                    <a href="/main/html/collector/cCompletedJobs.html">History</a>
+                    <a href="/main/html/common/About.html">About</a><br>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/collector/cHome.html">Home</a>
+            <a href="/main/html/collector/cMyJobs.html">My Jobs</a><br>
+            <a href="/main/html/collector/cInProgress.html">Ongoing Jobs</a><br>
+            <a href="/main/html/collector/cCompletedJobs.html">History</a>
+            <a href="/main/html/common/About.html">About</a><br>
+        </nav>
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets//images/light-mode-icon.svg" alt="Light Mode Icon">
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets//images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+
+    </header>
+    <hr>
+
+
+
+
+
+
+
+
+    <!-- Main Content -->
+    <main>
+        <div class="page-header">
+            <button class="back-btn" onclick="history.back()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="15 18 9 12 15 6" />
+                </svg>
+            </button>
+            <h1 class="page-title">Ongoing Job</h1>
+            <span class="badge badge-ongoing" id="globalStatus">Accepted</span>
+        </div>
+
+        <div class="journey-layout">
+
+            <!-- ─── CARDS ─── -->
+            <div class="cards-column" id="cardsColumn">
+
+                <!-- CARD 1: Details Overview -->
+                <div class="job-card" id="card-overview">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <span class="job-id-label">JOB001</span>
+                            <span class="badge badge-accepted" id="badge-overview">Accepted</span>
+                        </div>
+                        <button class="btn btn-primary" id="startJourneyBtn" onclick="openStartPopup()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                            Start Journey
+                        </button>
+                    </div>
+
+                    <p
+                        style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">
+                        Details Overview</p>
+
+                    <div class="overview-grid">
+                        <div class="overview-cell">
+                            <div class="overview-cell-title">Provider</div>
+                            <p><span>Name :</span> Emma LXC</p>
+                            <p><span>Address :</span> Emma house, 43300, Selangor, Malaysia</p>
+                            <p><span>Date :</span> 27/02/2026</p>
+                        </div>
+                        <div class="overview-cell">
+                            <div class="overview-cell-title">Item</div>
+                            <ul class="item-list">
+                                <li>1. Laptop</li>
+                                <li>2. Phone</li>
+                                <li>3. Printer</li>
+                            </ul>
+                            <span class="weight-tag">Total weight: 6 kg</span>
+                        </div>
+                        <div class="overview-cell">
+                            <div class="overview-cell-title">Brand &amp; Model</div>
+                            <ul class="item-list">
+                                <li>1. Dell, XPS 13 9310</li>
+                                <li>2. Apple, iPhone 12</li>
+                                <li>3. HP, LaserJet Pro MFP M428fdw</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: Session – Pickup (APU → Provider House) -->
+                <div class="job-card locked" id="card-session1">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <span class="job-id-label">JOB001</span>
+                            <span class="badge badge-pickup" id="badge-session1">Pick Up</span>
+                        </div>
+                    </div>
+                    <hr class="card-divider">
+                    <div class="session-route">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        APU → Emma house, 43300, Selangor, Malaysia
+                    </div>
+                    <div class="session-footer">
+                        <span></span>
+                        <button class="btn btn-complete" id="completeBtn-session1"
+                            onclick="openCompletePopup('session1')" disabled>Complete</button>
+                    </div>
+                </div>
+
+                <!-- CARD 3: Session – Dropoff Center 1 -->
+                <div class="job-card locked" id="card-session2">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <span class="job-id-label">JOB001</span>
+                            <span class="badge badge-pickup" id="badge-session2">Pick Up</span>
+                        </div>
+                        <div class="card-header-actions">
+                            <button class="btn btn-danger" id="reportBtn-session2" onclick="openReport('session2')"
+                                disabled>
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                Report Issue
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="session-items-grid">
+                        <div class="session-items-cell">
+                            <div class="cell-title">Item Dropoff</div>
+                            <ul>
+                                <li>1. Laptop</li>
+                                <li>2. Phone</li>
+                            </ul>
+                        </div>
+                        <div class="session-items-cell">
+                            <div class="cell-title">Brand &amp; Model</div>
+                            <ul>
+                                <li>1. Dell, XPS 13 9310</li>
+                                <li>2. Apple, iPhone 12</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <hr class="card-divider">
+                    <div class="session-route">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        APU → center 1, 43300, Selangor, Malaysia
+                    </div>
+                    <div class="session-footer">
+                        <span></span>
+                        <button class="btn btn-complete" id="completeBtn-session2"
+                            onclick="openCompletePopup('session2')" disabled>Complete</button>
+                    </div>
+                </div>
+
+                <!-- CARD 4: Session – Dropoff Center 2 -->
+                <div class="job-card locked" id="card-session3">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <span class="job-id-label">JOB001</span>
+                            <span class="badge badge-pickup" id="badge-session3">Pick Up</span>
+                        </div>
+                        <div class="card-header-actions">
+                            <button class="btn btn-danger" id="reportBtn-session3" onclick="openReport('session3')"
+                                disabled>
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                Report Issue
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="session-items-grid">
+                        <div class="session-items-cell">
+                            <div class="cell-title">Item Dropoff</div>
+                            <ul>
+                                <li>1. Printer</li>
+                            </ul>
+                        </div>
+                        <div class="session-items-cell">
+                            <div class="cell-title">Brand &amp; Model</div>
+                            <ul>
+                                <li>3. HP, LaserJet Pro MFP M428fdw</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <hr class="card-divider">
+                    <div class="session-route">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        APU → center 2, 43300, Selangor, Malaysia
+                    </div>
+                    <div class="session-footer">
+                        <span></span>
+                        <button class="btn btn-complete" id="completeBtn-session3"
+                            onclick="openCompletePopup('session3')" disabled>Complete</button>
+                    </div>
+                </div>
+
+                <!-- CARD 5: Return to APU -->
+                <div class="job-card locked" id="card-session4">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <span class="job-id-label">JOB001</span>
+                            <span class="badge badge-completed" id="badge-session4">Completed</span>
+                        </div>
+                        <div class="card-header-actions">
+                            <button class="btn btn-danger" id="reportBtn-session4" onclick="openReport('session4')"
+                                disabled>
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                Report Issue
+                            </button>
+                        </div>
+                    </div>
+                    <hr class="card-divider">
+                    <div class="session-route">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        center 2, 43300, Selangor, Malaysia → APU
+                    </div>
+                    <div class="session-footer">
+                        <span></span>
+                        <button class="btn btn-complete" id="completeBtn-session4"
+                            onclick="openCompletePopup('session4')" disabled>Complete</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ─── ROUTE SIDEBAR ─── -->
+            <aside class="route-sidebar">
+                <div class="route-title">Route</div>
+                <div class="route-steps">
+
+                    <div class="route-step">
+                        <div class="step-indicator">
+                            <div class="step-dot" id="dot-0"></div>
+                            <div class="step-line" id="line-0"></div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-label" id="label-0">Start Journey</div>
+                            <div class="step-sublabel">APU Facility</div>
+                        </div>
+                    </div>
+
+                    <div class="route-step">
+                        <div class="step-indicator">
+                            <div class="step-dot" id="dot-1"></div>
+                            <div class="step-line" id="line-1"></div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-label" id="label-1">Items Collected at Provider Location</div>
+                            <div class="step-sublabel">Emma house</div>
+                        </div>
+                    </div>
+
+                    <div class="route-step">
+                        <div class="step-indicator">
+                            <div class="step-dot" id="dot-2"></div>
+                            <div class="step-line" id="line-2"></div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-label" id="label-2">Delivered to Recycling Center 1</div>
+                            <div class="step-sublabel">Laptop, Phone</div>
+                        </div>
+                    </div>
+
+                    <div class="route-step">
+                        <div class="step-indicator">
+                            <div class="step-dot" id="dot-3"></div>
+                            <div class="step-line" id="line-3"></div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-label" id="label-3">Delivered to Recycling Center 2</div>
+                            <div class="step-sublabel">Printer</div>
+                        </div>
+                    </div>
+
+                    <div class="route-step">
+                        <div class="step-indicator">
+                            <div class="step-dot" id="dot-4"></div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-label" id="label-4">Returned to APU Facility</div>
+                            <div class="step-sublabel">Journey complete</div>
+                        </div>
+                    </div>
+
+                </div>
+            </aside>
+
+        </div>
+    </main>
+
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/collector/cHome.html">
+                <img src="/main/assets//images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>My Jobs</b><br>
+                <a href="/main/html/collector/cMyJobs.html">My Jobs</a><br>
+                <a href="/main/html/collector/cInProgress.html">In Progess</a><br>
+                <a href="/main/html/collector/cCompletedJobs.html">Completed Jobs</a>
+            </div>
+            <div>
+                <b>Support</b><br>
+                <a href="/main/html/collector/cReportIssues.html">Report Issue</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/About.html">About</a><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <script src="/main/javascript/mainScript.js"></script>
+    <script src="/main/javascript/cInProgress.js"></script>
+</body>
+
+</html>
