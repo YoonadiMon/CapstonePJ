@@ -195,7 +195,7 @@ function capitalize(text) {
 
 // Action handlers
 function acceptJob() {
-    alert('Job accepted! 🚀');
+    alert('Job accepted! ');
     // Add PHP API call here
 }
 
