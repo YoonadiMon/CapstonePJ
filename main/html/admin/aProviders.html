@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Manage Providers - AfterVolt</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+    <style>
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            color: var(--MainBlue);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .back-button:hover {
+            color: var(--DarkerBlue);
+            text-decoration: underline;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .user-count {
+            color: var(--Gray);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .dark-mode .user-count {
+            color: var(--BlueGray);
+        }
+
+        .search-add-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .search-input {
+            display: block;
+            width: 100%;
+            border: 1px solid var(--Gray);
+            border-radius: 6px;
+            font-size: 1rem;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            flex: 1;
+            padding: 0.875rem 1.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border: 1px solid var(--MainBlue);
+            box-shadow: 0 0 0 3px var(--LightBlue);
+            outline: none;
+        }
+
+        .dark-mode .search-input:focus {
+            box-shadow: 0 0 0 3px var(--DarkerBlue);
+        }
+
+        .search-input::placeholder {
+            color: var(--Gray);
+        }
+
+        .search-btn {
+            padding: 0.5rem 1.5rem;
+            background: var(--MainBlue);
+            color: var(--White);
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .add-btn{
+            padding: 0.5rem 1.5rem;
+            background: var(--MainBlue);
+            color: var(--White);
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            align-self: stretch;
+        }
+
+        .users-table-container {
+            background: var(--bg-color);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            overflow: hidden;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table thead {
+            background: var(--LightBlue);
+            color: var(--text-color);
+        }
+
+        .dark-mode .users-table thead {
+            background: var(--LowMainBlue);
+        }
+
+        .users-table th {
+            padding: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .users-table td {
+            text-align: center;
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--BlueGray);
+            color: var(--text-color);
+        }
+
+        .users-table .left {
+            text-align: left;
+        }
+
+        .users-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .users-table tbody tr:hover {
+            background: var(--shadow-color);
+        }
+
+        .dark-mode .users-table tbody tr:hover {
+            background: var(--Gray);
+        }
+
+        .users-table tbody tr td a {
+            text-decoration: none;
+        }
+
+        .users-table tbody tr td a:hover {
+            text-decoration: underline;
+            color: var(--BlueGray);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-details h4 {
+            margin: 0;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .user-details p {
+            margin: 0.25rem 0 0;
+            font-size: 0.85rem;
+            color: var(--BlueGray);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .action-btn {
+            width: 2.25rem;
+            height: 2.25rem;
+            background: var(--MainBlue);
+            color: var(--White);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+        }
+
+        .action-btn:hover {
+            background: var(--DarkBlue);
+            transform: translateY(-2px);
+        }
+
+        .action-btn img {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .dark-mode .search-btn,
+        .dark-mode .add-btn, 
+        .dark-mode .action-btn {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        .search-btn:hover,
+        .add-btn:hover, 
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--BlueGray);
+            transition: all 0.3s ease;
+        }
+
+        .dark-mode .search-btn:hover,
+        .dark-mode .add-btn:hover, 
+        .dark-mode .action-btn:hover {
+            box-shadow: 0 4px 12px var(--Gray);
+        }
+
+        .action-btn.delete-btn {
+            background: red;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .users-table {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-container {
+                padding: 1rem;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+            
+            .search-add-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .add-btn {
+                width: 100%;
+            }
+
+            .users-table-container {
+                overflow-x: auto;
+            }
+
+            .users-table {
+                min-width: 800px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+    
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/admin/aHome.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links -->
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn"  id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="/main/html/admin/aHome.html">Home</a>
+                    <a href="/main/html/admin/aRequests.html">Requests</a><br>
+                    <a href="/main/html/admin/aJobs.html">Jobs</a><br>
+                    <a href="/main/html/admin/aIssue.html">Issue</a><br>
+                    <a href="/main/html/admin/aOperations.html">Operations</a><br>
+                    <a href="/main/html/admin/aReport.html">Report</a>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/admin/aHome.html">Home</a>
+            <a href="/main/html/admin/aRequests.html">Requests</a><br>
+            <a href="/main/html/admin/aJobs.html">Jobs</a><br>
+            <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            <a href="/main/html/admin/aOperations.html">Operations</a><br>
+            <a href="/main/html/admin/aReport.html">Report</a>
+        </nav>          
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+        
+    </header>
+    <hr>
+
+    <!-- Main Content -->
+    <main>
+        <div class="page-container">
+            <a href="/main/html/admin/aHome.html" class="back-button">
+                ← Back to Home
+            </a>
+
+            <div class="page-header">
+                <h1>Manage Providers</h1>
+                <p class="user-count">Total Providers:</p>
+            </div>
+
+            <div class="search-add-section">
+                <form method="GET" class="search-form">
+                    <input type="text" name="search" class="search-input" 
+                        placeholder="Search by name, username, email, or phone..." 
+                        value="" >
+                    <button type="submit" class="search-btn">Search</button>
+                </form>
+                <button class="add-btn" onclick="">
+                    + Add New Provider
+                </button>
+            </div>
+
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th class="left">Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>State</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="left">
+                                <div class="user-info"> 
+                                    <div class="user-details">
+                                        <h4>Full Name</h4>
+                                        <p>@username</p>
+                                    </div>
+                                </div>
+                                </a>
+                            </td>
+                            <td>namename@email.com</td>
+                            <td>+60123456789</td>
+                            <td>Kuala Lumpur</td>
+                            <td>23/02/2026</td>
+                            <td>
+                                <div  class="action-btns">
+                                    <button class="action-btn" onclick="">
+                                        <img src="/main/assets/images/view-icon-white.svg" alt="View">
+                                    </button>
+                                    <button class="action-btn" onclick="">
+                                        <img src="/main/assets/images/edit-icon-white.svg" alt="Edit">
+                                    </button>
+                                    <button class="action-btn delete-btn" onclick="">
+                                        <img src="/main/assets/images/delete-icon-white.svg" alt="Delete">
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="left">
+                                <div class="user-info"> 
+                                    <div class="user-details">
+                                        <h4>Full Name</h4>
+                                        <p>@username</p>
+                                    </div>
+                                </div>
+                                </a>
+                            </td>
+                            <td>namename@email.com</td>
+                            <td>+60123456789</td>
+                            <td>Kuala Lumpur</td>
+                            <td>23/02/2026</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="action-btn" onclick="">
+                                        <img src="/main/assets/images/view-icon-white.svg" alt="View">
+                                    </button>
+                                    <button class="action-btn" onclick="">
+                                        <img src="/main/assets/images/edit-icon-white.svg" alt="Edit">
+                                    </button>
+                                    <button class="action-btn delete-btn" onclick="">
+                                        <img src="/main/assets/images/delete-icon-white.svg" alt="Delete">
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/admin/aHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Management</b><br>
+                <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            </div>
+            <div>
+                <b>System Operation</b><br>
+                <a href="/main/html/admin/aProviders.html">Providers</a><br>
+                <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
+                <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <script src="/main/javascript/mainScript.js"></script>
+</body>
+</html>

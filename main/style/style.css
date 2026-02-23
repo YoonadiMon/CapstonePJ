@@ -21,7 +21,9 @@
     --text-color: var(--Black);
     --footer-color: var(--MainBlue);
 
-    --shadow-color: rgba(16, 185, 129, 0.15);
+    --shadow-color: rgba(0, 0, 0, 0.15);
+
+    --LowMainBlue:hsla(225, 94%, 67%, 0.5);
 }
 
 .dark-mode {
