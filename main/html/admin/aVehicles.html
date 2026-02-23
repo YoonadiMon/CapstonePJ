@@ -46,13 +46,13 @@
             margin-bottom: 0.5rem;
         }
 
-        .centre-count {
+        .vehicle-count {
             color: var(--Gray);
             font-size: 1rem;
             margin-top: 0.5rem;
         }
 
-        .dark-mode .centre-count {
+        .dark-mode .veh-count {
             color: var(--BlueGray);
         }
 
@@ -120,28 +120,28 @@
             align-self: stretch;
         }
 
-        .centres-table-container {
+        .vehicles-table-container {
             background: var(--bg-color);
             border-radius: 16px;
             box-shadow: 0 4px 12px var(--shadow-color);
             overflow: hidden;
         }
 
-        .centres-table {
+        .vehicles-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .centres-table thead {
+        .vehicles-table thead {
             background: var(--LightBlue);
             color: var(--text-color);
         }
 
-        .dark-mode .centres-table thead {
+        .dark-mode .vehicles-table thead {
             background: var(--LowMainBlue);
         }
 
-        .centres-table th {
+        .vehicles-table th {
             padding: 1.5rem;
             text-align: center;
             font-weight: 600;
@@ -150,34 +150,34 @@
             letter-spacing: 0.05em;
         }
 
-        .centres-table td {
+        .vehicles-table td {
             text-align: center;
             padding: 1.25rem;
             border-bottom: 1px solid var(--BlueGray);
             color: var(--text-color);
         }
 
-        .centres-table .left {
+        .vehicles-table .left {
             text-align: left;
         }
 
-        .centres-table tbody tr {
+        .vehicles-table tbody tr {
             transition: all 0.2s ease;
         }
 
-        .centres-table tbody tr:hover {
+        .vehicles-table tbody tr:hover {
             background: var(--shadow-color);
         }
 
-        .dark-mode .centres-table tbody tr:hover {
+        .dark-mode .vehicles-table tbody tr:hover {
             background: var(--Gray);
         }
 
-        .centres-table tbody tr td a {
+        .vehicles-table tbody tr td a {
             text-decoration: none;
         }
 
-        .centres-table tbody tr td a:hover {
+        .vehicles-table tbody tr td a:hover {
             text-decoration: underline;
             color: var(--BlueGray);
         }
@@ -239,7 +239,7 @@
 
         /* Responsive Design */
         @media (max-width: 1200px) {
-            .centres-table {
+            .vehicles-table {
                 font-size: 0.9rem;
             }
         }
@@ -266,11 +266,11 @@
                 width: 100%;
             }
 
-            .centres-table-container {
+            .vehicles-table-container {
                 overflow-x: auto;
             }
 
-            .centres-table {
+            .vehicles-table {
                 min-width: 800px;
             }
         }
@@ -349,7 +349,7 @@
 
             <div class="page-header">
                 <h1>Manage Vehicles</h1>
-                <p class="centres-count">Total Vehicles:</p>
+                <p class="vehicle-count">Total Vehicles:</p>
             </div>
 
             <div class="search-add-section">
@@ -364,8 +364,8 @@
                 </button>
             </div>
 
-            <div class="centres-table-container">
-                <table class="centres-table">
+            <div class="vehicles-table-container">
+                <table class="vehicles-table">
                     <thead>
                         <tr>
                             <th class="left">Plate Number</th>
