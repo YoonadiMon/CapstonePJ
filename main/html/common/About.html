@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>About Us | AfterVolt</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+    <style>
+        /* About Page Specific Styles */
+        .about-hero {
+            text-align: center;
+            padding: 3rem 1rem;
+            background-color: var(--sec-bg-color);
+            border-radius: 16px;
+            margin-bottom: 3rem;
+        }
+
+        .about-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+
+        .about-hero p {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Story Sections - Alternating Layout */
+        .story-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-bottom: 4rem;
+            align-items: center;
+        }
+
+        .story-item {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+
+        .story-text {
+            flex: 1;
+        }
+
+        .story-text h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--MainBlue);
+            margin-bottom: 1.5rem;
+        }
+
+        .story-text p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-color);
+        }
+
+        .story-image {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .story-image img {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        /* Mission & Vision Cards */
+        .about-mission-vision {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .about-card {
+            background-color: var(--sec-bg-color);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            text-align: center;
+        }
+
+        .about-card h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--MainBlue);
+            margin-bottom: 1rem;
+        }
+
+        .about-card p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+
+        .about-tagline {
+            text-align: center;
+            margin: 3rem 0 1rem;
+            padding: 2rem;
+            background-color: var(--sec-bg-color);
+            border-radius: 16px;
+        }
+
+        .about-tagline p {
+            font-size: 1.3rem;
+            font-style: italic;
+            color: var(--MainBlue);
+        }
+
+        /* Tablet & Desktop Layout */
+        @media (min-width: 760px) {
+            .story-item {
+                flex-direction: row;
+                align-items: center;
+                gap: 3rem;
+            }
+
+            /* Alternate layout: image on right for odd items, left for even */
+            .story-item:nth-child(even) {
+                flex-direction: row-reverse;
+            }
+
+            .about-mission-vision {
+                flex-direction: row;
+            }
+
+            .about-card {
+                flex: 1;
+            }
+
+            .about-hero h1 {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+    
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/provider/pHome.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="/main/html/provider/pHome.html">Home</a>
+                    <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a>
+                    <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
+                    <a href="/main/html/provider/pEwasteGuide.html">E-waste Guide</a>
+                    <a href="/main/html/common/About.html">About</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/provider/pHome.html">Home</a>
+            <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a>
+            <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
+            <a href="/main/html/provider/pEwasteGuide.html">E-waste Guide</a>
+            <a href="/main/html/common/About.html">About</a>
+        </nav>          
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+    </header>
+    <hr>
+
+    <!-- Main Content - About Us Page -->
+    <main>
+        <!-- Hero Section - Centered -->
+        <section class="about-hero">
+            <h1>About Us</h1>
+            <p>Discover how we're transforming electronic waste recycling for a sustainable future.</p>
+        </section>
+
+        <!-- Story Sections with Images -->
+        <section class="story-section">
+            <!-- Story Part 1 - Image on Right -->
+            <div class="story-item">
+                <div class="story-text">
+                    <h2>Discover Our Story</h2>
+                    <p>At AfterVolt, we are dedicated to transforming how electronic waste is managed in our communities. Built by a team of ICT students from Asia Pacific University, our platform represents a fresh approach to e-waste recycling—one that prioritizes accessibility, transparency, and user engagement. We saw a critical gap: while policies and licensed recyclers exist, public participation remains low due to inconvenient processes and lack of information.</p>
+                </div>
+                <div class="story-image">
+                    <img src="/main/assets/images/about-story-1.jpg" alt="Team working on e-waste solution" onerror="this.src='https://via.placeholder.com/400x300?text=Team+Working'">
+                </div>
+            </div>
+
+            <!-- Story Part 2 - Image on Left (automatically alternates) -->
+            <div class="story-item">
+                <div class="story-text">
+                    <p>Our commitment goes beyond just building a system. We believe that technology can bridge the gap between people who want to recycle responsibly and the infrastructure that makes it possible. By creating a centralized digital platform, we simplify the entire journey—from scheduling pickups to tracking requests and accessing proper disposal guidelines. Every feature is designed with one goal: making it easier for everyone to do their part.</p>
+                </div>
+                <div class="story-image">
+                    <img src="/main/assets/images/about-story-2.jpg" alt="AfterVolt platform interface" onerror="this.src='https://via.placeholder.com/400x300?text=Platform+Interface'">
+                </div>
+            </div>
+
+            <!-- Story Part 3 - Image on Right -->
+            <div class="story-item">
+                <div class="story-text">
+                    <p>We're not just developers; we're advocates for environmental awareness. Our vision embraces the circular economy, where discarded electronics are seen not as waste, but as valuable resources waiting to be recovered. Join us in this journey. Together, we can turn e-waste into opportunity and build a more sustainable future for Malaysia.</p>
+                </div>
+                <div class="story-image">
+                    <img src="/main/assets/images/about-story-3.jpg" alt="Circular economy concept" onerror="this.src='https://via.placeholder.com/400x300?text=Circular+Economy'">
+                </div>
+            </div>
+        </section>
+
+        <!-- Mission & Vision Cards -->
+        <section class="about-mission-vision">
+            <div class="about-card">
+                <h3>Our Vision</h3>
+                <p>We strive to create a cleaner and healthier planet by responsibly managing electronic waste, preventing it from ending up in landfills, and promoting a circular economy for electronics.</p>
+            </div>
+
+            <div class="about-card">
+                <h3>Our Mission</h3>
+                <p>To be your one-stop solution for electronic waste recycling—connecting you to the right collectors, providing clear disposal guidance, and making responsible recycling simple and rewarding for everyone.</p>
+            </div>
+        </section>
+
+        <!-- Tagline -->
+        <div class="about-tagline">
+            <p>AfterVolt — <em>Recycle responsibly, track transparently, earn rewards.</em></p>
+        </div>
+    </main>
+
+    <hr>
+    
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/provider/pHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Recycling</b><br>
+                <a href="/main/html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
+                <a href="/main/html/provider/pWasteType.html">E-Waste Types</a>
+            </div>
+            <div>
+                <b>My Activity</b><br>
+                <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
+                <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/About.html">About</a><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <script src="/main/javascript/mainScript.js"></script>
+</body>
+</html>

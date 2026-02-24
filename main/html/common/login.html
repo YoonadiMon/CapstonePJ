@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | AfterVolt</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Login Page Specific Styles */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            padding: 2rem 1rem;
+        }
+
+        .login-box {
+            background-color: var(--sec-bg-color);
+            padding: 2.5rem 2rem;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px var(--shadow-color);
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            margin-top: 2rem;
+        }
+
+        /* "Welcome to AfterVolt Portal!" on top of the box */
+        .login-box::before {
+            content: "Welcome to AfterVolt Portal!";
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--MainBlue);
+            white-space: nowrap;
+        }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-logo img {
+            width: 2rem;
+            height: auto;
+        }
+
+        .login-logo span {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .login-box h2 {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.8rem;
+        }
+
+        /* Container for Register link and Email input */
+        .email-section {
+            margin-bottom: 1.2rem;
+        }
+
+        .register-link {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+            color: var(--text-color);
+        }
+
+        .register-link a {
+            color: var(--MainBlue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .email-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .email-input::placeholder {
+            color: var(--Gray);
+        }
+
+        .password-section {
+            margin-bottom: 0.5rem;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .password-input::placeholder {
+            color: var(--Gray);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin: 0.3rem 0 1.5rem;
+        }
+
+        .forgot-password a {
+            color: var(--Gray);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .forgot-password a:hover {
+            color: var(--MainBlue);
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--MainBlue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .login-btn:hover {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        /* Footer already styled in main CSS */
+    </style>
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+    
+    <!-- Logo + Name & Navbar - Login Page (same as landing) -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/landing.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <!-- Login Page Nav Links - Only Home, About, Contact -->
+                    <a href="/main/html/landing.html">Home</a>
+                    <a href="/main/html/common/About.html">About</a>
+                    <a href="/main/html/common/Contact.html">Contact</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet - Only Home, About, Contact -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/landing.html">Home</a>
+            <a href="/main/html/common/About.html">About</a>
+            <a href="/main/html/common/Contact.html">Contact</a>
+        </nav>          
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+    </header>
+    <hr>
+
+    <!-- Main Content - Login Page -->
+    <main>
+        <div class="login-container">
+            <div class="login-box">
+                <!-- Logo above Provider Login -->
+                <div class="login-logo">
+                    <img src="/main/assets/images/logo.png" alt="AfterVolt Logo">
+                    <span>AfterVolt</span>
+                </div>
+
+                <h2>Provider Login</h2>
+
+                <!-- Email section with Register link on top left -->
+                <div class="email-section">
+                    <div class="register-link">
+                        <a href="/main/html/common/Register.html">New here? Register Now!</a>
+                    </div>
+                    <input type="email" class="email-input" placeholder="Enter Email Address">
+                </div>
+
+                <!-- Password section -->
+                <div class="password-section">
+                    <input type="password" class="password-input" placeholder="Enter Password">
+                </div>
+
+                <div class="forgot-password">
+                    <a href="/main/html/common/ForgotPassword.html">Forgot Password</a>
+                </div>
+
+                <button class="login-btn">LOGIN</button>
+            </div>
+        </div>
+    </main>
+
+    <hr>
+    
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/landing.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 - Footer Links -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Recycling</b><br>
+                <a href="/main/html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
+                <a href="/main/html/provider/pWasteType.html">E-Waste Types</a>
+            </div>
+            <div>
+                <b>My Activity</b><br>
+                <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
+                <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/About.html">About</a><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+
+        <!-- Footer Bottom Navigation - Home, About, Contact -->
+        <section style="width: 100%; text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--LowMainBlue);">
+            <nav style="display: flex; gap: 2rem; justify-content: center;">
+                <a href="/main/html/landing.html" style="color: var(--text-color); text-decoration: none;">Home</a>
+                <a href="/main/html/common/About.html" style="color: var(--text-color); text-decoration: none;">About</a>
+                <a href="/main/html/common/Contact.html" style="color: var(--text-color); text-decoration: none;">Contact</a>
+            </nav>
+        </section>
+    </footer>
+
+    <script src="/main/javascript/mainScript.js"></script>
+</body>
+</html>
