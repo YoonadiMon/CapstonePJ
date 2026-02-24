@@ -1,0 +1,940 @@
+.jobs-main {
+    flex: 1;
+    width: 100%;
+}
+
+.page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* Header */
+.jobs-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.jobs-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.back-btn {
+    background: var(--sec-bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 24px;
+    padding: 0.6rem 1.5rem;
+    font-size: 0.95rem;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.back-btn:hover {
+    background: var(--MainBlue);
+    color: var(--White);
+    border-color: var(--MainBlue);
+}
+
+.jobs-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card-modern {
+    background: var(--bg-color);
+    border-radius: 24px;
+    padding: 1.2rem;
+    border: 1px solid var(--BlueGray);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-card-modern:hover {
+    transform: translateY(-2px);
+    border-color: var(--MainBlue);
+    box-shadow: 0 8px 24px var(--shadow-color);
+}
+
+.stat-icon-modern {
+    width: 48px;
+    height: 48px;
+    background: var(--sec-bg-color);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--MainBlue);
+    font-size: 1.3rem;
+}
+
+.stat-content-modern {
+    flex: 1;
+}
+
+.stat-value-modern {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1.2;
+}
+
+.stat-label-modern {
+    font-size: 0.8rem;
+    color: var(--Gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Filter Section Modern */
+.filter-section-modern {
+    background: var(--sec-bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 24px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filter-chips-modern {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.filter-chip-modern {
+    background: var(--bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 24px;
+    padding: 0.5rem 1.2rem;
+    font-size: 0.85rem;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.filter-chip-modern i {
+    color: var(--MainBlue);
+    font-size: 0.8rem;
+}
+
+.filter-chip-modern:hover {
+    border-color: var(--MainBlue);
+    background: var(--LightBlue);
+}
+
+.filter-chip-modern.active {
+    background: var(--MainBlue);
+    color: var(--White);
+    border-color: var(--MainBlue);
+}
+
+.filter-chip-modern.active i {
+    color: var(--White);
+}
+
+/* Search Wrapper Modern */
+.search-wrapper-modern {
+    display: flex;
+    align-items: center;
+    background: var(--bg-color);
+    border-radius: 24px;
+    padding: 0.2rem 0.2rem 0.2rem 1rem;
+    border: 1px solid var(--BlueGray);
+    min-width: 260px;
+}
+
+.search-wrapper-modern input {
+    border: none;
+    background: transparent;
+    padding: 0.5rem 0;
+    width: 100%;
+    outline: none;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.search-wrapper-modern input::placeholder {
+    color: var(--Gray);
+}
+
+.search-wrapper-modern button {
+    background: var(--MainBlue);
+    color: var(--White);
+    border: none;
+    border-radius: 24px;
+    padding: 0.5rem 1.2rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.search-wrapper-modern button:hover {
+    background: var(--DarkerMainBlue);
+}
+
+.jobs-count-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.jobs-count-badge-modern {
+    background: var(--sec-bg-color);
+    padding: 0.5rem 1.2rem;
+    border-radius: 24px;
+    border: 1px solid var(--BlueGray);
+    font-size: 0.9rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.jobs-count-badge-modern i {
+    color: var(--MainBlue);
+}
+
+.jobs-sort-modern {
+    display: flex;
+    gap: 0.3rem;
+    background: var(--bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 24px;
+    padding: 0.2rem;
+}
+
+.sort-option {
+    background: transparent;
+    border: none;
+    border-radius: 24px;
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.sort-option i {
+    color: var(--MainBlue);
+}
+
+.sort-option.active {
+    background: var(--DarkBlue);
+    color: var(--White);
+}
+
+.sort-option.active i {
+    color: var(--White);
+}
+
+.jobs-timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.timeline-stage {
+    background: var(--bg-color);
+    border-radius: 24px;
+    padding: 1.5rem;
+    border: 1px solid var(--BlueGray);
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.stage-header-modern {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--BlueGray);
+}
+
+.stage-icon-modern {
+    width: 40px;
+    height: 40px;
+    background: var(--sec-bg-color);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--MainBlue);
+    font-size: 1.2rem;
+}
+
+.stage-header-modern h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+    flex: 1;
+}
+
+.stage-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--sec-bg-color);
+    padding: 0.3rem 1rem;
+    border-radius: 24px;
+    font-size: 0.8rem;
+    color: var(--text-color);
+}
+
+.stage-progress i {
+    color: var(--MainBlue);
+}
+
+/* Status Cards Grid */
+.status-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.status-card-modern {
+    background: var(--sec-bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 20px;
+    padding: 1rem;
+}
+
+.status-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed var(--BlueGray);
+}
+
+.status-header-modern h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-count-modern {
+    background: var(--bg-color);
+    color: var(--DarkBlue);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.job-cards-modern {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.3rem;
+}
+
+.job-cards-modern::-webkit-scrollbar {
+    width: 4px;
+}
+
+.job-cards-modern::-webkit-scrollbar-track {
+    background: var(--BlueGray);
+    border-radius: 4px;
+}
+
+.job-cards-modern::-webkit-scrollbar-thumb {
+    background: var(--MainBlue);
+    border-radius: 4px;
+}
+
+.job-card-modern {
+    background: var(--bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 16px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.job-card-modern:hover {
+    border-color: var(--MainBlue);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.job-card-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+
+.job-id-modern {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--MainBlue);
+    background: var(--sec-bg-color);
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+}
+
+.job-badge-modern {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    text-transform: capitalize;
+}
+
+.job-badge-modern.pending { 
+    background: var(--sec-bg-color); 
+    color: var(--DarkBlue);
+    border: 1px solid var(--MainBlue);
+}
+.job-badge-modern.accepted { 
+    background: var(--LightBlue); 
+    color: var(--DarkBlue);
+    border: 1px solid var(--MainBlue);
+}
+.job-badge-modern.rejected { 
+    background: #ffe2e2; 
+    color: #b83e3e;
+    border: 1px solid #ff9f9f;
+}
+.job-badge-modern.ongoing { 
+    background: #fff1cf; 
+    color: #b55f0e;
+    border: 1px solid #ffcd7e;
+}
+.job-badge-modern.delayed { 
+    background: #ffd9b3; 
+    color: #b55f0e;
+    border: 1px solid #ffa75e;
+}
+.job-badge-modern.pickedup { 
+    background: var(--LightBlue); 
+    color: var(--DarkBlue);
+    border: 1px solid var(--MainBlue);
+}
+.job-badge-modern.completed { 
+    background: #dff0df; 
+    color: #1f6c2f;
+    border: 1px solid #9fd49f;
+}
+.job-badge-modern.cancelled { 
+    background: #e0e0e0; 
+    color: #666666;
+    border: 1px solid #b0b0b0;
+}
+.job-badge-modern.failed { 
+    background: #ffe2e2; 
+    color: #b83e3e;
+    border: 1px solid #ff9f9f;
+}
+
+.job-info-modern {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.job-info-tag {
+    background: var(--sec-bg-color);
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.job-info-tag i {
+    color: var(--MainBlue);
+    font-size: 0.7rem;
+}
+
+.job-details-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--Gray);
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--BlueGray);
+}
+
+.job-details-row span {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.job-details-row i {
+    color: var(--MainBlue);
+}
+
+/* Job Detail Container Modern */
+.job-detail-container-modern {
+    background: var(--bg-color);
+    border-radius: 32px;
+    padding: 2rem;
+    border: 1px solid var(--BlueGray);
+    box-shadow: 0 20px 40px var(--shadow-color);
+}
+
+.detail-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.detail-title-section-modern {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.detail-title-section-modern h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.detail-status-modern {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.4rem 1.5rem;
+    border-radius: 24px;
+    text-transform: capitalize;
+    background: var(--sec-bg-color);
+    border: 1px solid var(--BlueGray);
+}
+
+.detail-request-link-modern {
+    background: var(--MainBlue);
+    color: var(--White);
+    border: none;
+    border-radius: 24px;
+    padding: 0.7rem 1.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-request-link-modern:hover {
+    background: var(--DarkerMainBlue);
+}
+
+.info-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.info-card-modern {
+    background: var(--sec-bg-color);
+    border-radius: 24px;
+    padding: 1.5rem;
+    border: 1px solid var(--BlueGray);
+}
+
+.info-card-modern h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 1.2rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-card-modern h3 i {
+    color: var(--MainBlue);
+}
+
+.info-row-modern {
+    display: flex;
+    margin-bottom: 0.8rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed var(--BlueGray);
+}
+
+.info-row-modern:last-child {
+    border-bottom: none;
+}
+
+.info-label-modern {
+    font-size: 0.75rem;
+    color: var(--Gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 90px;
+    flex-shrink: 0;
+}
+
+.info-value-modern {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    flex: 1;
+}
+
+.items-section-modern {
+    background: var(--sec-bg-color);
+    border-radius: 24px;
+    padding: 1.5rem;
+    border: 1px solid var(--BlueGray);
+    margin-bottom: 2rem;
+}
+
+.items-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.items-header-modern h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.items-header-modern h3 i {
+    color: var(--MainBlue);
+}
+
+.items-count-modern {
+    background: var(--bg-color);
+    color: var(--DarkBlue);
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+/* Timeline Modern */
+.timeline-container-modern {
+    background: var(--sec-bg-color);
+    border-radius: 24px;
+    padding: 1.5rem;
+    border: 1px solid var(--BlueGray);
+    margin-bottom: 2rem;
+}
+
+.timeline-container-modern h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 1.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timeline-container-modern h3 i {
+    color: var(--MainBlue);
+}
+
+.timeline-modern {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-modern::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--MainBlue);
+    opacity: 0.3;
+}
+
+.timeline-item-modern {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-item-modern:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker-modern {
+    position: absolute;
+    left: -2rem;
+    top: 0;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--MainBlue);
+    border: 2px solid var(--bg-color);
+    box-shadow: 0 0 0 2px var(--MainBlue);
+}
+
+.timeline-content-modern {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid var(--BlueGray);
+}
+
+.timeline-time-modern {
+    font-size: 0.75rem;
+    color: var(--Gray);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.timeline-time-modern i {
+    color: var(--MainBlue);
+}
+
+.timeline-desc-modern {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.timeline-desc-modern i {
+    color: var(--MainBlue);
+    margin-right: 0.3rem;
+}
+
+.action-buttons-modern {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.btn-modern-primary {
+    background: var(--MainBlue);
+    color: var(--White);
+    border: none;
+    border-radius: 24px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-modern-primary:hover {
+    background: var(--DarkerMainBlue);
+    transform: translateY(-2px);
+}
+
+.btn-modern-outline {
+    background: transparent;
+    border: 1px solid var(--BlueGray);
+    border-radius: 24px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-color);
+}
+
+.btn-modern-outline:hover {
+    border-color: var(--MainBlue);
+    background: var(--sec-bg-color);
+    transform: translateY(-2px);
+}
+
+.btn-modern-report {
+    background: #b45309;
+    color: var(--White);
+    border: none;
+    border-radius: 24px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-modern-report:hover {
+    background: #92400e;
+    transform: translateY(-2px);
+}
+
+.no-jobs-modern {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--sec-bg-color);
+    border-radius: 32px;
+    border: 1px dashed var(--BlueGray);
+}
+
+.no-jobs-modern i {
+    font-size: 3rem;
+    color: var(--MainBlue);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.no-jobs-modern p {
+    color: var(--Gray);
+    font-size: 1rem;
+}
+
+.no-jobs-modern .suggestion {
+    font-size: 0.85rem;
+    color: var(--DarkBlue);
+    margin-top: 0.5rem;
+}
+
+/* Dark mode adjustments */
+.dark-mode .stat-card-modern,
+.dark-mode .timeline-stage,
+.dark-mode .job-card-modern,
+.dark-mode .job-detail-container-modern,
+.dark-mode .info-card-modern,
+.dark-mode .items-section-modern,
+.dark-mode .timeline-container-modern {
+    background: var(--bg-color);
+}
+
+.dark-mode .filter-section-modern,
+.dark-mode .status-card-modern,
+.dark-mode .stage-progress,
+.dark-mode .jobs-count-badge-modern,
+.dark-mode .job-info-tag,
+.dark-mode .timeline-content-modern {
+    background: var(--sec-bg-color);
+}
+
+.dark-mode .filter-chip-modern {
+    background: var(--bg-color);
+}
+
+.dark-mode .filter-chip-modern.active {
+    background: var(--MainBlue);
+}
+
+.dark-mode .sort-option.active {
+    background: var(--MainBlue);
+}
+
+.dark-mode .timeline-marker-modern {
+    border-color: var(--sec-bg-color);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .jobs-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .status-cards-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-grid-modern {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 0 1rem;
+    }
+    
+    .jobs-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .filter-section-modern {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-wrapper-modern {
+        min-width: 100%;
+    }
+    
+    .jobs-count-modern {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .detail-header-modern {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .action-buttons-modern {
+        flex-direction: column;
+    }
+    
+    .btn-modern-primary,
+    .btn-modern-outline,
+    .btn-modern-report {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1150px) {
+    .status-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

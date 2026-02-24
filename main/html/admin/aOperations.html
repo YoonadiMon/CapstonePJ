@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations - Aftervolt</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+    <link rel="stylesheet" href="/main/style/aOperations.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+    
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/admin/aHome.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="/main/html/admin/aHome.html">Home</a>
+                    <a href="/main/html/admin/aRequests.html">Requests</a>
+                    <a href="/main/html/admin/aJobs.html">Jobs</a>
+                    <a href="/main/html/admin/aIssue.html">Issue</a>
+                    <a href="/main/html/admin/aOperations.html" class="active">Operations</a>
+                    <a href="/main/html/admin/aReport.html">Report</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/admin/aHome.html">Home</a>
+            <a href="/main/html/admin/aRequests.html">Requests</a>
+            <a href="/main/html/admin/aJobs.html">Jobs</a>
+            <a href="/main/html/admin/aIssue.html">Issue</a>
+            <a href="/main/html/admin/aOperations.html" class="active">Operations</a>
+            <a href="/main/html/admin/aReport.html">Report</a>
+        </nav>          
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+    </header>
+    <hr>
+
+    <!-- Main Content -->
+    <main class="operations-main">
+        <!-- Page Header -->
+        <div class="ops-page-header">
+            <div>
+                <h1 class="ops-title">Operations</h1>
+            </div>
+        </div>
+
+        <div class="ops-schedule-container">
+            <div class="ops-requests-queue">
+                <div class="queue-header">
+                    <h2>Schedule</h2>
+                    <div class="queue-actions">
+                        <select class="ops-filter-select" id="requestFilter">
+                            <option value="all">All e-waste types</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="batteries">Batteries</option>
+                            <option value="appliances">Appliances</option>
+                        </select>
+                        <input type="text" placeholder="🔍 Search requests..." class="ops-search-input" id="requestSearch">
+                    </div>
+                </div>
+
+                <!-- Request Cards Container -->
+                <div class="request-cards-container" id="requestCardsContainer">
+                </div>
+
+                <div class="pagination-controls">
+                    <button class="c-btn-small" disabled>◀ Previous</button>
+                    <span class="page-indicator">Page 1 of 3</span>
+                    <button class="c-btn-small">Next ▶</button>
+                </div>
+            </div>
+
+            <div class="ops-assignment-panel" id="assignmentPanel">
+                <div class="panel-header">
+                    <h2>New Assignment</h2>
+                    <span class="request-id-badge" id="selectedRequestId">#REQ010</span>
+                </div>
+
+                <div class="selected-request-summary" id="selectedRequestSummary">
+                </div>
+
+                <!-- Assignment Form -->
+                <div class="assignment-form">
+                    <div class="form-section">
+                        <h3>Assign Collector</h3>
+                        <div class="assign-item">
+                            <select id="collectorSelect" class="ops-select">
+                                <option value="" disabled selected>Select a collector</option>
+                                <option value="collector1">John Smith (Available)</option>
+                                <option value="collector2">Sarah Johnson (Available)</option>
+                                <option value="collector4">Lisa Wong (Available)</option>
+                            </select>
+                            <button class="c-btn-small view-btn" id="viewCollectorAvailability" title="View availability">
+                                <i class="far fa-calendar-alt"></i>
+                            </button>
+                        </div>
+                        <div class="collector-availability-hint" id="collectorHint"></div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Assign Vehicle</h3>
+                        <div class="assign-item">
+                            <select id="vehicleSelect" class="ops-select">
+                                <option value="" disabled selected>Select a vehicle</option>
+                                <option value="vehicle1">Truck A - AV-1234 (Available)</option>
+                                <option value="vehicle3">Truck C - AV-9012 (Available)</option>
+                                <option value="vehicle4">Van D - AV-3456 (Available)</option>
+                            </select>
+                            <button class="c-btn-small view-btn" id="viewVehicleStatus" title="View status">
+                                <i class="fas fa-wrench"></i>
+                            </button>
+                        </div>
+                        <div class="vehicle-status-hint" id="vehicleHint"></div>
+                    </div>
+
+                    <div class="form-section">
+    <h3>Collection Centre</h3>
+    <div class="assign-item">
+        <select id="centreSelect" class="ops-select">
+            <option value="" disabled selected>Select a collection centre</option>
+            <option value="C01">APU E-waste Hub</option>
+            <option value="C02">Sunway Recycling Centre</option>
+            <option value="C03">Shah Alam Collection Point</option>
+        </select>
+        <div class="centre-capacity-container" id="centreCapacityContainer">
+            <div class="capacity-circle" id="capacityCircle">
+                <span id="capacityPercentage">85%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+                    <div class="form-section">
+                        <h3>Scheduled Date & Time</h3>
+                        <div class="datetime-picker-container">
+                            <input type="datetime-local" id="scheduledDateTime" class="ops-datetime-input" min="">
+                            <div style="font-size: 0.85rem; color: var(--Gray); display: flex; align-items: center; gap: 0.3rem;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Notes</h3>
+                        <textarea id="assignmentNotes" class="ops-textarea" ></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="assignment-actions">
+                        <button class="c-btn-primary c-btn-big" id="confirmAssignmentBtn" disabled>✓ Confirm</button>
+                        <button class="c-btn-secondary" id="resetAssignmentBtn">↺ Reset</button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                    </div>
+                </div>
+
+                <!-- Recent Assignments Timeline -->
+                <div class="recent-assignments">
+                    <h3>Recent assignments</h3>
+                    <div class="timeline-mini" id="recentTimeline">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Operations Section -->
+        <div class="bulk-ops-section">
+            <h3>Bulk operations</h3>
+            <div class="bulk-actions">
+                <button class="c-btn-secondary" id="assignMultipleBtn">Assign multiple (2 selected)</button>
+                <button class="c-btn-secondary" id="rescheduleSelectedBtn">Reschedule selected</button>
+                <button class="c-btn-secondary" id="exportScheduleBtn">📊 Export schedule</button>
+            </div>
+        </div>
+    </main>
+
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/admin/aHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Management</b><br>
+                <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            </div>
+            <div>
+                <b>System Operation</b><br>
+                <a href="/main/html/admin/aProviders.html">Providers</a><br>
+                <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
+                <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <script src="/main/javascript/mainScript.js"></script>
+    <script src="/main/javascript/aOperations.js"></script>
+</body>
+</html>
