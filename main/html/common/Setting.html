@@ -1,591 +1,654 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AfterVolt – Settings</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --MainBlue: hsl(225, 94%, 67%);
-  --DarkerMainBlue: hsl(225, 100%, 40%);
-  --DarkBlue: hsl(237, 52%, 36%);
-  --DarkerBlue: hsl(240, 60%, 20%);
-  --LightBlue: hsl(220, 100%, 90%);
-  --White: hsl(0, 0%, 100%);
-  --Black: hsl(0, 0%, 12%);
-  --Gray: hsl(228, 11%, 46%);
-  --BlueGray: hsl(226, 28%, 73%);
-  --bg-color: var(--White);
-  --sec-bg-color: var(--LightBlue);
-  --text-color: var(--Black);
-  --footer-color: var(--MainBlue);
-  --shadow-color: rgba(0,0,0,0.12);
-  --LowMainBlue: hsla(225, 94%, 67%, 0.4);
-}
-.dark-mode {
-  --bg-color: var(--Black);
-  --sec-bg-color: var(--DarkBlue);
-  --text-color: var(--White);
-  --footer-color: var(--DarkerMainBlue);
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; font-size: 14px; max-width: 100vw; }
+    <title>Settings</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
 
-body {
-  width: 100vw; min-height: 100vh;
-  display: flex; flex-direction: column;
-  background: var(--bg-color); color: var(--text-color);
-  transition: background .3s, color .3s;
-}
+    <link rel="stylesheet" href="/main/style/style.css">
 
-button { cursor: pointer; background: none; border: none; border-radius: 24px; padding: 0.4rem 0.8rem; }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
-/* BUTTONS */
-.c-btn-primary { background: var(--MainBlue); color: var(--White); }
-.c-btn-primary:hover { background: var(--DarkerMainBlue); }
-.c-btn-secondary { background: var(--DarkBlue); color: var(--White); }
-.c-btn-secondary:hover { background: var(--DarkerBlue); }
-.c-btn-small { padding: 0.35em 1.1em; font-size: 0.82rem; }
+    <style>
+        /* ── PAGE-SPECIFIC STYLES ── */
 
-/* NAVBAR */
-.c-navbar-desktop {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.75rem 2rem; background: var(--bg-color);
-  border-bottom: 1px solid var(--LowMainBlue);
-  box-shadow: 0 2px 8px var(--shadow-color);
-  position: sticky; top: 0; z-index: 100; max-width: 100vw;
-}
-.c-logo-section {
-  display: flex; align-items: center; gap: 0.5rem;
-  font-size: 1.1rem; font-weight: 700; color: var(--text-color); text-decoration: none;
-}
-.c-logo { width: 1.4rem; flex-shrink: 0; }
-.c-navbar-desktop nav a {
-  margin: 0 0.6rem; font-size: 0.9rem; font-weight: 500;
-  color: var(--text-color); text-decoration: none; transition: color .2s;
-}
-.c-navbar-desktop nav a:hover { color: var(--MainBlue); }
-.c-navbar-desktop-icons { display: flex; align-items: center; gap: 0.5rem; }
-.c-icon-btn {
-  width: 2.1rem; height: 2.1rem; padding: 0.4rem;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; transition: background .2s; color: var(--text-color); flex-shrink: 0;
-}
-.c-icon-btn:hover { background: var(--sec-bg-color); }
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
 
-/* MAIN */
-main { flex: 1; padding: 2rem; max-width: 860px; margin: 0 auto; width: 100%; }
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.2rem;
+        }
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: var(--Gray);
+        }
 
-.page-header { margin-bottom: 1.5rem; }
-.page-header h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-color); margin-bottom: 0.2rem; }
-.page-header p { font-size: 0.85rem; color: var(--Gray); }
+        /* SETTINGS LAYOUT */
+        .settings-layout {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
 
-/* SETTINGS LAYOUT */
-.settings-layout { display: grid; grid-template-columns: 190px 1fr; gap: 1.5rem; align-items: start; }
+        /* SIDEBAR */
+        .settings-sidebar {
+            background: var(--bg-color);
+            border: 1px solid var(--LowMainBlue);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 16px;
+            font-size: 0.85rem;
+            color: var(--Gray);
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all .15s;
+            text-decoration: none;
+        }
+        .sidebar-item:hover {
+            background: var(--sec-bg-color);
+            color: var(--text-color);
+        }
+        .sidebar-item.active {
+            background: var(--LightBlue);
+            color: var(--DarkerMainBlue);
+            border-left-color: var(--MainBlue);
+            font-weight: 600;
+        }
+        .dark-mode .sidebar-item.active {
+            background: var(--DarkerBlue);
+            color: var(--LightBlue);
+        }
+        .sidebar-item svg { flex-shrink: 0; opacity: .7; }
+        .sidebar-item.active svg { opacity: 1; }
 
-/* SIDEBAR */
-.sidebar {
-  background: var(--bg-color); border: 1px solid var(--LowMainBlue);
-  border-radius: 12px; overflow: hidden;
-  box-shadow: 0 2px 10px var(--shadow-color);
-}
-.sidebar-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 11px 16px; font-size: 0.85rem; color: var(--Gray);
-  cursor: pointer; border-left: 3px solid transparent; transition: all .15s;
-}
-.sidebar-item:hover { background: var(--sec-bg-color); color: var(--text-color); }
-.sidebar-item.active {
-  background: var(--LightBlue); color: var(--DarkerMainBlue);
-  border-left-color: var(--MainBlue); font-weight: 600;
-}
-.dark-mode .sidebar-item.active { background: var(--DarkerBlue); color: var(--LightBlue); border-left-color: var(--MainBlue); }
-.sidebar-item svg { flex-shrink: 0; opacity: .7; }
-.sidebar-item.active svg { opacity: 1; }
+        /* CARDS */
+        .tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        .tab-panel.active {
+            display: flex;
+        }
 
-/* CARDS */
-.cards { display: flex; flex-direction: column; gap: 1.2rem; }
-.card {
-  background: var(--bg-color); border: 1px solid var(--LowMainBlue);
-  border-radius: 12px; overflow: hidden;
-  box-shadow: 0 2px 10px var(--shadow-color);
-}
-.card-header {
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--LowMainBlue);
-}
-.card-title { font-size: 0.9rem; font-weight: 700; color: var(--text-color); }
-.card-desc { font-size: 0.75rem; color: var(--Gray); margin-top: 2px; }
-.card-body { padding: 18px 20px; }
+        .c-card {
+            background: var(--bg-color);
+            border: 1px solid var(--LowMainBlue);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+        .c-card-header {
+            padding: 14px 20px 12px;
+            border-bottom: 1px solid var(--LowMainBlue);
+        }
+        .c-card-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        .c-card-desc {
+            font-size: 0.75rem;
+            color: var(--Gray);
+            margin-top: 2px;
+        }
+        .c-card-body { padding: 16px 20px; }
+        .c-card-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--LowMainBlue);
+            background: var(--sec-bg-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
 
-/* FORM */
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-.form-row:last-child { margin-bottom: 0; }
-.form-group { display: flex; flex-direction: column; gap: 4px; }
-.form-group.full { grid-column: 1/-1; }
-label { font-size: 0.7rem; font-weight: 700; color: var(--Gray); text-transform: uppercase; letter-spacing: .05em; }
-input[type="text"], input[type="email"], input[type="password"], select {
-  padding: 0.5rem 0.7rem; border: 1.5px solid var(--LowMainBlue);
-  border-radius: 8px; font-size: 0.88rem; font-family: 'Inter', sans-serif;
-  color: var(--text-color); background: var(--bg-color);
-  transition: border-color .2s, box-shadow .2s; outline: none; width: 100%;
-}
-input:focus, select:focus { border-color: var(--MainBlue); box-shadow: 0 0 0 3px var(--LowMainBlue); }
+        /* FORM */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .form-row:last-child { margin-bottom: 0; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group.full { grid-column: 1/-1; }
+        label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--Gray);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            padding: 0.5rem 0.7rem;
+            border: 1.5px solid var(--LowMainBlue);
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+            background: var(--bg-color);
+            transition: border-color .2s, box-shadow .2s;
+            outline: none;
+            width: 100%;
+        }
+        input:focus, select:focus {
+            border-color: var(--MainBlue);
+            box-shadow: 0 0 0 3px var(--LowMainBlue);
+        }
 
-/* TOGGLE */
-.toggle-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 11px 0; border-bottom: 1px solid var(--sec-bg-color);
-}
-.toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
-.toggle-label { font-size: 0.88rem; color: var(--text-color); }
-.toggle-sub { font-size: 0.72rem; color: var(--Gray); margin-top: 2px; }
-.toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
-.toggle input { opacity: 0; width: 0; height: 0; }
-.toggle-track {
-  position: absolute; inset: 0; background: var(--BlueGray);
-  border-radius: 20px; cursor: pointer; transition: background .2s;
-}
-.toggle-track::after {
-  content: ''; position: absolute; left: 3px; top: 3px;
-  width: 14px; height: 14px; border-radius: 50%; background: white;
-  transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
-}
-.toggle input:checked + .toggle-track { background: var(--MainBlue); }
-.toggle input:checked + .toggle-track::after { transform: translateX(16px); }
+        /* TOGGLE */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--LowMainBlue);
+        }
+        .toggle-row:first-child { padding-top: 0; }
+        .toggle-row:last-child  { border-bottom: none; padding-bottom: 0; }
+        .toggle-label { font-size: 0.88rem; color: var(--text-color); }
+        .toggle-sub   { font-size: 0.72rem; color: var(--Gray); margin-top: 2px; }
 
-/* SELECT ROW */
-.select-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 11px 0; border-bottom: 1px solid var(--sec-bg-color);
-  gap: 16px;
-}
-.select-row:last-child { border-bottom: none; padding-bottom: 0; }
-.select-row select { max-width: 160px; }
+        .c-toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+        .c-toggle input { opacity: 0; width: 0; height: 0; }
+        .c-toggle-track {
+            position: absolute; inset: 0;
+            background: var(--BlueGray);
+            border-radius: 20px; cursor: pointer; transition: background .2s;
+        }
+        .c-toggle-track::after {
+            content: ''; position: absolute;
+            left: 3px; top: 3px;
+            width: 14px; height: 14px;
+            border-radius: 50%; background: white;
+            transition: transform .2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,.2);
+        }
+        .c-toggle input:checked + .c-toggle-track { background: var(--MainBlue); }
+        .c-toggle input:checked + .c-toggle-track::after { transform: translateX(16px); }
 
-/* CARD FOOTER */
-.card-footer {
-  padding: 12px 20px; border-top: 1px solid var(--LowMainBlue);
-  background: var(--sec-bg-color); display: flex; justify-content: flex-end; gap: 8px;
-}
+        /* SELECT ROW */
+        .select-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--LowMainBlue);
+            gap: 16px;
+        }
+        .select-row:first-child { padding-top: 0; }
+        .select-row:last-child  { border-bottom: none; padding-bottom: 0; }
+        .select-row select { max-width: 160px; }
 
-/* PASSWORD STRENGTH */
-.strength-bar { display: flex; gap: 4px; margin-top: 6px; }
-.strength-seg { height: 4px; flex: 1; border-radius: 4px; background: var(--LowMainBlue); transition: background .3s; }
-.strength-seg.weak { background: hsl(0,65%,55%); }
-.strength-seg.medium { background: hsl(40,90%,52%); }
-.strength-seg.strong { background: hsl(145,50%,45%); }
-.strength-text { font-size: 0.7rem; color: var(--Gray); margin-top: 4px; }
+        /* BUTTONS */
+        .c-btn-primary {
+            background: var(--MainBlue);
+            color: var(--White);
+            border-radius: 24px;
+            padding: 0.35em 1.1em;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .c-btn-primary:hover { background: var(--DarkerMainBlue); }
+        .c-btn-cancel {
+            background: none;
+            color: var(--Gray);
+            border: 1.5px solid var(--LowMainBlue);
+            border-radius: 24px;
+            padding: 0.35em 1.1em;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .c-btn-cancel:hover { background: var(--sec-bg-color); }
 
-/* FOOTER */
-footer {
-  background: var(--footer-color); width: 100%; max-width: 100vw;
-  margin-top: auto; padding: 2rem 3rem;
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2rem;
-}
-footer section { flex: 1; min-width: 140px; display: flex; flex-direction: column; }
-footer b { font-size: 0.95rem; font-weight: 700; color: var(--White); display: block; margin-bottom: 0.6rem; }
-footer a { color: var(--White); text-decoration: none; font-size: 0.88rem; display: block; margin-bottom: 0.4rem; opacity: .9; transition: opacity .2s; }
-footer a:hover { opacity: 1; color: var(--LightBlue); }
-footer p { font-size: 0.82rem; color: var(--White); opacity: .85; line-height: 1.6; margin-bottom: 0.3rem; }
+        /* PASSWORD STRENGTH */
+        .strength-bar { display: flex; gap: 4px; margin-top: 6px; }
+        .strength-seg {
+            height: 4px; flex: 1; border-radius: 4px;
+            background: var(--LowMainBlue); transition: background .3s;
+        }
+        .strength-seg.weak   { background: hsl(0,65%,55%); }
+        .strength-seg.medium { background: hsl(40,90%,52%); }
+        .strength-seg.strong { background: hsl(145,50%,45%); }
+        .strength-text { font-size: 0.7rem; color: var(--Gray); margin-top: 4px; }
 
-@keyframes slideIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-@keyframes slideOut { from { opacity:1; transform:translateY(0); }   to { opacity:0; transform:translateY(10px); } }
-
-@media (max-width: 640px) {
-  .settings-layout { grid-template-columns: 1fr; }
-  .form-row { grid-template-columns: 1fr; }
-  main { padding: 1rem; }
-  .c-navbar-desktop nav { display: none; }
-}
-</style>
+        @media (max-width: 768px) {
+            .settings-layout { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
 
-<!-- NAVBAR -->
-<header class="c-navbar-desktop">
-  <a class="c-logo-section" href="#">
-    <svg class="c-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-    </svg>
-    AfterVolt
-  </a>
-  <nav>
-    <a href="#">Home</a>
-    <a href="#">Requests</a>
-    <a href="#">Jobs</a>
-    <a href="#">Issue</a>
-    <a href="#">Operations</a>
-    <a href="#">Report</a>
-  </nav>
-  <div class="c-navbar-desktop-icons">
-    <button class="c-icon-btn" id="darkToggle" title="Toggle dark mode">
-      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-    </button>
-    <button class="c-icon-btn" title="Settings">
-      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-    </button>
-  </div>
-</header>
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/provider/pHome.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
 
-<!-- MAIN -->
-<main>
-  <div class="page-header">
-    <h1>Settings</h1>
-    <p>Manage your account security and preferences</p>
-  </div>
-
-  <div class="settings-layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="sidebar-item active" data-tab="security">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        Security
-      </div>
-
-      <div class="sidebar-item" data-tab="appearance">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 010 20"/><path d="M12 6v6l4 2"/></svg>
-        Appearance
-      </div>
-      <div class="sidebar-item" data-tab="language">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
-        Language & Region
-      </div>
-    </aside>
-
-    <!-- CONTENT PANELS -->
-    <div class="cards">
-
-      <!-- SECURITY -->
-      <div id="tab-security" class="tab-panel">
-
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Change Password</div>
-            <div class="card-desc">Update your password regularly to keep your account secure</div>
-          </div>
-          <div class="card-body">
-            <div class="form-row">
-              <div class="form-group full">
-                <label>Current Password</label>
-                <input type="password" id="currentPw" placeholder="Enter current password" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>New Password</label>
-                <input type="password" id="newPw" placeholder="New password" oninput="checkStrength(this.value)" />
-                <div class="strength-bar">
-                  <div class="strength-seg" id="s1"></div>
-                  <div class="strength-seg" id="s2"></div>
-                  <div class="strength-seg" id="s3"></div>
-                  <div class="strength-seg" id="s4"></div>
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+                    <a href="/main/html/provider/pHome.html">Home</a>
+                    <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a>
+                    <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
+                    <a href="/main/html/provider/pEwasteGuide.html">E-waste Guide</a>
+                    <a href="/main/html/common/About.html">About</a>
                 </div>
-                <div class="strength-text" id="strengthText"></div>
-              </div>
-              <div class="form-group">
-                <label>Confirm New Password</label>
-                <input type="password" id="confirmPw" placeholder="Confirm new password" />
-              </div>
             </div>
-          </div>
-          <div class="card-footer">
-            <button class="c-btn-secondary c-btn-small" onclick="clearPasswordFields()">Cancel</button>
-            <button class="c-btn-primary c-btn-small" onclick="savePassword()">Update Password</button>
-          </div>
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/provider/pHome.html">Home</a>
+            <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a>
+            <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
+            <a href="/main/html/provider/pEwasteGuide.html">E-waste Guide</a>
+            <a href="/main/html/common/About.html">About</a>
+        </nav>
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+    </header>
+
+    <hr>
+
+    <!-- Main Content -->
+    <main>
+
+        <!-- PAGE HEADER -->
+        <div>
+            <div class="page-title">Settings</div>
+            <div class="page-subtitle">Manage your account security and preferences</div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Two-Factor Authentication</div>
-            <div class="card-desc">Add an extra layer of security to your account</div>
-          </div>
-          <div class="card-body">
-            <div class="toggle-row">
-              <div>
-                <div class="toggle-label">Enable 2FA</div>
-                <div class="toggle-sub">Require a verification code when signing in</div>
-              </div>
-              <label class="toggle"><input type="checkbox" id="toggle2fa" onchange="saveToggle('2fa', this.checked)"><span class="toggle-track"></span></label>
+        <!-- SETTINGS LAYOUT -->
+        <div class="settings-layout">
+
+            <!-- SIDEBAR -->
+            <aside class="settings-sidebar">
+                <div class="sidebar-item active" data-tab="security">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    Security
+                </div>
+                <div class="sidebar-item" data-tab="appearance">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 010 20"/><path d="M12 6v6l4 2"/></svg>
+                    Appearance
+                </div>
+                <div class="sidebar-item" data-tab="language">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+                    Language & Region
+                </div>
+            </aside>
+
+            <!-- PANELS -->
+            <div>
+
+                <!-- SECURITY -->
+                <div id="tab-security" class="tab-panel active">
+
+                    <div class="c-card">
+                        <div class="c-card-header">
+                            <div class="c-card-title">Change Password</div>
+                            <div class="c-card-desc">Update your password regularly to keep your account secure</div>
+                        </div>
+                        <div class="c-card-body">
+                            <div class="form-row">
+                                <div class="form-group full">
+                                    <label>Current Password</label>
+                                    <input type="password" id="currentPw" placeholder="Enter current password" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>New Password</label>
+                                    <input type="password" id="newPw" placeholder="New password" oninput="checkStrength(this.value)" />
+                                    <div class="strength-bar">
+                                        <div class="strength-seg" id="s1"></div>
+                                        <div class="strength-seg" id="s2"></div>
+                                        <div class="strength-seg" id="s3"></div>
+                                        <div class="strength-seg" id="s4"></div>
+                                    </div>
+                                    <div class="strength-text" id="strengthText"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirm New Password</label>
+                                    <input type="password" id="confirmPw" placeholder="Confirm new password" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="c-card-footer">
+                            <button class="c-btn-cancel" onclick="clearPasswordFields()">Cancel</button>
+                            <button class="c-btn-primary" onclick="savePassword()">Update Password</button>
+                        </div>
+                    </div>
+
+                    <div class="c-card">
+                        <div class="c-card-header">
+                            <div class="c-card-title">Two-Factor Authentication</div>
+                            <div class="c-card-desc">Add an extra layer of security to your account</div>
+                        </div>
+                        <div class="c-card-body">
+                            <div class="toggle-row">
+                                <div>
+                                    <div class="toggle-label">Enable 2FA</div>
+                                    <div class="toggle-sub">Require a verification code when signing in</div>
+                                </div>
+                                <label class="c-toggle">
+                                    <input type="checkbox" id="toggle2fa" onchange="saveSetting('2fa', this.checked)">
+                                    <span class="c-toggle-track"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-row">
+                                <div>
+                                    <div class="toggle-label">Login Alerts</div>
+                                    <div class="toggle-sub">Get notified of new sign-ins to your account</div>
+                                </div>
+                                <label class="c-toggle">
+                                    <input type="checkbox" id="toggleAlerts" checked onchange="saveSetting('alerts', this.checked)">
+                                    <span class="c-toggle-track"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- APPEARANCE -->
+                <div id="tab-appearance" class="tab-panel">
+                    <div class="c-card">
+                        <div class="c-card-header">
+                            <div class="c-card-title">Appearance</div>
+                            <div class="c-card-desc">Customise how AfterVolt looks for you</div>
+                        </div>
+                        <div class="c-card-body">
+                            <div class="toggle-row">
+                                <div>
+                                    <div class="toggle-label">Dark Mode</div>
+                                    <div class="toggle-sub">Switch to a darker colour scheme</div>
+                                </div>
+                                <label class="c-toggle">
+                                    <input type="checkbox" id="toggleDark" onchange="toggleDarkMode(this.checked)">
+                                    <span class="c-toggle-track"></span>
+                                </label>
+                            </div>
+                            <div class="select-row">
+                                <div>
+                                    <div class="toggle-label">Font Size</div>
+                                    <div class="toggle-sub">Adjust text size across the app</div>
+                                </div>
+                                <select id="fontSize" onchange="savePref('fontSize', this.value)">
+                                    <option value="small">Small</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="large">Large</option>
+                                </select>
+                            </div>
+                            <div class="select-row">
+                                <div>
+                                    <div class="toggle-label">Density</div>
+                                    <div class="toggle-sub">Control spacing between elements</div>
+                                </div>
+                                <select id="density" onchange="savePref('density', this.value)">
+                                    <option value="compact">Compact</option>
+                                    <option value="comfortable" selected>Comfortable</option>
+                                    <option value="spacious">Spacious</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LANGUAGE & REGION -->
+                <div id="tab-language" class="tab-panel">
+                    <div class="c-card">
+                        <div class="c-card-header">
+                            <div class="c-card-title">Language & Region</div>
+                            <div class="c-card-desc">Set your preferred language, timezone and date format</div>
+                        </div>
+                        <div class="c-card-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Language</label>
+                                    <select id="language" onchange="savePref('language', this.value)">
+                                        <option value="en" selected>English</option>
+                                        <option value="ms">Bahasa Melayu</option>
+                                        <option value="zh">Chinese (Simplified)</option>
+                                        <option value="ta">Tamil</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Timezone</label>
+                                    <select id="timezone" onchange="savePref('timezone', this.value)">
+                                        <option value="asia_kl" selected>Asia/Kuala Lumpur (GMT+8)</option>
+                                        <option value="asia_sg">Asia/Singapore (GMT+8)</option>
+                                        <option value="utc">UTC (GMT+0)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Date Format</label>
+                                    <select id="dateFormat" onchange="savePref('dateFormat', this.value)">
+                                        <option value="dd_mm_yyyy" selected>DD/MM/YYYY</option>
+                                        <option value="mm_dd_yyyy">MM/DD/YYYY</option>
+                                        <option value="yyyy_mm_dd">YYYY-MM-DD</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Time Format</label>
+                                    <select id="timeFormat" onchange="savePref('timeFormat', this.value)">
+                                        <option value="12h">12-hour (AM/PM)</option>
+                                        <option value="24h" selected>24-hour</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="c-card-footer">
+                            <button class="c-btn-primary" onclick="saveLanguagePrefs()">Save Preferences</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-            <div class="toggle-row">
-              <div>
-                <div class="toggle-label">Login Alerts</div>
-                <div class="toggle-sub">Get notified of new sign-ins to your account</div>
-              </div>
-              <label class="toggle"><input type="checkbox" id="toggleAlerts" checked onchange="saveToggle('alerts', this.checked)"><span class="toggle-track"></span></label>
-            </div>
-          </div>
         </div>
+    </main>
 
-      </div>
+    <hr>
 
-
-
-      <!-- APPEARANCE -->
-      <div id="tab-appearance" class="tab-panel" style="display:none">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Appearance</div>
-            <div class="card-desc">Customise how AfterVolt looks for you</div>
-          </div>
-          <div class="card-body">
-            <div class="toggle-row">
-              <div>
-                <div class="toggle-label">Dark Mode</div>
-                <div class="toggle-sub">Switch to a darker colour scheme</div>
-              </div>
-              <label class="toggle"><input type="checkbox" id="toggleDark" onchange="toggleDarkMode(this.checked)"><span class="toggle-track"></span></label>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/provider/pHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
             </div>
-            <div class="select-row">
-              <div>
-                <div class="toggle-label">Font Size</div>
-                <div class="toggle-sub">Adjust text size across the app</div>
-              </div>
-              <select id="fontSize" onchange="savePref('fontSize', this.value)">
-                <option value="small">Small</option>
-                <option value="medium" selected>Medium</option>
-                <option value="large">Large</option>
-              </select>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
             </div>
-            <div class="select-row">
-              <div>
-                <div class="toggle-label">Density</div>
-                <div class="toggle-sub">Control spacing between elements</div>
-              </div>
-              <select id="density" onchange="savePref('density', this.value)">
-                <option value="compact">Compact</option>
-                <option value="comfortable" selected>Comfortable</option>
-                <option value="spacious">Spacious</option>
-              </select>
+            <div class="c-text">
+                abc@gmail.com
             </div>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- LANGUAGE & REGION -->
-      <div id="tab-language" class="tab-panel" style="display:none">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Language & Region</div>
-            <div class="card-desc">Set your preferred language, timezone and date format</div>
-          </div>
-          <div class="card-body">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Language</label>
-                <select id="language" onchange="savePref('language', this.value)">
-                  <option value="en" selected>English</option>
-                  <option value="ms">Bahasa Melayu</option>
-                  <option value="zh">Chinese (Simplified)</option>
-                  <option value="ta">Tamil</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Timezone</label>
-                <select id="timezone" onchange="savePref('timezone', this.value)">
-                  <option value="asia_kl" selected>Asia/Kuala Lumpur (GMT+8)</option>
-                  <option value="asia_sg">Asia/Singapore (GMT+8)</option>
-                  <option value="utc">UTC (GMT+0)</option>
-                </select>
-              </div>
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Recycling</b><br>
+                <a href="/main/html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
+                <a href="/main/html/provider/pWasteType.html">E-Waste Types</a>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Date Format</label>
-                <select id="dateFormat" onchange="savePref('dateFormat', this.value)">
-                  <option value="dd_mm_yyyy" selected>DD/MM/YYYY</option>
-                  <option value="mm_dd_yyyy">MM/DD/YYYY</option>
-                  <option value="yyyy_mm_dd">YYYY-MM-DD</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Time Format</label>
-                <select id="timeFormat" onchange="savePref('timeFormat', this.value)">
-                  <option value="12h">12-hour (AM/PM)</option>
-                  <option value="24h" selected>24-hour</option>
-                </select>
-              </div>
+            <div>
+                <b>My Activity</b><br>
+                <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
+                <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
             </div>
-          </div>
-          <div class="card-footer">
-            <button class="c-btn-primary c-btn-small" onclick="saveLanguagePrefs()">Save Preferences</button>
-          </div>
-        </div>
-      </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/About.html">About</a><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
 
-    </div>
-  </div>
-</main>
+    <script src="/main/javascript/mainScript.js"></script>
+    <script>
+        // ── SIDEBAR TABS ──────────────────────────────────────────────────
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById('tab-' + item.dataset.tab).classList.add('active');
+            });
+        });
 
-<!-- FOOTER -->
-<footer>
-  <section>
-    <a href="#" style="display:flex;align-items:center;gap:0.4rem;color:white;font-size:1rem;font-weight:700;margin-bottom:0.5rem;text-decoration:none;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      AfterVolt
-    </a>
-    <p>Promoting responsible e-waste collection and sustainable recycling practices in partnership with APJ.</p>
-    <p style="margin-top:0.4rem;">+6 012 345 5785 · abc@gmail.com</p>
-  </section>
-  <section>
-    <b>Management</b>
-    <a href="#">Collection Requests</a>
-    <a href="#">Collection Jobs</a>
-    <a href="#">Incidents</a>
-  </section>
-  <section>
-    <b>System Operation</b>
-    <a href="#">Providers</a>
-    <a href="#">Collectors</a>
-    <a href="#">Vehicles</a>
-    <a href="#">Collection Centres</a>
-    <a href="#">Item Processing</a>
-  </section>
-  <section>
-    <b>Proxy</b>
-    <a href="#">About</a>
-    <a href="#">Edit Profile</a>
-    <a href="#">Setting</a>
-  </section>
-</footer>
+        // ── PERSIST SETTINGS ─────────────────────────────────────────────
+        function saveSetting(key, value) {
+            localStorage.setItem('setting_' + key, value);
+            showToast('Setting saved.');
+        }
+        function savePref(key, value) {
+            localStorage.setItem('pref_' + key, value);
+        }
+        function loadSettings() {
+            // Toggles
+            const toggleMap = {
+                '2fa': 'toggle2fa',
+                'alerts': 'toggleAlerts'
+            };
+            Object.entries(toggleMap).forEach(([key, elId]) => {
+                const saved = localStorage.getItem('setting_' + key);
+                const el = document.getElementById(elId);
+                if (el && saved !== null) el.checked = saved === 'true';
+            });
+            // Selects
+            ['fontSize','density','language','timezone','dateFormat','timeFormat'].forEach(key => {
+                const saved = localStorage.getItem('pref_' + key);
+                const el = document.getElementById(key);
+                if (el && saved) el.value = saved;
+            });
+            // Dark mode
+            const dark = localStorage.getItem('pref_darkMode') === 'true';
+            if (dark) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('toggleDark').checked = true;
+            }
+        }
 
-<script>
-// ── SIDEBAR TABS ──────────────────────────────────────────────────────────
-document.querySelectorAll('.sidebar-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-    item.classList.add('active');
-    document.getElementById('tab-' + item.dataset.tab).style.display = 'flex';
-    document.getElementById('tab-' + item.dataset.tab).style.flexDirection = 'column';
-    document.getElementById('tab-' + item.dataset.tab).style.gap = '1.2rem';
-  });
-});
+        // ── PASSWORD ─────────────────────────────────────────────────────
+        function checkStrength(val) {
+            const segs = ['s1','s2','s3','s4'].map(id => document.getElementById(id));
+            const txt  = document.getElementById('strengthText');
+            segs.forEach(s => s.className = 'strength-seg');
+            if (!val) { txt.textContent = ''; return; }
+            let score = 0;
+            if (val.length >= 8) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+            const cls    = score <= 1 ? 'weak' : score <= 2 ? 'medium' : 'strong';
+            const labels = ['', 'Weak', 'Fair', 'Strong', 'Very Strong'];
+            for (let i = 0; i < score; i++) segs[i].classList.add(cls);
+            txt.textContent = labels[score] || '';
+            txt.style.color = cls === 'weak' ? 'hsl(0,65%,52%)' : cls === 'medium' ? 'hsl(40,80%,45%)' : 'hsl(145,50%,40%)';
+        }
 
-// show first tab as flex
-document.getElementById('tab-security').style.display = 'flex';
-document.getElementById('tab-security').style.flexDirection = 'column';
-document.getElementById('tab-security').style.gap = '1.2rem';
+        function savePassword() {
+            const current = document.getElementById('currentPw').value.trim();
+            const newPw   = document.getElementById('newPw').value.trim();
+            const confirm = document.getElementById('confirmPw').value.trim();
+            if (!current) { showToast('Please enter your current password.', 'error'); return; }
+            if (newPw.length < 8) { showToast('New password must be at least 8 characters.', 'error'); return; }
+            if (newPw !== confirm) { showToast('Passwords do not match.', 'error'); return; }
+            clearPasswordFields();
+            showToast('Password updated successfully!');
+        }
 
-// ── PERSIST SETTINGS ─────────────────────────────────────────────────────
-function saveToggle(key, value) {
-  localStorage.setItem('setting_' + key, value);
-  showToast('Setting saved.', 'success');
-}
-function savePref(key, value) {
-  localStorage.setItem('pref_' + key, value);
-}
-function loadSettings() {
-  const toggleIds = ['2fa','alerts','nCollect','nJobs','nIncidents','nWeekly','nSystem'];
-  toggleIds.forEach(key => {
-    const saved = localStorage.getItem('setting_' + key);
-    const el = document.getElementById('toggle' + key.charAt(0).toUpperCase() + key.slice(1)) || document.getElementById('n' + key.charAt(0).toUpperCase() + key.slice(1));
-    // map key to element id
-  });
-  // Load individual toggles
-  const toggleMap = {
-    '2fa': 'toggle2fa', 'alerts': 'toggleAlerts',
-    'nCollect': 'nCollect', 'nJobs': 'nJobs', 'nIncidents': 'nIncidents',
-    'nWeekly': 'nWeekly', 'nSystem': 'nSystem'
-  };
-  Object.entries(toggleMap).forEach(([key, elId]) => {
-    const saved = localStorage.getItem('setting_' + key);
-    const el = document.getElementById(elId);
-    if (el && saved !== null) el.checked = saved === 'true';
-  });
-  // Load selects
-  ['fontSize','density','language','timezone','dateFormat','timeFormat'].forEach(key => {
-    const saved = localStorage.getItem('pref_' + key);
-    const el = document.getElementById(key);
-    if (el && saved) el.value = saved;
-  });
-  // Dark mode
-  const dark = localStorage.getItem('pref_darkMode') === 'true';
-  if (dark) {
-    document.body.classList.add('dark-mode');
-    document.getElementById('toggleDark').checked = true;
-    updateDarkIcon(true);
-  }
-}
+        function clearPasswordFields() {
+            ['currentPw','newPw','confirmPw'].forEach(id => document.getElementById(id).value = '');
+            checkStrength('');
+        }
 
-// ── PASSWORD ──────────────────────────────────────────────────────────────
-function checkStrength(val) {
-  const segs = [document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4')];
-  const txt = document.getElementById('strengthText');
-  segs.forEach(s => s.className = 'strength-seg');
-  if (!val) { txt.textContent = ''; return; }
-  let score = 0;
-  if (val.length >= 8) score++;
-  if (/[A-Z]/.test(val)) score++;
-  if (/[0-9]/.test(val)) score++;
-  if (/[^A-Za-z0-9]/.test(val)) score++;
-  const cls = score <= 1 ? 'weak' : score <= 2 ? 'medium' : 'strong';
-  const labels = ['','Weak','Fair','Strong','Very Strong'];
-  for (let i = 0; i < score; i++) segs[i].classList.add(cls);
-  txt.textContent = labels[score] || '';
-  txt.style.color = cls === 'weak' ? 'hsl(0,65%,52%)' : cls === 'medium' ? 'hsl(40,80%,45%)' : 'hsl(145,50%,40%)';
-}
+        // ── DARK MODE ────────────────────────────────────────────────────
+        function toggleDarkMode(enabled) {
+            document.body.classList.toggle('dark-mode', enabled);
+            localStorage.setItem('pref_darkMode', enabled);
+        }
 
-function savePassword() {
-  const current = document.getElementById('currentPw').value.trim();
-  const newPw   = document.getElementById('newPw').value.trim();
-  const confirm = document.getElementById('confirmPw').value.trim();
-  if (!current) { showToast('Please enter your current password.', 'error'); return; }
-  if (newPw.length < 8) { showToast('New password must be at least 8 characters.', 'error'); return; }
-  if (newPw !== confirm) { showToast('Passwords do not match.', 'error'); return; }
-  clearPasswordFields();
-  showToast('Password updated successfully!', 'success');
-}
+        // ── LANGUAGE SAVE ────────────────────────────────────────────────
+        function saveLanguagePrefs() {
+            ['language','timezone','dateFormat','timeFormat'].forEach(key => {
+                savePref(key, document.getElementById(key).value);
+            });
+            showToast('Language & region preferences saved!');
+        }
 
-function clearPasswordFields() {
-  ['currentPw','newPw','confirmPw'].forEach(id => document.getElementById(id).value = '');
-  checkStrength('');
-}
+        // ── TOAST ────────────────────────────────────────────────────────
+        function showToast(message, type = 'success') {
+            document.querySelector('.c-toast')?.remove();
+            const colors = { success: 'hsl(145,50%,40%)', error: 'hsl(0,65%,52%)' };
+            const icons  = { success: '✓', error: '✕' };
+            const t = document.createElement('div');
+            t.className = 'c-toast';
+            t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${colors[type]};color:white;padding:10px 18px;border-radius:24px;font-size:0.82rem;font-family:'Inter',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;`;
+            t.innerHTML = `<span style="font-weight:700">${icons[type]}</span> ${message}`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
 
-// ── DARK MODE ─────────────────────────────────────────────────────────────
-function toggleDarkMode(enabled) {
-  document.body.classList.toggle('dark-mode', enabled);
-  localStorage.setItem('pref_darkMode', enabled);
-  updateDarkIcon(enabled);
-}
-function updateDarkIcon(dark) {
-  document.getElementById('darkToggle').innerHTML = dark
-    ? `<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
-    : `<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`;
-}
-document.getElementById('darkToggle').addEventListener('click', function() {
-  const isDark = document.body.classList.toggle('dark-mode');
-  document.getElementById('toggleDark').checked = isDark;
-  localStorage.setItem('pref_darkMode', isDark);
-  updateDarkIcon(isDark);
-});
-
-// ── LANGUAGE SAVE ─────────────────────────────────────────────────────────
-function saveLanguagePrefs() {
-  ['language','timezone','dateFormat','timeFormat'].forEach(key => {
-    savePref(key, document.getElementById(key).value);
-  });
-  showToast('Language & region preferences saved!', 'success');
-}
-
-// ── TOAST ─────────────────────────────────────────────────────────────────
-function showToast(message, type = 'success') {
-  document.querySelector('.toast')?.remove();
-  const colors = { success: 'hsl(145,50%,40%)', error: 'hsl(0,65%,52%)', info: 'var(--DarkerMainBlue)' };
-  const icons  = { success: '✓', error: '✕', info: 'ℹ' };
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${colors[type]};color:white;padding:10px 18px;border-radius:24px;font-size:0.82rem;font-family:'Inter',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;animation:slideIn .25s ease;`;
-  t.innerHTML = `<span style="font-weight:700">${icons[type]}</span> ${message}`;
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.animation = 'slideOut .25s ease forwards'; setTimeout(() => t.remove(), 250); }, 3000);
-}
-
-// ── INIT ──────────────────────────────────────────────────────────────────
-loadSettings();
-</script>
+        // ── INIT ─────────────────────────────────────────────────────────
+        loadSettings();
+    </script>
 </body>
 </html>
