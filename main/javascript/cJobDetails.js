@@ -80,46 +80,6 @@ function loadJobDetails(data, jobId) {
 }
 
 
-// function createItemCard(item) {
-//     const container = document.getElementById("itemsContainer");
-
-//     const card = document.createElement("div");
-//     card.className = "item-dropdown";
-
-//     card.innerHTML = `
-//         <div class="item-dropdown-header">
-//             <h3>${item.id}</h3>
-//             <span class="dropdown-arrow">▼</span>
-//         </div>
-
-//         <div class="item-dropdown-content">
-//             <div class="item-grid">
-//                 <div>
-//                     <p><strong>Item:</strong> ${item.name}</p>
-//                     <p><strong>Brand:</strong> ${item.brand}</p>
-//                     <p><strong>Weight:</strong> ${item.weight} kg</p>
-//                 </div>
-//                 <div>
-//                     <p><strong>Drop-off:</strong> ${item.dropoff}</p>
-//                     <p><strong>Description:</strong> ${item.description}</p>
-//                 </div>
-//             </div>
-//         </div>
-//     `;
-
-//     // Toggle logic
-//     const header = card.querySelector(".item-dropdown-header");
-//     const content = card.querySelector(".item-dropdown-content");
-//     const arrow = card.querySelector(".dropdown-arrow");
-
-//     header.addEventListener("click", () => {
-//         content.classList.toggle("active");
-//         arrow.classList.toggle("rotate");
-//     });
-
-//     container.appendChild(card);
-// }
-
 
 function createItemCard(item) {
     const container = document.getElementById("itemsContainer");
