@@ -1,10 +1,4 @@
-/* =============================================================
-   cJobsDetail.css  — colours updated to match cJobHistory.css
-   Layout, spacing, and structure unchanged.
-   All colours use the same :root token system.
-============================================================= */
 
-/* ─── SHARED TOKENS (same as cJobHistory.css) ────────────────── */
 :root {
     --card-bg:           var(--White);
     --border-color:      hsl(220, 20%, 88%);
@@ -157,8 +151,10 @@ main { flex: 1; }
 }
 
 .dark-mode .job-status-badge.pending {
-    background-color: var(--stats-bg);
-    color: var(--text-muted);
+    /* background-color: var(--stats-bg);
+    color: var(--text-muted); */
+    background-color: var(--sec-bg-color);
+    color: var(--BlueGray);
 }
 
 .dark-mode .job-status-badge.accepted {

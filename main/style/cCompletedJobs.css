@@ -1,11 +1,4 @@
-/* =============================================================
-   cJobHistory.css
-   Page-specific styles for cJobHistory.html
-   Loaded AFTER style.css — does not redefine header/footer/nav.
-   All new colours declared as :root variables.
-============================================================= */
 
-/* ─── NEW TOKENS ─────────────────────────────────────────────── */
 :root {
     --card-bg:              var(--White);
     --border-color:         hsl(220, 20%, 88%);

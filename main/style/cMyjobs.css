@@ -284,10 +284,7 @@ hr {
     gap: 1.5rem;
 }
 
-/* ─── JOB CARD — only bg, border, shadow changed ────────────────
-   was: background var(--LightBlue), no border, no shadow
-   now: var(--card-bg) + subtle border + shadow, same as clnProgress
-──────────────────────────────────────────────────────────────── */
+
 .job-card {
     background-color: var(--card-bg);
     border: 1.5px solid var(--border-color);
@@ -313,10 +310,7 @@ hr {
     border-bottom: 1px solid var(--border-color);
 }
 
-/* ─── STATUS BADGE — soft pill matching clnProgress .badge ──────
-   was: solid fill (MainBlue / DarkBlue / BlueGray)
-   now: light tinted bg + matching text + dot indicator
-──────────────────────────────────────────────────────────────── */
+
 .job-card-status {
     display: inline-flex;
     align-items: center;
