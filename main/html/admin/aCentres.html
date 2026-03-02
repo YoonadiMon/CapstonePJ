@@ -237,6 +237,299 @@
             background: red;
         }
 
+        /* ── Alert ── */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            background: var(--bg-color);
+        }
+
+        .alert-success {
+            color: green;
+            border: 1px solid green;
+        }
+
+        .alert-error {
+            color: red;
+            border: 1px solid red;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--Gray);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal h2 {
+            font-size: 1.6rem;
+            color: var(--text-color);
+            margin-bottom: 1.5rem;
+            padding-right: 2rem;
+        }
+
+        .modal h2.danger { 
+            color: red; 
+        }
+
+        .modal-small { 
+            max-width: 480px; 
+        }
+
+        .view-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .view-field label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--BlueGray);
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        .view-field span {
+            font-size: 1rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .view-field.full { 
+            grid-column: 1 / -1; 
+        }
+
+        .view-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.25rem;
+        }
+
+        .view-tag {
+            display: inline-block;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--LightBlue);
+            color: var(--MainBlue);
+        }
+
+        .dark-mode .view-tag {
+            background: var(--LowMainBlue);
+            color: var(--White);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-field { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 0.4rem; 
+        }
+
+        .form-field.full { 
+            grid-column: 1 / -1; 
+        }
+
+        .form-field label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--BlueGray);
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            background: var(--bg-color);
+            transition: border 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            border-color: var(--MainBlue);
+            box-shadow: 0 0 0 3px var(--LightBlue);
+            outline: none;
+        }
+
+        .form-field textarea { 
+            resize: vertical; 
+            min-height: 80px; 
+        }
+
+        .form-field select { 
+            padding-left: 0.5rem; 
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem 1rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            background: var(--bg-color);
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            accent-color: var(--MainBlue);
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 0;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .checkbox-group input[type="checkbox"]:focus {
+            box-shadow: none;
+            outline: 2px solid var(--MainBlue);
+            border-color: transparent;
+        }
+
+        .delete-info-box {
+            background: var(--LightBlue);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .dark-mode .delete-info-box { 
+            background: var(--LowMainBlue); 
+        }
+
+        .delete-info-box strong { 
+            color: var(--MainBlue); 
+        }
+
+        .delete-info-box .info-name { 
+            color: var(--text-color); 
+            font-weight: 600; 
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+
+        .btn-modal {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        .btn-cancel {
+            background: var(--BlueGray);
+            color: var(--text-color);
+        }
+
+        .btn-cancel:hover { 
+            background: var(--Gray); 
+        }
+
+        .btn-confirm-delete {
+            background: red;
+            color: var(--White);
+        }
+
+        .btn-confirm-delete:hover {
+            background: red;
+            transform: translateY(-2px);
+        }
+
+        .btn-save {
+            background: var(--MainBlue);
+            color: var(--White);
+        }
+
+        .btn-save:hover {
+            background: var(--DarkerBlue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--BlueGray);
+        }
+
+        .dark-mode .btn-save { 
+            background: var(--DarkerMainBlue); 
+        }
+
         /* Responsive Design */
         @media (max-width: 1200px) {
             .centres-table {
@@ -272,6 +565,18 @@
 
             .centres-table {
                 min-width: 800px;
+            }
+
+            .view-grid, .form-grid { 
+                grid-template-columns: 1fr; 
+            }
+
+            .view-field.full, .form-field.full { 
+                grid-column: 1; 
+            }
+
+            .modal { 
+                padding: 1.5rem; 
             }
         }
     </style>
@@ -359,7 +664,7 @@
                         value="" >
                     <button type="submit" class="search-btn">Search</button>
                 </form>
-                <button class="add-btn" onclick="">
+                <button class="add-btn" onclick="openAddModal()">
                     + Add New Centre
                 </button>
             </div>
@@ -377,42 +682,38 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="left">
-                                KL Electronics Collection - Branch 1
-                            </td>
+                            <td class="left">KL Electronics Collection - Branch 1</td>
                             <td>+60123456789</td>
                             <td>Kuala Lumpur</td>
                             <td>Open</td>
                             <td>
                                 <div class="action-btns">
-                                    <button class="action-btn" onclick="">
+                                    <button class="action-btn" onclick="openViewModal(0)" title="View">
                                         <img src="/main/assets/images/view-icon-white.svg" alt="View">
                                     </button>
-                                    <button class="action-btn" onclick="">
+                                    <button class="action-btn" onclick="openEditModal(0)" title="Edit">
                                         <img src="/main/assets/images/edit-icon-white.svg" alt="Edit">
                                     </button>
-                                    <button class="action-btn delete-btn" onclick="">
+                                    <button class="action-btn delete-btn" onclick="openDeleteModal(0)" title="Delete">
                                         <img src="/main/assets/images/delete-icon-white.svg" alt="Delete">
                                     </button>
                                 </div>
                             </td>
                         </tr>
                         <tr>
-                            <td class="left">
-                                KL Electronics Collection - Branch 2
-                            </td>
-                            <td>+60123456789</td>
-                            <td>Kuala Lumpur</td>
+                            <td class="left">KL Electronics Collection - Branch 2</td>
+                            <td>+60187654321</td>
+                            <td>Selangor</td>
                             <td>Permanently Closed</td>
                             <td>
                                 <div class="action-btns">
-                                    <button class="action-btn" onclick="">
+                                    <button class="action-btn" onclick="openViewModal(1)" title="View">
                                         <img src="/main/assets/images/view-icon-white.svg" alt="View">
                                     </button>
-                                    <button class="action-btn" onclick="">
+                                    <button class="action-btn" onclick="openEditModal(1)" title="Edit">
                                         <img src="/main/assets/images/edit-icon-white.svg" alt="Edit">
                                     </button>
-                                    <button class="action-btn delete-btn" onclick="">
+                                    <button class="action-btn delete-btn" onclick="openDeleteModal(1)" title="Delete">
                                         <img src="/main/assets/images/delete-icon-white.svg" alt="Delete">
                                     </button>
                                 </div>
@@ -470,6 +771,351 @@
         </section>
     </footer>
 
+    <!-- View Modal -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal">
+            <h2>Centre Details</h2>
+            <div class="view-grid">
+                <div class="view-field full">
+                    <label>Centre Name</label>
+                    <span id="view-name">—</span>
+                </div>
+                <div class="view-field full">
+                    <label>Address</label>
+                    <span id="view-address">—</span>
+                </div>
+                <div class="view-field">
+                    <label>State</label>
+                    <span id="view-state">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Postcode</label>
+                    <span id="view-postcode">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Contact (Phone)</label>
+                    <span id="view-contact">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Status</label>
+                    <span id="view-status">—</span>
+                </div>
+                <div class="view-field full">
+                    <label>Accepted Item Types</label>
+                    <div class="view-tags" id="view-items">—</div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal btn-cancel" onclick="closeModal('viewModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+     <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h2>Edit Centre</h2>
+            <form id="editForm">
+                <input type="hidden" id="edit-id">
+                <div class="form-grid">
+                    <div class="form-field full">
+                        <label for="edit-name">Centre Name</label>
+                        <input type="text" id="edit-name" name="name" required>
+                    </div>
+                    <div class="form-field full">
+                        <label for="edit-address">Address</label>
+                        <textarea id="edit-address" name="address"></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-state">State</label>
+                        <select id="edit-state" name="state">
+                            <option value="">-- Select State --</option>
+                            <option>Kuala Lumpur</option>
+                            <option>Selangor</option>
+                            <option>Penang</option>
+                            <option>Johor</option>
+                            <option>Perak</option>
+                            <option>Kedah</option>
+                            <option>Kelantan</option>
+                            <option>Terengganu</option>
+                            <option>Pahang</option>
+                            <option>Negeri Sembilan</option>
+                            <option>Melaka</option>
+                            <option>Sabah</option>
+                            <option>Sarawak</option>
+                            <option>Putrajaya</option>
+                            <option>Labuan</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-postcode">Postcode</label>
+                        <input type="text" id="edit-postcode" name="postcode">
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-contact">Contact (Phone)</label>
+                        <input type="text" id="edit-contact" name="contact" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-status">Status</label>
+                        <select id="edit-status" name="status">
+                            <option value="open">Open</option>
+                            <option value="closed">Closed</option>
+                            <option value="permanently-closed">Permanently Closed</option>
+                        </select>
+                    </div>
+                    <div class="form-field full">
+                        <label>Accepted Item Types</label>
+                        <div class="checkbox-group" id="edit-items">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Laptops"> Laptops
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Phones"> Phones
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Tablets"> Tablets
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Batteries"> Batteries
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="TVs"> TVs
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Appliances"> Appliances
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Cables & Accessories"> Cables & Accessories
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Printers"> Printers
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-modal btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+                    <button type="submit" class="btn-modal btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+     <div class="modal-overlay" id="deleteModal">
+        <div class="modal modal-small">
+            <h2 class="danger">Confirm Deletion</h2>
+            <p>Are you sure you want to delete this centre? This action <strong>cannot be undone</strong>.</p>
+            <div class="delete-info-box">
+                <strong>Centre: </strong><span class="info-name" id="delete-name">—</span><br>
+                <strong>State: </strong><span class="info-name" id="delete-state">—</span>
+            </div>
+            <form id="deleteForm">
+                <input type="hidden" id="delete-id">
+                <div class="modal-buttons">
+                    <button type="button" class="btn-modal btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                    <button type="submit" class="btn-modal btn-confirm-delete">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+     <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <button class="modal-close-btn" onclick="closeModal('addModal')">✕</button>
+            <h2>Add New Centre</h2>
+            <form id="addForm">
+                <div class="form-grid">
+                    <div class="form-field full">
+                        <label for="add-name">Centre Name</label>
+                        <input type="text" id="add-name" name="name" placeholder="e.g. KL Electronics Collection - Branch 1" required>
+                    </div>
+                    <div class="form-field full">
+                        <label for="add-address">Address</label>
+                        <textarea id="add-address" name="address" placeholder="Enter full address..."></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label for="add-state">State</label>
+                        <select id="add-state" name="state">
+                            <option value="">-- Select State --</option>
+                            <option>Kuala Lumpur</option>
+                            <option>Selangor</option>
+                            <option>Penang</option>
+                            <option>Johor</option>
+                            <option>Perak</option>
+                            <option>Kedah</option>
+                            <option>Kelantan</option>
+                            <option>Terengganu</option>
+                            <option>Pahang</option>
+                            <option>Negeri Sembilan</option>
+                            <option>Melaka</option>
+                            <option>Sabah</option>
+                            <option>Sarawak</option>
+                            <option>Putrajaya</option>
+                            <option>Labuan</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="add-postcode">Postcode</label>
+                        <input type="text" id="add-postcode" name="postcode" placeholder="e.g. 50450">
+                    </div>
+                    <div class="form-field">
+                        <label for="add-contact">Contact (Phone)</label>
+                        <input type="text" id="add-contact" name="contact" placeholder="e.g. +60123456789" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="add-status">Status</label>
+                        <select id="add-status" name="status">
+                            <option value="open">Open</option>
+                            <option value="closed">Closed</option>
+                            <option value="permanently-closed">Permanently Closed</option>
+                        </select>
+                    </div>
+                    <div class="form-field full">
+                        <label>Accepted Item Types</label>
+                        <div class="checkbox-group" id="add-items">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Laptops"> Laptops
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Phones"> Phones
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Tablets"> Tablets
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Batteries"> Batteries
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="TVs"> TVs
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Appliances"> Appliances
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Cables & Accessories"> Cables & Accessories
+                            </label>
+                            <br>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="items[]" value="Printers"> Printers
+                            </label>
+                            <br>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-modal btn-cancel" onclick="closeModal('addModal')">Cancel</button>
+                    <button type="submit" class="btn-modal btn-save">Add Centre</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/main/javascript/mainScript.js"></script>
+    <script>
+        //dummy data
+        const centres = [
+            {
+                id: 1,
+                name:     'KL Electronics Collection - Branch 1',
+                address:  'No. 10, Jalan Imbi, 55100 Kuala Lumpur',
+                state:    'Kuala Lumpur',
+                postcode: '55100',
+                contact:  '+60123456789',
+                status:   'open',
+                items:    ['Laptops', 'Phones', 'Batteries']
+            },
+            {
+                id: 2,
+                name:     'KL Electronics Collection - Branch 2',
+                address:  'No. 5, Jalan SS14/1, 47500 Subang Jaya, Selangor',
+                state:    'Selangor',
+                postcode: '47500',
+                contact:  '+60187654321',
+                status:   'permanently-closed',
+                items:    ['TVs', 'Appliances']
+            }
+        ];
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('active');
+            document.body.classList.add('stopScroll');
+            modal.querySelector('.modal').scrollTop = 0;
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.classList.remove('stopScroll');
+        }
+
+        // view
+        function openViewModal(index) {
+            const c = centres[index];
+            document.getElementById('view-name').textContent    = c.name;
+            document.getElementById('view-address').textContent = c.address;
+            document.getElementById('view-state').textContent   = c.state;
+            document.getElementById('view-postcode').textContent = c.postcode;
+            document.getElementById('view-contact').textContent = c.contact;
+            document.getElementById('view-status').textContent  = c.status;
+
+            // Render item tags
+            const tagsContainer = document.getElementById('view-items');
+            tagsContainer.innerHTML = c.items.length
+                ? c.items.map(item => `<span class="view-tag">${item}</span>`).join('')
+                : '—';
+
+            openModal('viewModal');
+        }
+
+        // edit
+        function openEditModal(index) {
+            const c = centres[index];
+            document.getElementById('edit-id').value       = c.id;
+            document.getElementById('edit-name').value     = c.name;
+            document.getElementById('edit-address').value  = c.address;
+            document.getElementById('edit-state').value    = c.state;
+            document.getElementById('edit-postcode').value = c.postcode;
+            document.getElementById('edit-contact').value  = c.contact;
+            document.getElementById('edit-status').value   = c.status;
+
+            // Tick the right checkboxes
+            document.querySelectorAll('#edit-items input[type="checkbox"]').forEach(cb => {
+                cb.checked = c.items.includes(cb.value);
+            });
+
+            openModal('editModal');
+        }
+
+        // delete
+        function openDeleteModal(index) {
+            const c = centres[index];
+            document.getElementById('delete-id').value           = c.id;
+            document.getElementById('delete-name').textContent   = c.name;
+            document.getElementById('delete-state').textContent  = c.state;
+            openModal('deleteModal');
+        }
+
+        // add
+        function openAddModal() {
+            document.getElementById('addForm').reset();
+            document.querySelectorAll('#add-items input[type="checkbox"]').forEach(cb => cb.checked = false);
+            openModal('addModal');
+        }
+    </script>
 </body>
 </html>
