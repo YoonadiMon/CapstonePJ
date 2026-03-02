@@ -22,17 +22,23 @@
         .back-button {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-            color: var(--MainBlue);
-            text-decoration: none;
+            gap: 0.5rem;
+            background: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
             font-weight: 500;
-            transition: color 0.3s;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
         }
 
         .back-button:hover {
-            color: var(--DarkerBlue);
-            text-decoration: underline;
+            background: var(--sec-bg-color);
+            border-color: var(--MainBlue);
         }
 
         .page-header {
@@ -161,15 +167,6 @@
             background: var(--Gray);
         }
 
-        .users-table tbody tr td a {
-            text-decoration: none;
-        }
-
-        .users-table tbody tr td a:hover {
-            text-decoration: underline;
-            color: var(--BlueGray);
-        }
-
         .user-info {
             display: flex;
             align-items: center;
@@ -240,7 +237,6 @@
             background: red;
         }
 
-        /* ── Alert ── */
         .alert {
             padding: 1rem 1.5rem;
             border-radius: 12px;
@@ -440,6 +436,7 @@
             transition: all 0.3s ease;
             font-family: inherit;
         }
+
         .btn-cancel {
             background: var(--BlueGray);
             color: var(--text-color);
