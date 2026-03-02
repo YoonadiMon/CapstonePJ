@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Collection Requests - AfterVolt</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+    <link rel="stylesheet" href="/main/style/aCollectionRequests.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+    
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/admin/aHome.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn"  id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="/main/html/admin/aHome.html">Home</a>
+                    <a href="/main/html/admin/aRequests.html">Requests</a>
+                    <a href="/main/html/admin/aJobs.html">Jobs</a>
+                    <a href="/main/html/admin/aIssue.html">Issue</a>
+                    <a href="/main/html/admin/aOperations.html">Operations</a>
+                    <a href="/main/html/admin/aReport.html">Report</a>
+                    <a href="/main/html/admin/aCollectionRequests.html" class="active">Collection Requests</a>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/admin/aHome.html">Home</a>
+            <a href="/main/html/admin/aRequests.html">Requests</a>
+            <a href="/main/html/admin/aJobs.html">Jobs</a>
+            <a href="/main/html/admin/aIssue.html">Issue</a>
+            <a href="/main/html/admin/aOperations.html">Operations</a>
+            <a href="/main/html/admin/aReport.html">Report</a>
+        </nav>          
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+        
+    </header>
+    <hr>
+
+    <!-- Main Content -->
+    <main>
+        <div class="dashboard-container">
+            <!-- Left Sidebar - Status Overview -->
+            <div class="dashboard-sidebar">
+                <div class="sidebar-header">
+                    <h2>Collection Hub</h2>
+                    <p>Manage all collection requests</p>
+                </div>
+                
+                <div class="status-panels">
+                    <div class="status-panel scheduled" onclick="filterByStatus('scheduled')">
+                        <div class="panel-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="panel-info">
+                            <span class="panel-label">Scheduled</span>
+                            <span class="panel-count" id="scheduledCount">0</span>
+                        </div>
+                        <div class="panel-trend">
+                            <i class="fas fa-arrow-up"></i> +2
+                        </div>
+                    </div>
+                    
+                    <div class="status-panel completed" onclick="filterByStatus('completed')">
+                        <div class="panel-icon">
+                            <i class="fas fa-check-double"></i>
+                        </div>
+                        <div class="panel-info">
+                            <span class="panel-label">Completed</span>
+                            <span class="panel-count" id="completedCount">0</span>
+                        </div>
+                        <div class="panel-trend">
+                            <i class="fas fa-check"></i> 12 this month
+                        </div>
+                    </div>
+                    
+                    <div class="status-panel cancelled" onclick="filterByStatus('cancelled')">
+                        <div class="panel-icon">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div class="panel-info">
+                            <span class="panel-label">Cancelled</span>
+                            <span class="panel-count" id="cancelledCount">0</span>
+                        </div>
+                        <div class="panel-trend">
+                            <i class="fas fa-exclamation"></i> 3 this week
+                        </div>
+                    </div>
+                    
+                    <div class="status-panel rejected" onclick="filterByStatus('rejected')">
+                        <div class="panel-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="panel-info">
+                            <span class="panel-label">Rejected</span>
+                            <span class="panel-count" id="rejectedCount">0</span>
+                        </div>
+                        <div class="panel-trend">
+                            <i class="fas fa-info"></i> 1 pending review
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quick-filters">
+                    <h4>Quick Filters</h4>
+                    <div class="filter-chips">
+                        <span class="filter-chip active" data-filter="all">All Requests</span>
+                        <span class="filter-chip" data-filter="this-week">This Week</span>
+                        <span class="filter-chip" data-filter="this-month">This Month</span>
+                        <span class="filter-chip" data-filter="high-weight">High Weight (>20kg)</span>
+                        <span class="filter-chip" data-filter="needs-review">Needs Review</span>
+                    </div>
+                </div>
+                
+                <div class="recent-activity">
+                    <h4>Recent Activity</h4>
+                    <div class="activity-feed" id="activityFeed">
+                        <!-- Activity items will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content Area -->
+            <div class="dashboard-main">
+                <!-- Header with Search and Actions -->
+                <div class="main-header">
+                    <div class="header-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search by ID, provider, items..." id="searchInput">
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-btn" id="exportBtn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button class="action-btn primary" onclick="window.location.href='/main/html/admin/aRequests.html'">
+                            <i class="fas fa-plus"></i> New Request
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- LIST VIEW SECTION -->
+                <div id="collectionListView" class="view-section">
+                    <!-- Results Bar -->
+                    <div class="results-bar">
+                        <div class="results-info">
+                            <span id="resultCount">Showing 0 requests</span>
+                            <span class="results-divider"></span>
+                            <span class="results-total" id="totalCount">Total: 0</span>
+                        </div>
+                        <div class="results-sort">
+                            <label for="sortSelect">Sort by:</label>
+                            <select id="sortSelect" class="sort-select">
+                                <option value="date-desc">Newest First</option>
+                                <option value="date-asc">Oldest First</option>
+                                <option value="weight-desc">Weight (High to Low)</option>
+                                <option value="weight-asc">Weight (Low to High)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline View (instead of grid/list) -->
+                    <div id="timelineContainer" class="timeline-view">
+                        <!-- Timeline items will be inserted here -->
+                    </div>
+                    
+                    <!-- Kanban View (alternative) -->
+                    <div id="kanbanContainer" class="kanban-view hidden">
+                        <div class="kanban-column" data-status="scheduled">
+                            <div class="kanban-header scheduled">
+                                <span>Scheduled</span>
+                                <span class="column-count" id="kanbanScheduledCount">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanbanScheduled"></div>
+                        </div>
+                        <div class="kanban-column" data-status="completed">
+                            <div class="kanban-header completed">
+                                <span>Completed</span>
+                                <span class="column-count" id="kanbanCompletedCount">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanbanCompleted"></div>
+                        </div>
+                        <div class="kanban-column" data-status="cancelled">
+                            <div class="kanban-header cancelled">
+                                <span>Cancelled</span>
+                                <span class="column-count" id="kanbanCancelledCount">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanbanCancelled"></div>
+                        </div>
+                        <div class="kanban-column" data-status="rejected">
+                            <div class="kanban-header rejected">
+                                <span>Rejected</span>
+                                <span class="column-count" id="kanbanRejectedCount">0</span>
+                            </div>
+                            <div class="kanban-cards" id="kanbanRejected"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- View Toggle -->
+                    <div class="view-toggle">
+                        <button class="toggle-btn active" data-view="timeline">
+                            <i class="fas fa-stream"></i> Timeline
+                        </button>
+                        <button class="toggle-btn" data-view="kanban">
+                            <i class="fas fa-columns"></i> Kanban
+                        </button>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="emptyState" class="empty-state hidden">
+                        <i class="fas fa-box-open"></i>
+                        <h3>No collection requests found</h3>
+                        <p>Try adjusting your filters or search criteria</p>
+                    </div>
+                </div>
+                
+                <!-- DETAIL VIEW SECTION -->
+                <div id="collectionDetailView" class="view-section hidden">
+                    <div class="detail-container">
+                        <!-- Back button and actions -->
+                        <div class="detail-nav">
+                            <button class="back-btn" id="backToListBtn">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <div class="detail-actions">
+                                <button class="detail-action-btn" id="printDetailBtn">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                                <button class="detail-action-btn" id="shareDetailBtn">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Hero Section -->
+                        <div class="detail-hero">
+                            <div class="hero-badge" id="detailStatus">Scheduled</div>
+                            <div class="hero-title">
+                                <h1 id="detailRequestId">#REQ002</h1>
+                                <p id="detailTitle">Desktop PC, Printer Setup</p>
+                            </div>
+                            <div class="hero-provider" id="detailProvider">
+                                <i class="fas fa-user-circle"></i>
+                                <div>
+                                    <strong>Sarah Tan</strong>
+                                    <span>+60 12-345 6789</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats Cards -->
+                        <div class="detail-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <div>
+                                    <span class="stat-label">Request Date</span>
+                                    <span class="stat-value" id="detailRequestDate">23 Feb 2026</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-weight-hanging"></i>
+                                <div>
+                                    <span class="stat-label">Total Weight</span>
+                                    <span class="stat-value" id="detailWeight">15.0 kg</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-boxes"></i>
+                                <div>
+                                    <span class="stat-label">Items</span>
+                                    <span class="stat-value" id="detailItemCount">3 items</span>
+                                </div>
+                            </div>
+                            <div class="stat-item" id="statusSpecificStat">
+                                <!-- Status specific stat -->
+                            </div>
+                        </div>
+                        
+                        <!-- Content Grid -->
+                        <div class="detail-grid">
+                            <!-- Left Column -->
+                            <div class="detail-left">
+                                <!-- Items List -->
+                                <div class="detail-card">
+                                    <h3><i class="fas fa-box"></i> Items</h3>
+                                    <div class="items-list" id="detailItemsList">
+                                        <!-- Items will be inserted here -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Description -->
+                                <div class="detail-card">
+                                    <h3><i class="fas fa-align-left"></i> Description</h3>
+                                    <p id="detailDescription">Old desktop computer setup, printer needs repair. All items are in working condition but outdated.</p>
+                                </div>
+                                
+                                <!-- Condition & Brand -->
+                                <div class="detail-card">
+                                    <h3><i class="fas fa-tag"></i> Details</h3>
+                                    <div class="details-grid">
+                                        <div>
+                                            <span class="details-label">Brand/Model</span>
+                                            <span class="details-value" id="detailBrand">HP Pavilion, Canon Pixma</span>
+                                        </div>
+                                        <div>
+                                            <span class="details-label">Condition</span>
+                                            <span class="details-value" id="detailCondition">Working but outdated</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="detail-right">
+                                <!-- Location -->
+                                <div class="detail-card">
+                                    <h3><i class="fas fa-map-marker-alt"></i> Pickup Address</h3>
+                                    <p id="detailAddress">No 45, Jalan University, Petaling Jaya, 47300</p>
+                                    <a href="#" class="map-link" id="mapLink">
+                                        <i class="fas fa-external-link-alt"></i> View on map
+                                    </a>
+                                </div>
+                                
+                                <!-- Timeline -->
+                                <div class="detail-card">
+                                    <h3><i class="fas fa-history"></i> Timeline</h3>
+                                    <div class="timeline-steps" id="timelineSteps">
+                                        <!-- Timeline steps will be inserted here -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Assignment -->
+                                <div class="detail-card" id="assignmentCard">
+                                    <h3><i class="fas fa-truck"></i> Assignment</h3>
+                                    <div class="assignment-info" id="assignmentInfo">
+                                        <!-- Assignment info will be inserted here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Footer -->
+                        <div class="detail-footer" id="detailFooter">
+                            <!-- Action buttons will be inserted here -->
+                        </div>
+                        
+                        <!-- Notes Section -->
+                        <div class="detail-notes" id="detailNotes">
+                            <!-- Notes will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/admin/aHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Management</b><br>
+                <a href="/main/html/admin/aCollectionRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            </div>
+            <div>
+                <b>System Operation</b><br>
+                <a href="/main/html/admin/aProviders.html">Providers</a><br>
+                <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
+                <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <script src="/main/javascript/mainScript.js"></script>
+    <script src="/main/javascript/aCollectionRequests.js"></script>
+</body>
+</html>

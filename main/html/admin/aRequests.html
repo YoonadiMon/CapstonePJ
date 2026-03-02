@@ -83,94 +83,76 @@
                 <h2>Requests</h2>
             </div>
 
-            <!-- Request List -->
-            <div id="requestListView" class="view-list">
-                <!-- Filter bar -->
-                <div class="filter-bar">
-                    <div class="filter-group">
-                        <div class="filter-dropdown">
-                            <button class="filter-dropdown-btn" id="filterDropdownBtn">
-                                <i class="fas fa-filter"></i> All <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="filter-dropdown-content" id="filterDropdownContent">
-                                <a href="#" data-filter="all"><i class="fas fa-list"></i> All</a>
-                                <a href="#" data-filter="pending"><i class="far fa-clock"></i> Pending</a>
-                                <a href="#" data-filter="approved"><i class="fas fa-check-circle"></i> Approved</a>
-                                <a href="#" data-filter="scheduled"><i class="fas fa-calendar-check"></i> Scheduled</a>
-                                <a href="#" data-filter="ongoing"><i class="fas fa-sync-alt"></i> Ongoing</a>
-                                <a href="#" data-filter="completed"><i class="fas fa-check-double"></i> Completed</a>
-                                <a href="#" data-filter="cancelled"><i class="fas fa-ban"></i> Cancelled</a>
-                                <a href="#" data-filter="rejected"><i class="fas fa-times-circle"></i> Rejected</a>
-                            </div>
-                        </div>
-        
-                        <!-- Sort button -->
-                        <div class="sort-dropdown">
-                            <button class="sort-dropdown-btn" id="sortDropdownBtn">
-                                <i class="fas fa-sort-amount-down"></i> Sort by: Date <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="sort-dropdown-content" id="sortDropdownContent">
-                                <a href="#" data-sort="date-desc"><i class="fas fa-calendar"></i> Newest first</a>
-                                <a href="#" data-sort="date-asc"><i class="fas fa-calendar"></i> Oldest first</a>
-                                <a href="#" data-sort="name-asc"><i class="fas fa-sort-alpha-down"></i> Name A-Z</a>
-                                <a href="#" data-sort="name-desc"><i class="fas fa-sort-alpha-up"></i> Name Z-A</a>
-                                <a href="#" data-sort="weight-desc"><i class="fas fa-weight-hanging"></i> Weight (high to low)</a>
-                                <a href="#" data-sort="weight-asc"><i class="fas fa-weight-hanging"></i> Weight (low to high)</a>
-                            </div>
-                        </div>
-                        
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" placeholder="Search requests..." id="searchInput">
-                        </div>
-                    </div>
+         <!-- Request List -->
+<div id="requestListView" class="view-list">
+    <!-- Filter bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <!-- Sort button -->
+            <div class="sort-dropdown">
+                <button class="sort-dropdown-btn" id="sortDropdownBtn">
+                    <i class="fas fa-sort-amount-down"></i> Sort by: Date <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="sort-dropdown-content" id="sortDropdownContent">
+                    <a href="#" data-sort="date-desc"><i class="fas fa-calendar"></i> Newest first</a>
+                    <a href="#" data-sort="date-asc"><i class="fas fa-calendar"></i> Oldest first</a>
+                    <a href="#" data-sort="weight-desc"><i class="fas fa-weight-hanging"></i> Weight (high to low)</a>
+                    <a href="#" data-sort="weight-asc"><i class="fas fa-weight-hanging"></i> Weight (low to high)</a>
                 </div>
-
-                <div class="request-count-container">
-                    <span class="request-count" id="requestCount">6 requests</span>
-                </div>
-
-                <div id="requestsContainer"></div>
             </div>
+            
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search pending requests..." id="searchInput">
+            </div>
+        </div>
+    </div>
+
+    <div class="request-count-container">
+        <span class="request-count" id="requestCount">0 pending requests</span>
+    </div>
+
+    <div id="requestsContainer"></div>
+</div>
 
             <!-- REQUEST DETAIL SECTION -->
             <div id="requestDetailView" class="view-detail hidden">
                 <div class="detail-view">
-                    <button class="back-link" id="backToListBtn"><i class="fas fa-arrow-left"></i> Back</button>
+                    <button class="back-link" id="backToListBtn"><i class="fas fa-arrow-left"></i> Back to Pending Requests</button>
 
                     <div class="detail-header">
                         <div class="detail-badge">
-                            <h2>#REQ001</h2>
-                            <span class="big-status pending">Pending</span>
+                            <h2 id="detailReqId">#REQ001</h2>
+                            <span class="big-status pending" id="detailStatus">Pending</span>
                         </div>
-                        <div class="provider-mini"><i class="fas fa-store"></i> Tan Wei Ming · +60 12-345 6789</div>
+                        <div class="provider-mini" id="detailProvider"><i class="fas fa-store"></i> Tan Wei Ming · +60 12-345 6789</div>
                     </div>
 
                     <div class="grid-2col">
                         <div class="info-card">
                             <div class="info-row">
                                 <div class="info-label">items</div>
-                                <div class="info-value">Laptop (Dell XPS 13) · 19" monitor (LG) · keyboard</div>
+                                <div class="info-value" id="detailItems">Laptop (Dell XPS 13) · 19" monitor (LG) · keyboard</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">description / condition</div>
-                                <div class="info-value">Laptop doesn't power on, screen flickers. Monitor works but has scratch.</div>
+                                <div class="info-value" id="detailDescription">Laptop doesn't power on, screen flickers. Monitor works but has scratch.</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">brand / model</div>
-                                <div class="info-value">Dell XPS 13 9360 · LG 24MP58</div>
+                                <div class="info-value" id="detailBrand">Dell XPS 13 9360 · LG 24MP58</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">weight</div>
-                                <div class="info-value">8.2 kg (total)</div>
+                                <div class="info-value" id="detailWeight">8.2 kg (total)</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">pickup address</div>
-                                <div class="info-value">No 12, Jalan SS2/72, Petaling Jaya, Selangor, 47300</div>
+                                <div class="info-value" id="detailAddress">No 12, Jalan SS2/72, Petaling Jaya, Selangor, 47300</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">date</div>
-                                <div class="info-value">26 Feb 2026</div>
+                                <div class="info-value" id="detailDate">26 Feb 2026</div>
                             </div>
                         </div>
 
@@ -180,7 +162,7 @@
                                 <div class="timeline-icon"><i class="fas fa-paper-plane"></i></div>
                                 <div class="timeline-content">
                                     <p>Request sent</p>
-                                    <small>24 Feb 2026, 09:23</small>
+                                    <small id="detailSentDate">24 Feb 2026, 09:23</small>
                                 </div>
                             </div>
                             <div class="timeline-step">
@@ -190,19 +172,13 @@
                                     <small>Awaiting admin review</small>
                                 </div>
                             </div>
-                            <div class="timeline-step" style="opacity:0.5;">
-                                <div class="timeline-icon"><i class="fas fa-check-circle"></i></div>
-                                <div class="timeline-content">
-                                    <p>Approval / rejection</p>
-                                    <small>not yet</small>
-                                </div>
-                            </div>
                             <hr>
-                            <div><i class="fas fa-truck"></i> <strong>Assignment</strong></div>
-                            <div class="assignment-box">
-                            </div>
                         </div>
-                         <div class="action-btns">
+                    </div>
+                    
+                    <div class="action-btns">
+                        <button class="btn btn-primary" id="approveBtn"><i class="fas fa-check"></i> Approve Request</button>
+                        <button class="btn btn-outline" id="rejectBtn"><i class="fas fa-times"></i> Reject Request</button>
                     </div>
                 </div>
             </div>
@@ -235,7 +211,7 @@
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aCollectionRequests.html">Collection Requests</a><br>
                 <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
                 <a href="/main/html/admin/aIssue.html">Issue</a><br>
             </div>
