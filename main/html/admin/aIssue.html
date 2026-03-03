@@ -173,6 +173,10 @@
             transform: scale(0.97); 
         }
 
+        .dark-mode .search-btn {
+            background-color: var(--DarkerMainBlue);
+        }
+
         .clear-btn {
             background-color: transparent;
             color: var(--Gray);
@@ -285,6 +289,10 @@
             margin-bottom: 0.5rem;
         }
 
+        .dark-mode .issue-preview {
+            color: var(--BlueGray);
+        }
+
         .issue-meta {
             display: flex;
             flex-wrap: wrap;
@@ -300,6 +308,10 @@
 
         .issue-time {
             font-size: 0.75rem;
+            color: var(--BlueGray);
+        }
+
+        .dark-mode .issue-time {
             color: var(--Gray);
         }
 
@@ -367,7 +379,7 @@
             font-size: 0.72rem;
             padding: 0.15rem 0.5rem;
             border-radius: 6px;
-            background: var(--sec-bg-color);
+            background: var(--LightBlue);
             color: var(--MainBlue);
             font-weight: 600;
             text-decoration: none;
@@ -376,6 +388,11 @@
 
         .linked-id:hover {
             background: var(--LowMainBlue);
+        }
+
+        .dark-mode .linked-id {
+            background: var(--MainBlue);
+            color: var(--DarkBlue);
         }
 
         .issue-actions {
@@ -402,6 +419,10 @@
         }
 
         .action-btn:hover {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        .dark-mode .action-btn {
             background-color: var(--DarkerMainBlue);
         }
 
