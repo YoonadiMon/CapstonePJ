@@ -85,7 +85,6 @@
         <div class="ops-schedule-container">
             <div class="ops-requests-queue">
                 <div class="queue-header">
-                    <h2>Schedule</h2>
                     <div class="queue-actions">
                         <select class="ops-filter-select" id="requestFilter">
                             <option value="all">All e-waste types</option>
@@ -110,24 +109,27 @@
 
             <div class="ops-assignment-panel" id="assignmentPanel">
                 <div class="panel-header">
-                    <h2>New Assignment</h2>
-                    <span class="request-id-badge" id="selectedRequestId">#REQ010</span>
+                    <h2>Assignment</h2>
+                    <span class="request-id-badge" id="selectedRequestId" style="display: none;"></span>
                 </div>
+
 
                 <div class="selected-request-summary" id="selectedRequestSummary">
                 </div>
 
                 <!-- Assignment Form -->
                 <div class="assignment-form">
+                    <!-- Assign Collector Section -->
                     <div class="form-section">
                         <h3>Assign Collector</h3>
                         <div class="assign-item">
-                            <select id="collectorSelect" class="ops-select">
-                                <option value="" disabled selected>Select a collector</option>
-                                <option value="collector1">John Smith (Available)</option>
-                                <option value="collector2">Sarah Johnson (Available)</option>
-                                <option value="collector4">Lisa Wong (Available)</option>
-                            </select>
+                            <div class="custom-dropdown" id="collectorDropdown">
+                                <div class="custom-dropdown-select">
+                                    <span id="selectedCollectorText">Select a collector</span>
+                                    <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+                                </div>
+                                <div class="custom-dropdown-menu" id="collectorMenu"></div>
+                            </div>
                             <button class="c-btn-small view-btn" id="viewCollectorAvailability" title="View availability">
                                 <i class="far fa-calendar-alt"></i>
                             </button>
@@ -135,15 +137,17 @@
                         <div class="collector-availability-hint" id="collectorHint"></div>
                     </div>
 
+                    <!-- Assign Vehicle Section -->
                     <div class="form-section">
                         <h3>Assign Vehicle</h3>
                         <div class="assign-item">
-                            <select id="vehicleSelect" class="ops-select">
-                                <option value="" disabled selected>Select a vehicle</option>
-                                <option value="vehicle1">Truck A - AV-1234 (Available)</option>
-                                <option value="vehicle3">Truck C - AV-9012 (Available)</option>
-                                <option value="vehicle4">Van D - AV-3456 (Available)</option>
-                            </select>
+                            <div class="custom-dropdown" id="vehicleDropdown">
+                                <div class="custom-dropdown-select">
+                                    <span id="selectedVehicleText">Select a vehicle</span>
+                                    <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+                                </div>
+                                <div class="custom-dropdown-menu" id="vehicleMenu"></div>
+                            </div>
                             <button class="c-btn-small view-btn" id="viewVehicleStatus" title="View status">
                                 <i class="fas fa-wrench"></i>
                             </button>
@@ -151,35 +155,38 @@
                         <div class="vehicle-status-hint" id="vehicleHint"></div>
                     </div>
 
+                    <!-- Collection Centre Section -->
                     <div class="form-section">
-    <h3>Collection Centre</h3>
-    <div class="assign-item">
-        <select id="centreSelect" class="ops-select">
-            <option value="" disabled selected>Select a collection centre</option>
-            <option value="C01">APU E-waste Hub</option>
-            <option value="C02">Sunway Recycling Centre</option>
-            <option value="C03">Shah Alam Collection Point</option>
-        </select>
-        <div class="centre-capacity-container" id="centreCapacityContainer">
-            <div class="capacity-circle" id="capacityCircle">
-                <span id="capacityPercentage">85%</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-                    <div class="form-section">
-                        <h3>Scheduled Date & Time</h3>
-                        <div class="datetime-picker-container">
-                            <input type="datetime-local" id="scheduledDateTime" class="ops-datetime-input" min="">
-                            <div style="font-size: 0.85rem; color: var(--Gray); display: flex; align-items: center; gap: 0.3rem;">
+                        <h3>Collection Centre</h3>
+                        <div class="assign-item">
+                            <div class="custom-dropdown" id="centreDropdown">
+                                <div class="custom-dropdown-select">
+                                    <span id="selectedCentreText">Select a collection centre</span>
+                                    <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+                                </div>
+                                <div class="custom-dropdown-menu" id="centreMenu"></div>
+                            </div>
+                            <div class="centre-capacity-container" id="centreCapacityContainer">
+                                <div class="capacity-circle" id="capacityCircle">
+                                    <span id="capacityPercentage">0%</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Schedule Date & Time Section -->
+                    <div class="form-section">
+                        <h3>Schedule Date & Time</h3>
+                        <div class="datetime-picker-container">
+                            <input type="datetime-local" id="scheduledDateTime" class="ops-datetime-input" min="">
+                            <div style="font-size: 0.85rem; color: var(--Gray); display: flex; align-items: center; gap: 0.3rem;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Notes Section -->
                     <div class="form-section">
                         <h3>Notes</h3>
-                        <textarea id="assignmentNotes" class="ops-textarea" ></textarea>
+                        <textarea id="assignmentNotes" class="ops-textarea"></textarea>
                     </div>
 
                     <!-- Action Buttons -->
@@ -189,20 +196,18 @@
                     </div>
 
                     <!-- Quick Actions -->
-                    <div class="quick-actions">
-                    </div>
+                    <div class="quick-actions"></div>
                 </div>
 
                 <!-- Recent Assignments Timeline -->
                 <div class="recent-assignments">
                     <h3>Recent assignments</h3>
-                    <div class="timeline-mini" id="recentTimeline">
-                    </div>
+                    <div class="timeline-mini" id="recentTimeline"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Bulk Operations Section -->
+        <!-- Bulk Operations Section 
         <div class="bulk-ops-section">
             <h3>Bulk operations</h3>
             <div class="bulk-actions">
@@ -210,10 +215,11 @@
                 <button class="c-btn-secondary" id="rescheduleSelectedBtn">Reschedule selected</button>
                 <button class="c-btn-secondary" id="exportScheduleBtn">📊 Export schedule</button>
             </div>
-        </div>
-    </main>
-
+        </div> -->
+    </main> 
     <hr>
+
+    
     <!-- Footer -->
     <footer>
         <!-- Column 1 -->
@@ -237,7 +243,7 @@
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aCollectionRequests.html">Collection Requests</a><br>
                 <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
                 <a href="/main/html/admin/aIssue.html">Issue</a><br>
             </div>

@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin · Jobs · AfterVolt</title>
+    <title>Jobs - AfterVolt</title>
     <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
- 
     <link rel="stylesheet" href="/main/style/style.css">
     <link rel="stylesheet" href="/main/style/aJobs.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
@@ -59,8 +57,7 @@
             <a href="/main/html/admin/aIssue.html">Issue</a>
             <a href="/main/html/admin/aOperations.html">Operations</a>
             <a href="/main/html/admin/aReport.html">Report</a>
-        </nav>
-        
+        </nav>          
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
                 <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
@@ -76,23 +73,141 @@
     <main class="jobs-main">
         <div class="page-container">
             <div class="jobs-header">
-                <h1 class="page-title" id="pageTitle">Collection Jobs</h1>
+                <h1 class="page-title" id="pageTitle">Jobs</h1>
                 <button class="back-btn" id="backToListBtn" style="display: none;">
                     <i class="fas fa-arrow-left"></i> Back to Jobs
                 </button>
             </div>
 
+            <!-- Jobs List View -->
             <div id="jobsListContainer" class="jobs-list-container">
+                <!-- Stats Section -->
+                <div class="jobs-stats-grid" id="statsContainer"></div>
+
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <!-- Status Filter Dropdown -->
+                        <div class="filter-dropdown">
+                            <button class="filter-dropdown-btn" id="filterDropdownBtn">
+                                <i class="fas fa-filter"></i> <span id="selectedFilter">All Jobs</span> <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="filter-dropdown-content" id="filterDropdownContent">
+                                <a href="#" data-filter="all" class="active-filter"><i class="fas fa-list"></i> All Jobs</a>
+                                <a href="#" data-filter="pending"><i class="far fa-clock"></i> Pending</a>
+                                <a href="#" data-filter="accepted"><i class="fas fa-check-circle"></i> Accepted</a>
+                                <a href="#" data-filter="rejected"><i class="fas fa-times-circle"></i> Rejected</a>
+                                <a href="#" data-filter="ongoing"><i class="fas fa-sync-alt"></i> Ongoing</a>
+                                <a href="#" data-filter="delayed"><i class="fas fa-exclamation-triangle"></i> Delayed</a>
+                                <a href="#" data-filter="pickedup"><i class="fas fa-box"></i> Picked up</a>
+                                <a href="#" data-filter="completed"><i class="fas fa-check-double"></i> Completed</a>
+                                <a href="#" data-filter="cancelled"><i class="fas fa-ban"></i> Cancelled</a>
+                                <a href="#" data-filter="failed"><i class="fas fa-times-circle"></i> Failed</a>
+                            </div>
+                        </div>
+
+                        <!-- Search Box -->
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search jobs by ID, provider, collector..." id="searchInput">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sort Section -->
+                <div class="sort-options-container">
+                    <span class="sort-label">Sort by:</span>
+                    <button class="sort-btn" id="sortDescBtn">
+                        <i class="fas fa-sort-amount-down"></i> Newest
+                    </button>
+                    <button class="sort-btn" id="sortAscBtn">
+                        <i class="fas fa-sort-amount-up"></i> Oldest
+                    </button>
+                </div>
+
+                <!-- Timeline Container -->
+                <div class="jobs-timeline-container" id="timelineContainer"></div>
             </div>
 
+            <!-- Job Detail View -->
             <div id="jobDetailContainer" class="job-detail-container" style="display: none;">
+                <div class="job-detail-container-modern">
+                    <div class="detail-header-modern">
+                        <div class="detail-title-section-modern">
+                            <h2 id="detailJobId"></h2>
+                            <span class="detail-status-modern" id="detailJobStatus"></span>
+                        </div>
+                        <button class="detail-request-link-modern" id="viewRequestBtn">
+                            <i class="fas fa-external-link-alt"></i> View Request <span id="detailRequestId"></span>
+                        </button>
+                    </div>
+
+                    <div class="info-grid-modern">
+                        <!-- Provider Information Card -->
+                        <div class="info-card-modern">
+                            <h3><i class="fas fa-store"></i> Provider Information</h3>
+                            <div class="info-row-modern">
+                                <span class="info-label-modern">Name</span>
+                                <span class="info-value-modern" id="detailProviderName"></span>
+                            </div>
+                            <div class="info-row-modern">
+                                <span class="info-label-modern">Address</span>
+                                <span class="info-value-modern" id="detailProviderAddress"></span>
+                            </div>
+                            <div class="info-row-modern">
+                                <span class="info-label-modern">Date</span>
+                                <span class="info-value-modern" id="detailProviderDate"></span>
+                            </div>
+                        </div>
+
+                        <!-- Assignment Details Card -->
+                        <div class="info-card-modern">
+                            <h3><i class="fas fa-truck"></i> Assignment Details</h3>
+                            <div class="info-row-modern">
+                                <span class="info-label-modern">Collector</span>
+                                <span class="info-value-modern" id="detailCollector"></span>
+                            </div>
+                            <div class="info-row-modern">
+                                <span class="info-label-modern">Vehicle</span>
+                                <span class="info-value-modern" id="detailVehicle"></span>
+                            </div>
+                            <div class="info-row-modern">
+                                <span class="info-label-modern">Scheduled</span>
+                                <span class="info-value-modern" id="detailScheduled"></span>
+                            </div>
+                            <div class="info-row-modern">
+                                <span class="info-label-modern">Total Weight</span>
+                                <span class="info-value-modern" id="detailTotalWeight"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items Section -->
+                    <div class="items-section-modern">
+                        <div class="items-header-modern">
+                            <h3><i class="fas fa-boxes"></i> Items</h3>
+                            <span class="items-count-modern" id="detailItemsCount">0</span>
+                        </div>
+                        <div id="detailItemsList"></div>
+                    </div>
+
+                    <!-- Timeline Section -->
+                    <div class="timeline-container-modern">
+                        <h3><i class="fas fa-history"></i> Job Timeline</h3>
+                        <div class="timeline-modern" id="detailTimeline"></div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons-modern" id="detailActionButtons"></div>
+                </div>
             </div>
         </div>
     </main>
-
     <hr>
+
     <!-- Footer -->
     <footer>
+        <!-- Column 1 -->
         <section class="c-footer-info-section">
             <a href="/main/html/admin/aHome.html">
                 <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
@@ -105,10 +220,11 @@
             <div class="c-text">abc@gmail.com</div>
         </section>
         
+        <!-- Column 2 -->
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aCollectionRequests.html">Collection Requests</a><br>
                 <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
                 <a href="/main/html/admin/aIssue.html">Issue</a><br>
             </div>
@@ -132,5 +248,3 @@
     <script src="/main/javascript/aJobs.js"></script>
 </body>
 </html>
-
-<!-- test push -->

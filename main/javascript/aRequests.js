@@ -1,73 +1,174 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded - Initializing Requests Page');
     
+    // Sample data
     const sampleRequests = [
         {
             id: 'REQ001',
             title: 'Laptop & monitor',
             status: 'pending',
-            user: 'Maya',
-            date: '24 Feb 2026',
+            user: 'Tan Wei Ming',
+            date: '26 Feb 2026',
             weight: '8.2',
-            statusText: 'pending'
+            statusText: 'pending',
+            description: 'Laptop doesn\'t power on, screen flickers. Monitor works but has scratch.',
+            brand: 'Dell XPS 13 9360 · LG 24MP58',
+            address: 'No 12, Jalan SS2/72, Petaling Jaya, Selangor, 47300',
+            items: 'Laptop (Dell XPS 13) · 19" monitor (LG) · keyboard',
+            contact: '+60 12-345 6789',
+            sentDate: '24 Feb 2026, 09:23'
         },
         {
-            id: 'REQ002',
-            title: 'Desktop PC, printer',
-            status: 'scheduled',
-            user: 'Sarah',
-            date: '23 Feb 2026',
-            weight: '15.0',
-            statusText: 'scheduled'
+            id: 'REQ009',
+            title: 'Office Electronics',
+            status: 'pending',
+            user: 'Tech Solutions',
+            date: '03 Mar 2026',
+            weight: '18.5',
+            statusText: 'pending',
+            description: 'Bulk office electronics from company renovation. All items are 3-5 years old.',
+            brand: 'Dell, Logitech, HP',
+            address: 'Level 15, Menara Standard Chartered, Kuala Lumpur',
+            items: 'Monitors (5 pcs) · Keyboards (10 pcs) · Mice (8 pcs)',
+            contact: '+60 12-987 6543',
+            sentDate: '03 Mar 2026, 10:15'
         },
         {
-            id: 'REQ003',
-            title: 'Mobile phones (5 pcs)',
-            status: 'ongoing',
-            user: 'Aiman Hakim',
-            date: '22 Feb 2026',
-            weight: '2.1',
-            statusText: 'ongoing'
+            id: 'REQ010',
+            title: 'Home Entertainment',
+            status: 'pending',
+            user: 'Kevin Tan',
+            date: '02 Mar 2026',
+            weight: '22.3',
+            statusText: 'pending',
+            description: 'Complete home entertainment setup. TV has minor scratch on screen.',
+            brand: 'Sony Bravia, Bose, PlayStation 4',
+            address: 'No 15, Jalan Setia, Bangsar, 59100',
+            items: 'LCD TV · Home Theater System · Gaming Console',
+            contact: '+60 16-234 5678',
+            sentDate: '02 Mar 2026, 14:30'
         },
         {
-            id: 'REQ004',
-            title: 'CRT TV (broken)',
-            status: 'completed',
-            user: 'Natasha',
-            date: '20 Feb 2026',
-            weight: '24.5',
-            statusText: 'completed'
+            id: 'REQ011',
+            title: 'Network Equipment',
+            status: 'pending',
+            user: 'Network Solutions',
+            date: '01 Mar 2026',
+            weight: '9.8',
+            statusText: 'pending',
+            description: 'Used network equipment from office upgrade. Some units may need repair.',
+            brand: 'Cisco, MikroTik, Ubiquiti',
+            address: 'No 89, Jalan Technology, Cyberjaya, 63000',
+            items: 'Routers (3 pcs) · Switches (2 pcs) · Firewall',
+            contact: '+60 13-456 7890',
+            sentDate: '01 Mar 2026, 09:45'
         },
         {
-            id: 'REQ005',
-            title: 'Server rack parts',
-            status: 'rejected',
-            user: 'James',
-            date: '19 Feb 2026',
-            weight: '42.0',
-            statusText: 'rejected'
-        },
-        {
-            id: 'REQ006',
-            title: 'Battery collection',
-            status: 'cancelled',
-            user: 'Michelle',
-            date: '18 Feb 2026',
-            weight: '3.5',
-            statusText: 'cancelled'
+            id: 'REQ012',
+            title: 'Printer Bundle',
+            status: 'pending',
+            user: 'PrintHub',
+            date: '29 Feb 2026',
+            weight: '32.0',
+            statusText: 'pending',
+            description: 'Multiple printers from closing office. Some need toner replacement.',
+            brand: 'HP, Canon, Epson',
+            address: 'No 34, Jalan Industri, Shah Alam, 40200',
+            items: 'Laser Printers (2 pcs) · Inkjet Printer · Scanner',
+            contact: '+60 14-567 8901',
+            sentDate: '29 Feb 2026, 11:20'
         }
     ];
 
+    // DOM Elements
+    const listView = document.getElementById('requestListView');
+    const detailView = document.getElementById('requestDetailView');
+    const backToListBtn = document.getElementById('backToListBtn');
+    const sortDropdownBtn = document.getElementById('sortDropdownBtn');
+    const sortDropdownContent = document.getElementById('sortDropdownContent');
+    const sortLinks = document.querySelectorAll('.sort-dropdown-content a');
+    const requestCount = document.getElementById('requestCount');
+    const searchInput = document.getElementById('searchInput');
+    const requestsContainer = document.getElementById('requestsContainer');
+    const approveBtn = document.getElementById('approveBtn');
+    const rejectBtn = document.getElementById('rejectBtn');
+
+    // Detail view elements
+    const detailReqId = document.getElementById('detailReqId');
+    const detailStatus = document.getElementById('detailStatus');
+    const detailProvider = document.getElementById('detailProvider');
+    const detailItems = document.getElementById('detailItems');
+    const detailDescription = document.getElementById('detailDescription');
+    const detailBrand = document.getElementById('detailBrand');
+    const detailWeight = document.getElementById('detailWeight');
+    const detailAddress = document.getElementById('detailAddress');
+    const detailDate = document.getElementById('detailDate');
+    const detailSentDate = document.getElementById('detailSentDate');
+
+    // State
+    let currentFilter = 'pending'; 
+    let currentSearch = '';
+    let currentSort = 'date-desc';
+    let filteredRequests = [...sampleRequests];
+    let currentRequest = null;
+
+    // Request count
+    function updateRequestCount() {
+        if (requestCount) {
+            requestCount.textContent = `${filteredRequests.length} pending ${filteredRequests.length === 1 ? 'request' : 'requests'}`;
+        }
+    }
+
+    function filterRequests() {
+        filteredRequests = sampleRequests.filter(request => {
+            const searchTerm = currentSearch.toLowerCase();
+            const matchesSearch = currentSearch === '' || 
+                request.id.toLowerCase().includes(searchTerm) ||
+                request.user.toLowerCase().includes(searchTerm) ||
+                request.title.toLowerCase().includes(searchTerm);
+            
+            return matchesSearch;
+        });
+
+        sortRequests();
+        renderRequestCards();
+        updateRequestCount();
+    }
+
+    // Sort function
+    function sortRequests() {
+        filteredRequests.sort((a, b) => {
+            switch(currentSort) {
+                case 'date-desc':
+                    return new Date(b.date) - new Date(a.date);
+                case 'date-asc':
+                    return new Date(a.date) - new Date(b.date);
+                case 'name-asc':
+                    return a.user.localeCompare(b.user);
+                case 'name-desc':
+                    return b.user.localeCompare(a.user);
+                case 'weight-desc':
+                    return parseFloat(b.weight) - parseFloat(a.weight);
+                case 'weight-asc':
+                    return parseFloat(a.weight) - parseFloat(b.weight);
+                default:
+                    return 0;
+            }
+        });
+    }
+
+    // Render cards
     function renderRequestCards() {
-        console.log('Rendering request cards');
-        const container = document.getElementById('requestsContainer');
-        if (!container) {
-            console.error('requestsContainer not found!');
+        console.log('Rendering pending request cards');
+        if (!requestsContainer) return;
+        
+        if (filteredRequests.length === 0) {
+            requestsContainer.innerHTML = '<div class="no-results">No pending requests found</div>';
             return;
         }
         
         let html = '';
-        sampleRequests.forEach(req => {
+        filteredRequests.forEach(req => {
             html += `
                 <div class="req-card" data-req="${req.id}">
                     <div class="req-info">
@@ -85,192 +186,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         });
-        container.innerHTML = html;
-        console.log('Cards rendered, count:', sampleRequests.length);
+        requestsContainer.innerHTML = html;
+
+        attachCardEventListeners();
     }
-
-    renderRequestCards();
-
-    const listView = document.getElementById('requestListView');
-    const detailView = document.getElementById('requestDetailView');
-    const backToListBtn = document.getElementById('backToListBtn');
-    
-    console.log('List view element:', listView);
-    console.log('Detail view element:', detailView);
-    console.log('Back button element:', backToListBtn);
- 
-    const filterDropdownBtn = document.getElementById('filterDropdownBtn');
-    const filterDropdownContent = document.getElementById('filterDropdownContent');
-    const filterLinks = document.querySelectorAll('.filter-dropdown-content a');
-
-    const sortDropdownBtn = document.getElementById('sortDropdownBtn');
-    const sortDropdownContent = document.getElementById('sortDropdownContent');
-    const sortLinks = document.querySelectorAll('.sort-dropdown-content a');
-    
-    const requestCount = document.getElementById('requestCount');
-    const searchInput = document.getElementById('searchInput');
-
-    let cards = document.querySelectorAll('.req-card');
-    console.log('Cards found after render:', cards.length);
-
-    let currentFilter = 'all';
-    let currentSearch = '';
-    let currentSort = 'date-desc'; 
-
-    function showList(e) {
-        if (e) e.preventDefault();
-        console.log('Showing list view');
-        
-        if (listView) {
-            listView.classList.remove('hidden');
-            console.log('List view visible');
-        }
-        if (detailView) {
-            detailView.classList.add('hidden');
-            console.log('Detail view hidden');
-        }
-    }
-
-    function showDetail(e) {
-        if (e) e.preventDefault();
-        console.log('Showing detail view');
-
-        if (filterDropdownContent) {
-            filterDropdownContent.classList.remove('show');
-        }
-        if (sortDropdownContent) {
-            sortDropdownContent.classList.remove('show');
-        }
-        
-        if (listView) {
-            listView.classList.add('hidden');
-            console.log('List view hidden');
-        }
-        if (detailView) {
-            detailView.classList.remove('hidden');
-            console.log('Detail view visible');
-        }
-    }
-
-function updateDetailView(reqId) {
-    console.log('Updating detail view for request:', reqId);
-   
-    const request = sampleRequests.find(req => req.id === reqId);
-    console.log('Found request:', request);
-    
-    if (request) {
-     
-        const detailTitle = document.querySelector('.detail-badge h2');
-        const detailStatus = document.querySelector('.big-status');
-        const providerMini = document.querySelector('.provider-mini');
-        const actionButtonsContainer = document.querySelector('.action-btns');
-        
-        console.log('Detail elements found:', {
-            title: !!detailTitle,
-            status: !!detailStatus,
-            provider: !!providerMini,
-            actions: !!actionButtonsContainer
-        });
-        
-        if (detailTitle) {
-            detailTitle.textContent = '#' + request.id;
-            console.log('Updated title to:', '#' + request.id);
-        }
-        
-        if (detailStatus) {
-            detailStatus.className = 'big-status';
-            detailStatus.classList.add(request.status);
-            detailStatus.textContent = request.statusText;
-            console.log('Updated status to:', request.statusText);
-        }
-        
-        if (providerMini) {
-            providerMini.innerHTML = `<i class="fas fa-store"></i> ${request.user} · +60 12-345 6789`;
-            console.log('Updated provider to:', request.user);
-        }
-   
-        if (actionButtonsContainer) {
-            if (request.status === 'scheduled') {
-                actionButtonsContainer.innerHTML = `
-                    <button class="btn btn-primary" onclick="window.location.href='/main/html/admin/aJobs.html?job=${request.id}'">
-                        <i class="fas fa-eye"></i> View Job
-                    </button>
-                `;
-            } else if (request.status === 'ongoing') {
-                actionButtonsContainer.innerHTML = `
-                    <button class="btn btn-primary" onclick="window.location.href='/main/html/admin/aJobs.html?track=${request.id}'">
-                        <i class="fas fa-map-marker-alt"></i> View Job
-                    </button>
-                    <button class="btn btn-outline" onclick="contactCollector('${request.id}')">
-                        <i class="fas fa-phone"></i> Contact Collector
-                    </button>
-                `;
-            } else if (request.status === 'completed') {
-                actionButtonsContainer.innerHTML = `
-                    <button class="btn btn-primary" onclick="window.location.href='/main/html/admin/aReport.html?request=${request.id}'">
-                        <i class="fas fa-file-alt"></i> View Report
-                    </button>
-                `;
-            } else {
-                actionButtonsContainer.innerHTML = '';
-            }
-        }
-        
-        console.log('Detail view updated successfully');
-    } else {
-        console.error('Request not found for ID:', reqId);
-    }
-}
-
-function contactCollector(reqId) {
-    console.log('Contact collector for request:', reqId);
-    //contact logic
-    alert('Collector contact info would be displayed here');
-}
 
     function attachCardEventListeners() {
-        console.log('Attaching event listeners to', cards.length, 'cards');
-        
-        cards.forEach((card, index) => {
-            const newCard = card.cloneNode(true);
-            card.parentNode.replaceChild(newCard, card);
-   
-            newCard.addEventListener('click', function(e) {
+        const cards = document.querySelectorAll('.req-card');
+        cards.forEach(card => {
+            card.addEventListener('click', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                console.log('Card clicked - Index:', index);
-                
                 const reqId = this.getAttribute('data-req');
-                console.log('Request ID from card:', reqId);
-                
-                if (filterDropdownContent) {
-                    filterDropdownContent.classList.remove('show');
+                const request = sampleRequests.find(r => r.id === reqId);
+                if (request) {
+                    updateDetailView(request);
+                    showDetail();
                 }
-                if (sortDropdownContent) {
-                    sortDropdownContent.classList.remove('show');
-                }
-     
-                updateDetailView(reqId);
-       
-                showDetail();
             });
         });
-
-        cards = document.querySelectorAll('.req-card');
     }
 
-    if (filterDropdownBtn) {
-        filterDropdownBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            filterDropdownContent.classList.toggle('show');
-            if (sortDropdownContent) {
-                sortDropdownContent.classList.remove('show');
-            }
-            console.log('Filter dropdown toggled');
-        });
-    } else {
-        console.error('filterDropdownBtn not found');
+    // Detail view
+    function updateDetailView(request) {
+        currentRequest = request;
+        
+        detailReqId.textContent = `#${request.id}`;
+        detailStatus.className = `big-status ${request.status}`;
+        detailStatus.textContent = request.statusText;
+        detailProvider.innerHTML = `<i class="fas fa-store"></i> ${request.user} · ${request.contact}`;
+        detailItems.textContent = request.items;
+        detailDescription.textContent = request.description;
+        detailBrand.textContent = request.brand;
+        detailWeight.textContent = `${request.weight} kg (total)`;
+        detailAddress.textContent = request.address;
+        detailDate.textContent = request.date;
+        detailSentDate.textContent = request.sentDate;
+    }
+
+    function showList() {
+        listView.classList.remove('hidden');
+        detailView.classList.add('hidden');
+    }
+
+    function showDetail() {
+        listView.classList.add('hidden');
+        detailView.classList.remove('hidden');
     }
 
     if (sortDropdownBtn) {
@@ -278,144 +238,14 @@ function contactCollector(reqId) {
             e.preventDefault();
             e.stopPropagation();
             sortDropdownContent.classList.toggle('show');
-            if (filterDropdownContent) {
-                filterDropdownContent.classList.remove('show');
-            }
-            console.log('Sort dropdown toggled');
+            if (filterDropdownContent) filterDropdownContent.classList.remove('show');
         });
-    } else {
-        console.error('sortDropdownBtn not found');
     }
 
     document.addEventListener('click', function(e) {
-        if (filterDropdownContent && !filterDropdownBtn?.contains(e.target) && !filterDropdownContent.contains(e.target)) {
-            filterDropdownContent.classList.remove('show');
-        }
-        if (sortDropdownContent && !sortDropdownBtn?.contains(e.target) && !sortDropdownContent.contains(e.target)) {
-            sortDropdownContent.classList.remove('show');
-        }
-    });
-
-    function sortRequests() {
-        console.log('Sorting requests by:', currentSort);
-        const cardsArray = Array.from(cards);
-        const container = document.getElementById('requestListView');
-
-        cardsArray.forEach(card => card.remove());
-
-        cardsArray.sort((a, b) => {
-            const aId = a.querySelector('.req-id')?.textContent || '';
-            const bId = b.querySelector('.req-id')?.textContent || '';
-            const aName = aId.split('·')[1]?.trim() || aId;
-            const bName = bId.split('·')[1]?.trim() || bId;
-            
-            const aDate = a.querySelector('.req-meta span:nth-child(2)')?.textContent || '';
-            const bDate = b.querySelector('.req-meta span:nth-child(2)')?.textContent || '';
-            
-            const aWeight = parseFloat(a.querySelector('.req-meta span:last-child')?.textContent) || 0;
-            const bWeight = parseFloat(b.querySelector('.req-meta span:last-child')?.textContent) || 0;
-
-            const parseDate = (dateStr) => {
-                try {
-                    const months = { 'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-                                    'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11 };
-                    const [day, month, year] = dateStr.split(' ');
-                    return new Date(parseInt(year), months[month], parseInt(day));
-                } catch (e) {
-                    return new Date(0);
-                }
-            };
-            
-            switch(currentSort) {
-                case 'date-desc':
-                    return parseDate(bDate) - parseDate(aDate);
-                case 'date-asc':
-                    return parseDate(aDate) - parseDate(bDate);
-                case 'name-asc':
-                    return aName.localeCompare(bName);
-                case 'name-desc':
-                    return bName.localeCompare(aName);
-                case 'weight-desc':
-                    return bWeight - aWeight;
-                case 'weight-asc':
-                    return aWeight - bWeight;
-                default:
-                    return 0;
-            }
-        });
-
-        cardsArray.forEach(card => container.appendChild(card));
-
-        cards = document.querySelectorAll('.req-card');
-        attachCardEventListeners();
-        
-        console.log('Sort complete');
+    if (sortDropdownContent && !sortDropdownBtn?.contains(e.target) && !sortDropdownContent.contains(e.target)) {
+        sortDropdownContent.classList.remove('show');
     }
-
-    // Filter function
-    function filterRequests() {
-        let visibleCount = 0;
-        
-        cards.forEach(card => {
-            const statusElement = card.querySelector('.status');
-            const statusClasses = statusElement ? statusElement.classList : [];
-            let status = '';
-            for (let i = 0; i < statusClasses.length; i++) {
-                if (statusClasses[i] !== 'status') {
-                    status = statusClasses[i];
-                    break;
-                }
-            }
-            
-            const requestText = card.textContent.toLowerCase();
-            const searchTerm = currentSearch.toLowerCase();
-            
-            const matchesFilter = currentFilter === 'all' || status === currentFilter;
-            const matchesSearch = currentSearch === '' || requestText.includes(searchTerm);
-            
-            if (matchesFilter && matchesSearch) {
-                card.classList.remove('filtered-out');
-                card.classList.add('filtered-in');
-                visibleCount++;
-            } else {
-                card.classList.add('filtered-out');
-                card.classList.remove('filtered-in');
-            }
-        });
-        
-        if (requestCount) {
-            const totalCards = cards.length;
-            const filterName = currentFilter === 'all' ? 'all' : currentFilter;
-            
-            if (currentSearch) {
-                requestCount.textContent = `${visibleCount} of ${totalCards} requests (filtered by "${currentSearch}")`;
-            } else if (currentFilter !== 'all') {
-                requestCount.textContent = `${visibleCount} ${filterName} requests`;
-            } else {
-                requestCount.textContent = `${visibleCount} requests`;
-            }
-        }
-        
-        console.log(`Filter: ${currentFilter}, Search: "${currentSearch}", Visible: ${visibleCount}/${cards.length}`);
-    }
-
-    filterLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            filterLinks.forEach(l => l.classList.remove('active-filter'));
-            this.classList.add('active-filter');
-            
-            currentFilter = this.getAttribute('data-filter');
-            
-            if (filterDropdownBtn) {
-                const filterText = this.textContent.trim();
-                filterDropdownBtn.innerHTML = `<i class="fas fa-filter"></i> ${filterText} <i class="fas fa-chevron-down"></i>`;
-            }
-
-            filterRequests();
-            filterDropdownContent.classList.remove('show');
-        });
     });
 
     sortLinks.forEach(link => {
@@ -432,8 +262,7 @@ function contactCollector(reqId) {
                 sortDropdownBtn.innerHTML = `<i class="fas fa-sort-amount-down"></i> ${sortText} <i class="fas fa-chevron-down"></i>`;
             }
             
-            sortRequests();
-            filterRequests();
+            filterRequests(); 
             sortDropdownContent.classList.remove('show');
         });
     });
@@ -451,30 +280,147 @@ function contactCollector(reqId) {
 
     if (backToListBtn) {
         backToListBtn.addEventListener('click', showList);
-    } else {
-        console.error('backToListBtn not found');
     }
 
-    attachCardEventListeners();
+    // Approve button
+if (approveBtn) {
+    approveBtn.addEventListener('click', function() {
+        if (currentRequest) {
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'approve-modal-overlay';
 
-    showList();
-  
-    setTimeout(() => {
-        filterRequests();
-        sortRequests();
-        
-        filterLinks.forEach(link => {
-            if (link.getAttribute('data-filter') === 'all') {
-                link.classList.add('active-filter');
+            const modalContent = document.createElement('div');
+            modalContent.className = 'approve-modal-content';
+            modalContent.innerHTML = `
+                <div class="approve-modal-header">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Request Approved!</h3>
+                    <button class="approve-modal-close" id="closeApproveModal">&times;</button>
+                </div>
+                <div class="approve-modal-body">
+                    <p>Request <strong>#${currentRequest.id}</strong> has been approved.</p>
+                    <div class="request-summary">
+                        <div><i class="fas fa-user"></i> ${currentRequest.user}</div>
+                        <div><i class="fas fa-box"></i> ${currentRequest.items}</div>
+                        <div><i class="fas fa-weight-hanging"></i> ${currentRequest.weight} kg</div>
+                    </div>
+                </div>
+                <div class="approve-modal-footer">
+                    <button class="btn btn-primary" id="goToOperationsBtn">
+                        <i class="fas fa-truck"></i> Assign Collector
+                    </button>
+                </div>
+            `;
+            
+            modalOverlay.appendChild(modalContent);
+            document.body.appendChild(modalOverlay);
+
+const approvedRequest = {
+    id: currentRequest.id,
+    provider: currentRequest.user,
+    items: currentRequest.items.split(' · '), 
+    address: currentRequest.address,
+    preferredDate: currentRequest.date,
+    weight: currentRequest.weight,
+    description: currentRequest.description,
+    contact: currentRequest.contact,
+    status: 'approved'
+};
+
+let approvedRequests = JSON.parse(sessionStorage.getItem('approvedRequests')) || [];
+approvedRequests.push(approvedRequest);
+sessionStorage.setItem('approvedRequests', JSON.stringify(approvedRequests));
+
+console.log('Stored approved requests:', approvedRequests);
+       
+            const index = sampleRequests.findIndex(r => r.id === currentRequest.id);
+            if (index !== -1) {
+                sampleRequests.splice(index, 1);
+                filterRequests();
             }
-        });
+            
+            // Assign Collector 
+            document.getElementById('goToOperationsBtn').addEventListener('click', function() {
+                window.location.href = '/main/html/admin/aOperations.html';
+            });
+         
+            document.getElementById('closeApproveModal').addEventListener('click', function() {
+                document.body.removeChild(modalOverlay);
+                showList(); // Go back to list view
+            });
+      
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) {
+                    document.body.removeChild(modalOverlay);
+                    showList();
+                }
+            });
+        }
+    });
+}
+
+    // Reject button
+if (rejectBtn) {
+    rejectBtn.addEventListener('click', function() {
+        if (currentRequest) {
+
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'modal-overlay';
+
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            modalContent.innerHTML = `
+                <h3><i class="fas fa-times-circle"></i> Reject Request #${currentRequest.id}</h3>
+                <p>Please provide a reason for rejection:</p>
+                <textarea id="rejectionReason" placeholder="Enter rejection reason..." rows="4"></textarea>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" id="cancelReject">Cancel</button>
+                    <button class="modal-btn confirm" id="confirmReject">Confirm Rejection</button>
+                </div>
+            `;
+            
+            modalOverlay.appendChild(modalContent);
+            document.body.appendChild(modalOverlay);
+
+            document.getElementById('confirmReject').addEventListener('click', function() {
+                const reason = document.getElementById('rejectionReason').value.trim();
+                if (!reason) {
+                    alert('Please enter a rejection reason');
+                    return;
+                }
+                
+                alert(`Request #${currentRequest.id} has been rejected. Reason: ${reason}`);
+         
+                const index = sampleRequests.findIndex(r => r.id === currentRequest.id);
+                if (index !== -1) {
+                    sampleRequests.splice(index, 1);
+                    filterRequests();
+                    showList();
+                }
+                
+                document.body.removeChild(modalOverlay);
+            });
         
-        sortLinks.forEach(link => {
-            if (link.getAttribute('data-sort') === 'date-desc') {
-                link.classList.add('active-sort');
-            }
-        });
-        
-        console.log('Initialization complete');
-    }, 100);
+            document.getElementById('cancelReject').addEventListener('click', function() {
+                document.body.removeChild(modalOverlay);
+            });
+     
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) {
+                    document.body.removeChild(modalOverlay);
+                }
+            });
+        }
+    });
+}
+
+    filterRequests(); 
+
+    sortLinks.forEach(link => {
+        if (link.getAttribute('data-sort') === 'date-desc') {
+            link.classList.add('active-sort');
+        }
+    });
+    
+    console.log('Initialization complete');
 });

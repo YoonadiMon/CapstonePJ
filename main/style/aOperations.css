@@ -13,7 +13,6 @@
     flex-wrap: wrap;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 2px solid var(--LowMainBlue);
 }
 
 .ops-title {
@@ -197,15 +196,59 @@
 /* Pagination */
 .pagination-controls {
     display: flex;
-    justify-content: center;
+    justify-content: center; 
     align-items: center;
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
+    padding: 0.5rem 0;
+    width: 100%;
+}
+
+.pagination-controls .c-btn-small {
+    background: transparent; 
+    border: none; 
+    color: var(--MainBlue);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    transition: all 0.2s ease;
+    min-width: auto; 
+}
+
+.pagination-controls .c-btn-small:hover:not(:disabled) {
+    color: var(--DarkerMainBlue);
+    text-decoration: underline;
+    background: transparent; 
+}
+
+.pagination-controls .c-btn-small:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    color: var(--Gray);
 }
 
 .page-indicator {
     color: var(--text-color);
     font-size: 0.9rem;
+    font-weight: 500;
+    text-align: left;
+    opacity: 0.6; 
+    margin-left: 0.5rem;
+}
+
+/* Dark mode */
+.dark-mode .pagination-controls .c-btn-small {
+    color: var(--LightBlue);
+}
+
+.dark-mode .pagination-controls .c-btn-small:hover:not(:disabled) {
+    color: var(--White);
+}
+
+.dark-mode .page-indicator {
+    color: var(--White);
+    opacity: 0.5;
 }
 
 .ops-assignment-panel {
@@ -241,7 +284,6 @@
     font-size: 0.9rem;
 }
 
-/* Selected Request Summary */
 .selected-request-summary {
     background-color: var(--sec-bg-color);
     border-radius: 20px;
@@ -295,19 +337,160 @@
     align-items: center;
 }
 
+.custom-dropdown {
+    position: relative;
+    flex: 1;
+}
+
+.custom-dropdown-select {
+    width: 100%;
+    padding: 0.6rem 1.2rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.custom-dropdown-select:hover {
+    border-color: var(--MainBlue);
+    background-color: var(--LightBlue);
+}
+
+.custom-dropdown-select .arrow {
+    color: var(--DarkBlue);
+    font-size: 0.7rem;
+}
+
+.custom-dropdown-menu {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 16px;
+    box-shadow: 0 8px 16px var(--shadow-color);
+    z-index: 1000;
+    display: none;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.custom-dropdown-menu.show {
+    display: block;
+}
+
+.custom-dropdown-item {
+    padding: 0.7rem 1rem;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    transition: background-color 0.2s ease;
+}
+
+.custom-dropdown-item:hover {
+    background-color: var(--LightBlue);
+}
+
+.custom-dropdown-item.selected {
+    background-color: var(--MainBlue);
+    color: var(--White);
+}
+
+/* Dark mode */
+.dark-mode .custom-dropdown-select {
+    background-color: var(--DarkBlue);
+    border-color: var(--MainBlue);
+    color: var(--White);
+}
+
+.dark-mode .custom-dropdown-select:hover {
+    background-color: var(--DarkerBlue);
+}
+
+.dark-mode .custom-dropdown-menu {
+    background-color: var(--DarkBlue);
+    border-color: var(--MainBlue);
+}
+
+.dark-mode .custom-dropdown-item {
+    color: var(--White);
+}
+
+.dark-mode .custom-dropdown-item:hover {
+    background-color: var(--DarkerBlue);
+}
+
+.dark-mode .custom-dropdown-item.selected {
+    background-color: var(--MainBlue);
+}
+
+/* Updated dropdown styling to match sort dropdown */
 .ops-select {
     flex: 1;
-    padding: 0.8rem 1rem;
-    border-radius: 40px;
+    padding: 0.6rem 1.2rem;
+    border-radius: 30px;
     border: 1px solid var(--BlueGray);
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    font-weight: 500;
     outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ops-select:hover {
+    border-color: var(--MainBlue);
+    background-color: var(--LightBlue);
 }
 
 .ops-select:focus {
     border-color: var(--MainBlue);
+    box-shadow: 0 0 0 2px var(--LowMainBlue);
+}
+
+.ops-select option {
+    padding: 0.7rem 1rem;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    font-weight: normal;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-dot.green {
+    background-color: #2ecc71;
+    box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
+}
+
+.status-dot.red {
+    background-color: #e74c3c;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
 }
 
 .view-btn {
@@ -413,6 +596,7 @@
     margin: 0.5rem 0 1rem 0;  
     flex-wrap: wrap;
 }
+
 /* Recent Timeline */
 .recent-assignments h3 {
     font-size: 1.1rem;
@@ -471,7 +655,6 @@
     flex-wrap: wrap;
 }
 
-/* Loading State */
 .loading-spinner {
     text-align: center;
     padding: 2rem;
@@ -488,6 +671,23 @@
     color: var(--White);
 }
 
+/* Dark mode styles for dropdowns */
+.dark-mode .ops-select {
+    background-color: var(--DarkBlue);
+    border-color: var(--MainBlue);
+    color: var(--White);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+
+.dark-mode .ops-select:hover {
+    background-color: var(--DarkerBlue);
+}
+
+.dark-mode .ops-select option {
+    background-color: var(--DarkBlue);
+    color: var(--White);
+}
+
 /* Capacity Circle */
 .centre-capacity-container {
     display: flex;
@@ -496,27 +696,51 @@
 }
 
 .capacity-circle {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: conic-gradient(var(--MainBlue) 0deg, var(--LightBlue) 0deg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
     position: relative;
     transition: background 0.3s ease;
 }
 
 .capacity-circle span {
     background: var(--bg-color);
-    width: 35px;
-    height: 35px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1;
     color: var(--DarkBlue);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.dark-mode .capacity-circle span {
+    background: var(--DarkBlue);
+    color: var(--White);
+}
+
+/* Empty state */
+.empty-requests {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--Gray);
+}
+
+.empty-requests i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-requests h3 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-color);
 }
