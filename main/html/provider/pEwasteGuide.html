@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Provider View</title>
+    <title>E-Waste Guide | AfterVolt</title>
     <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
 
     <link rel="stylesheet" href="/main/style/style.css">
@@ -12,6 +12,349 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* Guide Navigation Tabs */
+        .guide-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 2rem 0;
+            border-bottom: 2px solid var(--BlueGray);
+            padding-bottom: 0.5rem;
+        }
+
+        .guide-tab {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--sec-bg-color);
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: var(--text-color);
+            text-decoration: none;
+            border: 1px solid transparent;
+        }
+
+        .guide-tab:hover {
+            background-color: var(--LowMainBlue);
+        }
+
+        .guide-tab.active {
+            background-color: var(--MainBlue);
+            color: white;
+            border-bottom: 1px solid var(--MainBlue);
+        }
+
+        .guide-content {
+            display: none;
+            padding: 2rem 0;
+        }
+
+        .guide-content.active {
+            display: block;
+        }
+
+        /* Find a Centre Styles */
+        .find-centre-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            padding: 1rem 0;
+        }
+
+        .search-section {
+            width: 100%;
+        }
+
+        .search-section h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .search-bar {
+            display: flex;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 2rem;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 1rem 1.2rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 50px 0 0 50px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .search-bar button {
+            padding: 1rem 2rem;
+            background-color: var(--MainBlue);
+            color: white;
+            border: none;
+            border-radius: 0 50px 50px 0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .search-bar button:hover {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        .results-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .centre-list {
+            flex: 1;
+            background-color: var(--sec-bg-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .centre-list h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--BlueGray);
+        }
+
+        .centre-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .centre-count {
+            background-color: var(--MainBlue);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .centre-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--BlueGray);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .centre-item:hover {
+            background-color: var(--LowMainBlue);
+        }
+
+        .centre-item.active {
+            background-color: var(--MainBlue);
+            color: white;
+        }
+
+        .centre-item.active .centre-distance {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .centre-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .centre-address {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+            opacity: 0.8;
+        }
+
+        .centre-distance {
+            font-size: 0.8rem;
+            color: var(--Gray);
+        }
+
+        .centre-details {
+            flex: 1;
+            background-color: var(--sec-bg-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+        }
+
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .details-name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .details-rating {
+            background-color: var(--MainBlue);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .details-status {
+            color: green;
+            font-weight: 500;
+            margin: 0.5rem 0;
+        }
+
+        .details-address {
+            margin: 1rem 0;
+            line-height: 1.6;
+        }
+
+        .details-phone {
+            margin: 1rem 0;
+            font-weight: 500;
+        }
+
+        .details-phone a {
+            color: var(--MainBlue);
+            text-decoration: none;
+        }
+
+        .details-hours {
+            margin: 1.5rem 0;
+        }
+
+        .details-hours h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .hours-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .hours-table td {
+            padding: 0.3rem 0;
+        }
+
+        .hours-table td:first-child {
+            font-weight: 500;
+            width: 100px;
+        }
+
+        .details-links {
+            margin-top: 1rem;
+        }
+
+        .details-links a {
+            color: var(--MainBlue);
+            text-decoration: none;
+            margin-right: 1rem;
+        }
+
+        .details-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (min-width: 760px) {
+            .results-layout {
+                flex-direction: row;
+            }
+
+            .centre-list {
+                max-width: 40%;
+            }
+
+            .centre-details {
+                max-width: 60%;
+            }
+        }
+
+        /* Accepted Items Styles */
+        .accepted-items-container {
+            padding: 1rem 0;
+        }
+
+        .accepted-items-container h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .accepted-items-container h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--MainBlue);
+            margin: 2rem 0 1rem;
+        }
+
+        .accepted-items-container h4 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 1.5rem 0 1rem;
+        }
+
+        .intro-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+            max-width: 800px;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .items-grid ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .items-grid li {
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed var(--BlueGray);
+            color: var(--text-color);
+        }
+
+        .items-grid li:before {
+            content: "✓ ";
+            color: var(--MainBlue);
+            font-weight: 600;
+            margin-right: 0.3rem;
+        }
+
+        .category-section {
+            background-color: var(--sec-bg-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+        }
+    </style>
 </head>
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
@@ -25,8 +368,6 @@
                 <div class="c-text">AfterVolt</div>
             </a>
         </section>
-
-        <!-- Menu Links -->
 
         <!-- Menu Links Mobile -->
         <nav class="c-navbar-side">
@@ -76,6 +417,493 @@
 
     <!-- Main Content -->
     <main>
+        <!-- Guide Navigation Tabs -->
+        <div class="guide-tabs">
+            <a href="#" class="guide-tab" onclick="switchTab(event, 'find-centre')">📍 Find a Centre</a>
+            <a href="#" class="guide-tab active" onclick="switchTab(event, 'accepted-items')">📋 Accepted Items</a>
+            <a href="#" class="guide-tab" onclick="switchTab(event, 'preparation')">📝 Preparation Guide</a>
+            <a href="#" class="guide-tab" onclick="switchTab(event, 'journey')">🔄 The Journey</a>
+        </div>
+
+        <!-- Find a Centre Content -->
+        <div id="find-centre" class="guide-content">
+            <div class="find-centre-container">
+                <!-- Search Section -->
+                <div class="search-section">
+                    <h2>Find a location near you</h2>
+                    <div class="search-bar">
+                        <input type="text" placeholder="Enter your address or postcode" id="searchInput">
+                        <button id="searchBtn">Search</button>
+                    </div>
+                </div>
+
+                <!-- Results Layout -->
+                <div class="results-layout">
+                    <!-- Left side - Centre List -->
+                    <div class="centre-list">
+                        <div class="centre-list-header">
+                            <h3>All locations</h3>
+                            <span class="centre-count" id="totalCount">11</span>
+                        </div>
+                        
+                        <div id="centreList">
+                            <!-- Bukit Jalil -->
+                            <div class="centre-item active" data-id="bukit-jalil" onclick="selectCentre('bukit-jalil')">
+                                <div class="centre-name">Bukit Jalil</div>
+                                <div class="centre-address">No 1, Jalan ABC, 57000 Kuala Lumpur</div>
+                                <div class="centre-distance">0.5 km away</div>
+                            </div>
+                            
+                            <!-- Puchong -->
+                            <div class="centre-item" data-id="puchong" onclick="selectCentre('puchong')">
+                                <div class="centre-name">Puchong</div>
+                                <div class="centre-address">No 2, Jalan DEF, 47100 Selangor</div>
+                                <div class="centre-distance">2.3 km away</div>
+                            </div>
+                            
+                            <!-- Cheras -->
+                            <div class="centre-item" data-id="cheras" onclick="selectCentre('cheras')">
+                                <div class="centre-name">Cheras</div>
+                                <div class="centre-address">No 3, Jalan GHI, 56000 Selangor</div>
+                                <div class="centre-distance">3.8 km away</div>
+                            </div>
+                            
+                            <!-- Putrajaya -->
+                            <div class="centre-item" data-id="putrajaya" onclick="selectCentre('putrajaya')">
+                                <div class="centre-name">Putrajaya</div>
+                                <div class="centre-address">No 4, Jalan JKL, 62000 Putrajaya</div>
+                                <div class="centre-distance">5.1 km away</div>
+                            </div>
+                            
+                            <!-- Bangsar -->
+                            <div class="centre-item" data-id="bangsar" onclick="selectCentre('bangsar')">
+                                <div class="centre-name">Bangsar</div>
+                                <div class="centre-address">No 5, Jalan MNO, 59000 Kuala Lumpur</div>
+                                <div class="centre-distance">6.2 km away</div>
+                            </div>
+                            
+                            <!-- Damansara -->
+                            <div class="centre-item" data-id="damansara" onclick="selectCentre('damansara')">
+                                <div class="centre-name">Damansara</div>
+                                <div class="centre-address">No 6, Jalan PQR, 47400 Selangor</div>
+                                <div class="centre-distance">7.0 km away</div>
+                            </div>
+                            
+                            <!-- Kepong -->
+                            <div class="centre-item" data-id="kepong" onclick="selectCentre('kepong')">
+                                <div class="centre-name">Kepong</div>
+                                <div class="centre-address">No 7, Jalan STU, 52100 Kuala Lumpur</div>
+                                <div class="centre-distance">8.4 km away</div>
+                            </div>
+                            
+                            <!-- Subang Jaya -->
+                            <div class="centre-item" data-id="subang" onclick="selectCentre('subang')">
+                                <div class="centre-name">Subang Jaya</div>
+                                <div class="centre-address">No 8, Jalan VWX, 47500 Selangor</div>
+                                <div class="centre-distance">9.1 km away</div>
+                            </div>
+                            
+                            <!-- KLCC -->
+                            <div class="centre-item" data-id="klcc" onclick="selectCentre('klcc')">
+                                <div class="centre-name">KLCC</div>
+                                <div class="centre-address">No 9, Jalan YZ, 50088 Kuala Lumpur</div>
+                                <div class="centre-distance">10.3 km away</div>
+                            </div>
+                            
+                            <!-- Ampang -->
+                            <div class="centre-item" data-id="ampang" onclick="selectCentre('ampang')">
+                                <div class="centre-name">Ampang</div>
+                                <div class="centre-address">No 10, Jalan AB, 68000 Selangor</div>
+                                <div class="centre-distance">11.5 km away</div>
+                            </div>
+                            
+                            <!-- Shah Alam -->
+                            <div class="centre-item" data-id="shah-alam" onclick="selectCentre('shah-alam')">
+                                <div class="centre-name">Shah Alam</div>
+                                <div class="centre-address">No 11, Jalan CD, 40000 Selangor</div>
+                                <div class="centre-distance">13.2 km away</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right side - Centre Details -->
+                    <div class="centre-details" id="centreDetails">
+                        <!-- Bukit Jalil details (default active) -->
+                        <div id="detail-bukit-jalil" class="detail-view">
+                            <div class="details-header">
+                                <span class="details-name">Bukit Jalil</span>
+                                <span class="details-rating">★★★★★ (9/10)</span>
+                            </div>
+                            
+                            <div class="details-status">Open now · Closes 9:00 pm</div>
+                            
+                            <div class="details-address">
+                                No 1, Jalan ABC, 57000 Kuala Lumpur, Malaysia.
+                            </div>
+                            
+                            <div class="details-phone">
+                                📞 <a href="tel:0123456789">012-345 6789</a>
+                            </div>
+                            
+                            <div class="details-links">
+                                <a href="#">Open now</a> · <a href="#">Closes 9:00 pm</a>
+                            </div>
+                            
+                            <div class="details-hours">
+                                <h4>Opening Hours</h4>
+                                <table class="hours-table">
+                                    <tr><td>Monday:</td><td>09:30–21:00</td></tr>
+                                    <tr><td>Tuesday:</td><td>09:30–21:00</td></tr>
+                                    <tr><td>Wednesday:</td><td>09:30–21:00</td></tr>
+                                    <tr><td>Thursday:</td><td>09:30–21:00</td></tr>
+                                    <tr><td>Friday:</td><td>09:30–21:00</td></tr>
+                                    <tr><td>Saturday:</td><td>09:30–21:00</td></tr>
+                                    <tr><td>Sunday:</td><td>10:00–21:00</td></tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Puchong details -->
+                        <div id="detail-puchong" class="detail-view" style="display: none;">
+                            <div class="details-header">
+                                <span class="details-name">Puchong</span>
+                                <span class="details-rating">★★★★☆ (8/10)</span>
+                            </div>
+                            <div class="details-status">Open now · Closes 8:00 pm</div>
+                            <div class="details-address">No 2, Jalan DEF, 47100 Selangor, Malaysia.</div>
+                            <div class="details-phone">📞 <a href="tel:0123456790">012-345 6790</a></div>
+                            <div class="details-hours">
+                                <h4>Opening Hours</h4>
+                                <table class="hours-table">
+                                    <tr><td>Monday:</td><td>09:00–20:00</td></tr>
+                                    <tr><td>Tuesday:</td><td>09:00–20:00</td></tr>
+                                    <tr><td>Wednesday:</td><td>09:00–20:00</td></tr>
+                                    <tr><td>Thursday:</td><td>09:00–20:00</td></tr>
+                                    <tr><td>Friday:</td><td>09:00–20:00</td></tr>
+                                    <tr><td>Saturday:</td><td>10:00–18:00</td></tr>
+                                    <tr><td>Sunday:</td><td>Closed</td></tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Add more detail views for other centres as needed -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accepted Items Content -->
+        <div id="accepted-items" class="guide-content active">
+            <div class="accepted-items-container">
+                <h2>What Can You Recycle?</h2>
+                <p class="intro-text">We accept a wide range of electronic devices. If it runs on electricity or batteries, it can likely be recycled!</p>
+
+                <!-- Small Appliances -->
+                <div class="category-section">
+                    <h3>📱 Small Appliances</h3>
+                    <div class="items-grid">
+                        <div class="item-card">
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>Smartphone</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-tablet-alt"></i>
+                            <span>Tablet</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-laptop"></i>
+                            <span>Laptop</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-camera"></i>
+                            <span>Digital camera</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-video"></i>
+                            <span>Projectors</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-headphones"></i>
+                            <span>MP3 Players</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-compact-disc"></i>
+                            <span>DVD Players</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Computer Hardware -->
+                <div class="category-section">
+                    <h3>💻 Computer Hardware</h3>
+                    <div class="items-grid">
+                        <div class="item-card">
+                            <i class="fas fa-keyboard"></i>
+                            <span>Keyboards</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-desktop"></i>
+                            <span>Desktop</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-mouse"></i>
+                            <span>Computer Mice</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-tv"></i>
+                            <span>Monitors</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-headphones"></i>
+                            <span>Headphones</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-print"></i>
+                            <span>Printers</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-usb"></i>
+                            <span>USB Cable</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Entertainment & Audio -->
+                <div class="category-section">
+                    <h3>📺 Entertainment & Audio</h3>
+                    <div class="items-grid">
+                        <div class="item-card">
+                            <i class="fas fa-tv"></i>
+                            <span>Televisions</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-volume-up"></i>
+                            <span>Speakers</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-gamepad"></i>
+                            <span>Gaming Consoles</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-bolt"></i>
+                            <span>Remote Controls</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-radio"></i>
+                            <span>Radios</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batteries & Accessories -->
+                <div class="category-section">
+                    <h3>🔋 Batteries & Accessories</h3>
+                    <div class="items-grid">
+                        <div class="item-card">
+                            <i class="fas fa-battery-full"></i>
+                            <span>AA/AAA Batteries</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>Phone Batteries</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-laptop"></i>
+                            <span>Laptop Batteries</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-plug"></i>
+                            <span>Chargers & Cables</span>
+                        </div>
+                        <div class="item-card">
+                            <i class="fas fa-battery-three-quarters"></i>
+                            <span>Power Banks</span>
+                        </div>
+                    </div>
+                    <p style="margin-top: 1rem; color: var(--Gray); font-size: 0.9rem;">
+                        <i class="fas fa-exclamation-triangle" style="color: orange;"></i> 
+                        Please tape the ends of lithium batteries before disposal.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preparation Guide Content -->
+        <div id="preparation" class="guide-content">
+            <div class="preparation-container">
+                <h2>How to Prepare Your E-Waste</h2>
+                <p class="preparation-intro">Follow these simple steps to ensure your e-waste is ready for collection or drop-off.</p>
+                
+                <div class="steps-grid">
+                    <!-- Step 1 -->
+                    <div class="step-card" data-step="1">
+                        <div class="step-image">
+                            <img src="/main/assets/images/guide/step1-backup.jpg" alt="Backup your data" onerror="this.parentElement.innerHTML='<i class=\'fas fa-database placeholder-icon\'></i>'">
+                        </div>
+                        <div class="step-content-wrapper">
+                            <div class="step-header">
+                                <div class="step-number">1</div>
+                                <div class="step-title">Backup Your Data</div>
+                            </div>
+                            <div class="step-content">
+                                <i class="fas fa-database step-icon"></i>
+                                Before disposing of any device that stores information (phones, laptops, computers), make sure to back up your important files and photos.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 5 -->
+                    <div class="step-card" data-step="5">
+                        <div class="step-image">
+                            <img src="/main/assets/images/guide/step5-pack.jpg" alt="Pack securely" onerror="this.parentElement.innerHTML='<i class=\'fas fa-box placeholder-icon\'></i>'">
+                        </div>
+                        <div class="step-content-wrapper">
+                            <div class="step-header">
+                                <div class="step-number">5</div>
+                                <div class="step-title">Pack Securely</div>
+                            </div>
+                            <div class="step-content">
+                                <i class="fas fa-box step-icon"></i>
+                                Place items in a box or bag to prevent damage during collection. For fragile items like monitors, use padding if available.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2 -->
+                    <div class="step-card" data-step="2">
+                        <div class="step-image">
+                            <img src="/main/assets/images/guide/step2-wipe.jpg" alt="Wipe personal information" onerror="this.parentElement.innerHTML='<i class=\'fas fa-user-shield placeholder-icon\'></i>'">
+                        </div>
+                        <div class="step-content-wrapper">
+                            <div class="step-header">
+                                <div class="step-number">2</div>
+                                <div class="step-title">Wipe Personal Information</div>
+                            </div>
+                            <div class="step-content">
+                                <i class="fas fa-user-shield step-icon"></i>
+                                Perform a factory reset on phones and computers, or use data wiping software to protect your privacy. Remove SIM and memory cards.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4 -->
+                    <div class="step-card" data-step="4">
+                        <div class="step-image">
+                            <img src="/main/assets/images/guide/step4-dismantle.jpg" alt="Do not dismantle" onerror="this.parentElement.innerHTML='<i class=\'fas fa-tools placeholder-icon\'></i>'">
+                        </div>
+                        <div class="step-content-wrapper">
+                            <div class="step-header">
+                                <div class="step-number">4</div>
+                                <div class="step-title">Do Not Dismantle</div>
+                            </div>
+                            <div class="step-content">
+                                <i class="fas fa-tools step-icon"></i>
+                                Leave devices intact. Professional recyclers have the right equipment to safely separate materials.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3 (Full width on desktop with image left, text right) -->
+                    <div class="step-card" data-step="3">
+                        <div class="step-image">
+                            <img src="/main/assets/images/guide/step3-battery.jpg" alt="Remove batteries" onerror="this.parentElement.innerHTML='<i class=\'fas fa-battery-half placeholder-icon\'></i>'">
+                        </div>
+                        <div class="step-content-wrapper">
+                            <div class="step-header">
+                                <div class="step-number">3</div>
+                                <div class="step-title">Remove Batteries (If Possible)</div>
+                            </div>
+                            <div class="step-content">
+                                <i class="fas fa-battery-half step-icon"></i>
+                                For safety during transport, remove batteries if they are detachable. For batteries that are built-in, leave them in place.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Journey Content -->
+        <div id="journey" class="guide-content">
+            <div class="journey-container">
+                <h2>What Happens to Your E-Waste?</h2>
+                <p class="journey-intro">Ever wondered what happens after your e-waste is disposed of? The journey ...</p>
+                
+                <div class="journey-steps">
+                    <!-- Step 1: Collection & Sorting -->
+                    <div class="journey-step">
+                        <div class="journey-step-image">
+                            <img src="/main/assets/images/journey/step1-collection.jpg" alt="Collection and sorting" onerror="this.parentElement.innerHTML='<i class=\'fas fa-truck placeholder-icon\'></i>'">
+                        </div>
+                        <div class="journey-step-content">
+                            <h3>Step 1: Collection & Sorting</h3>
+                            <p>E-waste arrives at the recycling facility and is sorted by type (e.g., computers, phones, appliances).</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Manual Disassembly -->
+                    <div class="journey-step">
+                        <div class="journey-step-image">
+                            <img src="/main/assets/images/journey/step2-disassembly.jpg" alt="Manual disassembly" onerror="this.parentElement.innerHTML='<i class=\'fas fa-tools placeholder-icon\'></i>'">
+                        </div>
+                        <div class="journey-step-content">
+                            <h3>Step 2: Manual Disassembly</h3>
+                            <p>Trained workers carefully take apart devices by hand, separating different components:</p>
+                            <ul class="journey-list">
+                                <li>Circuit boards (contain precious metals)</li>
+                                <li>Plastic casings</li>
+                                <li>Glass (from monitors and screens)</li>
+                                <li>Metals (steel, aluminum, copper)</li>
+                                <li>Batteries (sent for specialized recycling)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Shredding & Separation -->
+                    <div class="journey-step">
+                        <div class="journey-step-image">
+                            <img src="/main/assets/images/journey/step3-shredding.jpg" alt="Shredding and separation" onerror="this.parentElement.innerHTML='<i class=\'fas fa-industry placeholder-icon\'></i>'">
+                        </div>
+                        <div class="journey-step-content">
+                            <h3>Step 3: Shredding & Separation</h3>
+                            <p>Materials are shredded into small pieces. Magnets, eddy currents, and other technologies separate different materials:</p>
+                            <ul class="journey-list">
+                                <li>Ferrous metals (iron, steel) are pulled out by magnets</li>
+                                <li>Non-ferrous metals (aluminum, copper) are separated by eddy currents</li>
+                                <li>Plastics are sorted by type</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Material Recovery -->
+                    <div class="journey-step">
+                        <div class="journey-step-image">
+                            <img src="/main/assets/images/journey/step4-recovery.jpg" alt="Material recovery" onerror="this.parentElement.innerHTML='<i class=\'fas fa-recycle placeholder-icon\'></i>'">
+                        </div>
+                        <div class="journey-step-content">
+                            <h3>Step 4: Material Recovery</h3>
+                            <p>Separated materials are sent to specialized facilities:</p>
+                            <ul class="journey-list">
+                                <li>Metals are melted down and reused in manufacturing</li>
+                                <li>Plastics are processed into pellets for new products</li>
+                                <li>Precious metals (gold, silver, copper) are extracted from circuit boards</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 5: Safe Disposal -->
+                    <div class="journey-step">
+                        <div class="journey-step-image">
+                            <img src="/main/assets/images/journey/step5-disposal.jpg" alt="Safe disposal" onerror="this.parentElement.innerHTML='<i class=\'fas fa-shield-alt placeholder-icon\'></i>'">
+                        </div>
+                        <div class="journey-step-content">
+                            <h3>Step 5: Safe Disposal</h3>
+                            <p>Hazardous materials that cannot be recycled (like certain chemicals) are treated and disposed of safely according to environmental regulations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
     </main>
 
@@ -123,6 +951,84 @@
     </footer>
 
     <script src="/main/javascript/mainScript.js"></script>
-    <script src="/main/javascript/e-waste-guide.js"></script>
+    <script>
+        // Tab switching function
+        function switchTab(event, tabId) {
+            event.preventDefault();
+            
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.guide-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.guide-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Add active class to clicked tab and corresponding content
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Centre selection function
+        function selectCentre(centreId) {
+            // Remove active class from all centre items
+            document.querySelectorAll('.centre-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to selected centre
+            const selectedItem = document.querySelector(`.centre-item[data-id="${centreId}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('active');
+            }
+            
+            // Hide all detail views
+            document.querySelectorAll('.detail-view').forEach(detail => {
+                detail.style.display = 'none';
+            });
+            
+            // Show selected detail view
+            const selectedDetail = document.getElementById(`detail-${centreId}`);
+            if (selectedDetail) {
+                selectedDetail.style.display = 'block';
+            }
+        }
+
+        // Search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchBtn = document.getElementById('searchBtn');
+            const searchInput = document.getElementById('searchInput');
+            
+            if (searchBtn) {
+                searchBtn.addEventListener('click', function() {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    
+                    if (searchTerm.includes('bukit') || searchTerm.includes('57000')) {
+                        selectCentre('bukit-jalil');
+                    } else if (searchTerm.includes('puchong') || searchTerm.includes('47100')) {
+                        selectCentre('puchong');
+                    } else if (searchTerm.includes('cheras') || searchTerm.includes('56000')) {
+                        selectCentre('cheras');
+                    } else if (searchTerm.includes('putra') || searchTerm.includes('62000')) {
+                        selectCentre('putrajaya');
+                    } else if (searchTerm.includes('bangsar') || searchTerm.includes('59000')) {
+                        selectCentre('bangsar');
+                    } else if (searchTerm) {
+                        alert('No matching centre found. Showing nearest centre: Bukit Jalil');
+                        selectCentre('bukit-jalil');
+                    }
+                });
+            }
+
+            // Enter key in search input
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchBtn.click();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
