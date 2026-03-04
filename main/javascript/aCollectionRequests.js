@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded - Initializing Collection Requests Page');
     
-    // Sample data - only non-pending requests
     const collectionRequests = [
         {
             id: 'REQ002',
@@ -112,6 +111,63 @@ document.addEventListener('DOMContentLoaded', function() {
             collector: 'Raj Kumar',
             vehicle: 'Van - VHL003',
             completionNotes: 'All items collected. Will be sorted for parts recovery.'
+        },
+        {
+            id: 'REQ009',
+            title: 'Office Electronics Bulk',
+            items: ['Monitors (5x)', 'Keyboards (8x)', 'Mice (8x)', 'Speakers (2x)'],
+            status: 'ongoing',
+            provider: 'Tech Solutions Sdn Bhd',
+            providerContact: '+60 17-890 1234',
+            date: '01 Mar 2026',
+            scheduledDate: '04 Mar 2026',
+            scheduledTime: '9:00 AM - 1:00 PM',
+            weight: '28.5',
+            address: 'Lot 12, Jalan Teknologi, Taman Sains, Selangor, 43300',
+            description: 'Bulk office electronics from company upgrade. All items are used but functional.',
+            brand: 'Dell, HP, Logitech',
+            condition: 'Used - Working',
+            assignedCollector: 'Rosli Bin Ahmad',
+            assignedVehicle: 'Truck - VHL004',
+            completionDate: null
+        },
+        {
+            id: 'REQ010',
+            title: 'Smartphones Collection',
+            items: ['iPhone 6 (3x)', 'Samsung S7 (2x)', 'Chargers', 'Phone Cases'],
+            status: 'ongoing',
+            provider: 'Mobile Repairs KL',
+            providerContact: '+60 12-345 6780',
+            date: '02 Mar 2026',
+            scheduledDate: '05 Mar 2026',
+            scheduledTime: '2:00 PM - 4:30 PM',
+            weight: '4.2',
+            address: 'No 15, Jalan Alor, Bukit Bintang, Kuala Lumpur, 50200',
+            description: 'Collection of old smartphones for parts recovery. Some have broken screens.',
+            brand: 'Apple, Samsung',
+            condition: 'Damaged/For Parts',
+            assignedCollector: 'Mei Ling',
+            assignedVehicle: 'Van - VHL005',
+            completionDate: null
+        },
+        {
+            id: 'REQ011',
+            title: 'Printoners and Scanners',
+            items: ['Laser Printers (3x)', 'Inkjet Printers (2x)', 'Scanner (1x)', 'Ink Cartridges (15x)'],
+            status: 'ongoing',
+            provider: 'Creative Design Studio',
+            providerContact: '+60 16-543 2109',
+            date: '03 Mar 2026',
+            scheduledDate: '06 Mar 2026',
+            scheduledTime: '10:30 AM - 12:30 PM',
+            weight: '45.0',
+            address: 'No 8, Jalan SS15/4, Subang Jaya, 47500',
+            description: 'Office printers and scanners being replaced. Includes unused ink cartridges.',
+            brand: 'Brother, Canon, Epson',
+            condition: 'Mixed - Some working, some not',
+            assignedCollector: 'Kevin Tan',
+            assignedVehicle: 'Truck - VHL001',
+            completionDate: null
         }
     ];
 
@@ -168,6 +224,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Activity feed
     const activityFeed = document.getElementById('activityFeed');
 
+    // Sort
+    const sortDropdownBtn = document.getElementById('sortDropdownBtn');
+    const sortDropdownContent = document.getElementById('sortDropdownContent');
+    const selectedSortSpan = document.getElementById('selectedSort');
+
     // State
     let currentView = 'timeline';
     let currentFilter = 'all';
@@ -177,24 +238,95 @@ document.addEventListener('DOMContentLoaded', function() {
     let filteredRequests = [...collectionRequests];
     let currentRequest = null;
 
-    // Initialize stats
+    if (sortDropdownBtn) {
+        sortDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sortDropdownContent.classList.toggle('show');
+        });
+    }
+
+    document.addEventListener('click', () => {
+        if (sortDropdownContent) {
+            sortDropdownContent.classList.remove('show');
+        }
+    });
+
+    document.querySelectorAll('.sort-dropdown-content a').forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+      
+            document.querySelectorAll('.sort-dropdown-content a').forEach(a => {
+                a.classList.remove('active-sort');
+            });
+            
+            option.classList.add('active-sort');
+            
+            selectedSortSpan.textContent = option.textContent.trim();
+            
+            const sortValue = option.dataset.sort;
+            
+            currentSort = sortValue;
+            filterRequests();
+            renderCurrentView();
+            
+            sortDropdownContent.classList.remove('show');
+        });
+    });
+
     function updateStats() {
         const scheduled = collectionRequests.filter(r => r.status === 'scheduled').length;
+        const ongoing = collectionRequests.filter(r => r.status === 'ongoing').length;
         const completed = collectionRequests.filter(r => r.status === 'completed').length;
         const cancelled = collectionRequests.filter(r => r.status === 'cancelled').length;
         const rejected = collectionRequests.filter(r => r.status === 'rejected').length;
         
         scheduledCount.textContent = scheduled;
+        ongoingCount.textContent = ongoing;
         completedCount.textContent = completed;
         cancelledCount.textContent = cancelled;
         rejectedCount.textContent = rejected;
         
-        kanbanScheduledCount.textContent = scheduled;
-        kanbanCompletedCount.textContent = completed;
-        kanbanCancelledCount.textContent = cancelled;
-        kanbanRejectedCount.textContent = rejected;
+        hidePillIfNoUpdates('scheduled', scheduled);
+        hidePillIfNoUpdates('ongoing', ongoing);
+        hidePillIfNoUpdates('completed', completed);
+        hidePillIfNoUpdates('cancelled', cancelled);
+        hidePillIfNoUpdates('rejected', rejected);
+        
+        if (document.getElementById('kanbanScheduledCount')) {
+            document.getElementById('kanbanScheduledCount').textContent = scheduled;
+        }
+        if (document.getElementById('kanbanOngoingCount')) {
+            document.getElementById('kanbanOngoingCount').textContent = ongoing;
+        }
+        if (document.getElementById('kanbanCompletedCount')) {
+            document.getElementById('kanbanCompletedCount').textContent = completed;
+        }
+        if (document.getElementById('kanbanCancelledCount')) {
+            document.getElementById('kanbanCancelledCount').textContent = cancelled;
+        }
+        if (document.getElementById('kanbanRejectedCount')) {
+            document.getElementById('kanbanRejectedCount').textContent = rejected;
+        }
         
         totalCountSpan.textContent = `Total: ${collectionRequests.length}`;
+    }
+
+    function hidePillIfNoUpdates(status, count) {
+        const statusPanel = document.querySelector(`.status-panel.${status}`);
+        
+        if (statusPanel) {
+            const trendPill = statusPanel.querySelector('.panel-trend');
+            
+            if (count === 0) {
+                if (trendPill) {
+                    trendPill.style.display = 'none';
+                }
+            } else {
+                if (trendPill) {
+                    trendPill.style.display = 'flex'; 
+                }
+            }
+        }
     }
 
     // Update activity feed
@@ -271,6 +403,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         sortRequests();
         updateResultsCount();
+        
+        const scheduled = filteredRequests.filter(r => r.status === 'scheduled').length;
+        const ongoing = filteredRequests.filter(r => r.status === 'ongoing').length;
+        const completed = filteredRequests.filter(r => r.status === 'completed').length;
+        const cancelled = filteredRequests.filter(r => r.status === 'cancelled').length;
+        const rejected = filteredRequests.filter(r => r.status === 'rejected').length;
+        
+        hidePillIfNoUpdates('scheduled', scheduled);
+        hidePillIfNoUpdates('ongoing', ongoing);
+        hidePillIfNoUpdates('completed', completed);
+        hidePillIfNoUpdates('cancelled', cancelled);
+        hidePillIfNoUpdates('rejected', rejected);
     }
 
     function sortRequests() {
@@ -294,11 +438,13 @@ document.addEventListener('DOMContentLoaded', function() {
         resultCountSpan.textContent = `Showing ${filteredRequests.length} of ${collectionRequests.length} requests`;
     }
 
-    // Render timeline view
     function renderTimeline() {
+        console.log('renderTimeline called, filteredRequests:', filteredRequests.length);
+        
         if (filteredRequests.length === 0) {
             timelineContainer.innerHTML = '';
             emptyState.classList.remove('hidden');
+            console.log('No requests, showing empty state');
             return;
         }
 
@@ -332,8 +478,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         timelineContainer.innerHTML = html;
+        console.log('Timeline HTML set, items:', filteredRequests.length);
         
-        // Add click handlers
         document.querySelectorAll('.timeline-item').forEach(item => {
             item.addEventListener('click', () => {
                 const reqId = item.dataset.req;
@@ -375,6 +521,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'scheduled':
                     kanbanScheduled.innerHTML += card;
                     break;
+                case 'ongoing':
+                    break;
                 case 'completed':
                     kanbanCompleted.innerHTML += card;
                     break;
@@ -387,7 +535,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Add click handlers
         document.querySelectorAll('.kanban-card').forEach(card => {
             card.addEventListener('click', () => {
                 const reqId = card.dataset.req;
@@ -400,222 +547,239 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Show detail view
-    function showDetail(request) {
-        currentRequest = request;
-        listView.classList.add('hidden');
-        detailView.classList.remove('hidden');
-        
-        // Update hero section
-        detailStatus.textContent = request.status.charAt(0).toUpperCase() + request.status.slice(1);
-        detailStatus.className = `hero-badge ${request.status}`;
-        detailRequestId.textContent = `#${request.id}`;
-        detailTitle.textContent = request.title;
-        detailProvider.innerHTML = `
-            <i class="fas fa-user-circle"></i>
-            <div>
-                <strong>${request.provider}</strong>
-                <span>${request.providerContact}</span>
-            </div>
-        `;
-        
-        // Update stats
-        detailRequestDate.textContent = request.date;
-        detailWeight.textContent = `${request.weight} kg`;
-        detailItemCount.textContent = `${request.items.length} items`;
-        
-        // Status specific stat
-        let statusStatHtml = '';
-        switch(request.status) {
-            case 'scheduled':
-                statusStatHtml = `
-                    <i class="fas fa-calendar-check"></i>
-                    <div>
-                        <span class="stat-label">Scheduled</span>
-                        <span class="stat-value">${request.scheduledDate}</span>
-                    </div>
-                `;
-                break;
-            case 'completed':
-                statusStatHtml = `
-                    <i class="fas fa-check-circle"></i>
-                    <div>
-                        <span class="stat-label">Completed</span>
-                        <span class="stat-value">${request.completedDate}</span>
-                    </div>
-                `;
-                break;
-            case 'cancelled':
-                statusStatHtml = `
-                    <i class="fas fa-ban"></i>
-                    <div>
-                        <span class="stat-label">Cancelled</span>
-                        <span class="stat-value">${request.cancellationDate}</span>
-                    </div>
-                `;
-                break;
-            case 'rejected':
-                statusStatHtml = `
-                    <i class="fas fa-times-circle"></i>
-                    <div>
-                        <span class="stat-label">Rejected</span>
-                        <span class="stat-value">${request.rejectionDate}</span>
-                    </div>
-                `;
-                break;
-        }
-        statusSpecificStat.innerHTML = statusStatHtml;
-        
-        // Update items list
-        detailItemsList.innerHTML = request.items.map(item => `
-            <div class="item-row">
-                <i class="fas fa-box"></i>
-                <span>${item}</span>
-            </div>
-        `).join('');
-        
-        // Update description and details
-        detailDescription.textContent = request.description;
-        detailBrand.textContent = request.brand;
-        detailCondition.textContent = request.condition;
-        detailAddress.textContent = request.address;
-        mapLink.href = `https://maps.google.com/?q=${encodeURIComponent(request.address)}`;
-        
-        // Update timeline
-        updateDetailTimeline(request);
-        
-        // Update assignment
-        updateAssignment(request);
-        
-        // Update action buttons
-        updateActionButtons(request);
-        
-        // Update notes
-        updateNotes(request);
+function showDetail(request) {
+    currentRequest = request;
+    listView.classList.add('hidden');
+    detailView.classList.remove('hidden');
+    
+    // Update hero section
+    detailStatus.textContent = request.status.charAt(0).toUpperCase() + request.status.slice(1);
+    detailStatus.className = `hero-badge ${request.status}`;
+    detailRequestId.textContent = `#${request.id}`;
+    detailTitle.textContent = request.title;
+    detailProvider.innerHTML = `
+        <i class="fas fa-user-circle"></i>
+        <div>
+            <strong>${request.provider}</strong>
+            <span>${request.providerContact}</span>
+        </div>
+    `;
+    
+    // Update stats
+    detailRequestDate.textContent = request.date;
+    detailWeight.textContent = `${request.weight} kg`;
+    detailItemCount.textContent = `${request.items.length} items`;
+    
+    // Status specific stat
+    let statusStatHtml = '';
+    switch(request.status) {
+        case 'scheduled':
+            statusStatHtml = `
+                <i class="fas fa-calendar-check"></i>
+                <div>
+                    <span class="stat-label">Scheduled</span>
+                    <span class="stat-value">${request.scheduledDate || 'TBD'}</span>
+                </div>
+            `;
+            break;
+        case 'ongoing':
+            statusStatHtml = `
+                <i class="fas fa-sync-alt"></i>
+                <div>
+                    <span class="stat-label">Ongoing</span>
+                    <span class="stat-value">${request.scheduledDate || 'In progress'}</span>
+                </div>
+            `;
+            break;
+        case 'completed':
+            statusStatHtml = `
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <span class="stat-label">Completed</span>
+                    <span class="stat-value">${request.completedDate || request.date}</span>
+                </div>
+            `;
+            break;
+        case 'cancelled':
+            statusStatHtml = `
+                <i class="fas fa-ban"></i>
+                <div>
+                    <span class="stat-label">Cancelled</span>
+                    <span class="stat-value">${request.cancellationDate || request.date}</span>
+                </div>
+            `;
+            break;
+        case 'rejected':
+            statusStatHtml = `
+                <i class="fas fa-times-circle"></i>
+                <div>
+                    <span class="stat-label">Rejected</span>
+                    <span class="stat-value">${request.rejectionDate || request.date}</span>
+                </div>
+            `;
+            break;
     }
+    statusSpecificStat.innerHTML = statusStatHtml;
+    
+    // Update items list
+    detailItemsList.innerHTML = request.items.map(item => `
+        <div class="item-row">
+            <i class="fas fa-box"></i>
+            <span>${item}</span>
+        </div>
+    `).join('');
+    
+    // Update description and details
+    detailDescription.textContent = request.description || 'No description provided';
+    detailBrand.textContent = request.brand || 'Various';
+    detailCondition.textContent = request.condition || 'Not specified';
+    detailAddress.textContent = request.address;
+    mapLink.href = `https://maps.google.com/?q=${encodeURIComponent(request.address)}`;
+    
+    // Update timeline
+    updateDetailTimeline(request);
+    
+    // Update assignment
+    updateAssignment(request);
+    
+    // Update action buttons
+    updateActionButtons(request);
+    
+    // Update notes
+    updateNotes(request);
+}
 
-    function updateDetailTimeline(request) {
-        let steps = '';
-        
-        // Request submitted
+function updateDetailTimeline(request) {
+    let steps = '';
+    
+    steps += `
+        <div class="timeline-step">
+            <div class="step-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <div class="step-content">
+                <p>Request submitted</p>
+                <small>${request.date}</small>
+            </div>
+        </div>
+    `;
+    
+    if (request.status === 'scheduled' || request.status === 'ongoing' || request.status === 'completed') {
         steps += `
             <div class="timeline-step">
                 <div class="step-icon">
-                    <i class="fas fa-paper-plane"></i>
+                    <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="step-content">
-                    <p>Request submitted</p>
+                    <p>Request approved</p>
                     <small>${request.date}</small>
                 </div>
             </div>
         `;
-        
-        switch(request.status) {
-            case 'scheduled':
-                steps += `
-                    <div class="timeline-step">
-                        <div class="step-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="step-content">
-                            <p>Approved</p>
-                            <small>${request.date}</small>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-icon">
-                            <i class="fas fa-calendar-check"></i>
-                        </div>
-                        <div class="step-content">
-                            <p>Scheduled for collection</p>
-                            <small>${request.scheduledDate} · ${request.scheduledTime}</small>
-                        </div>
-                    </div>
-                `;
-                break;
-                
-            case 'completed':
-                steps += `
-                    <div class="timeline-step">
-                        <div class="step-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="step-content">
-                            <p>Approved</p>
-                            <small>${request.date}</small>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-icon">
-                            <i class="fas fa-truck"></i>
-                        </div>
-                        <div class="step-content">
-                            <p>Collected</p>
-                            <small>${request.completedDate} at ${request.completionTime}</small>
-                            <div class="step-note">${request.completionNotes}</div>
-                        </div>
-                    </div>
-                `;
-                break;
-                
-            case 'cancelled':
-                steps += `
-                    <div class="timeline-step">
-                        <div class="step-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="step-content">
-                            <p>Approved</p>
-                            <small>${request.date}</small>
-                        </div>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-icon">
-                            <i class="fas fa-ban"></i>
-                        </div>
-                        <div class="step-content">
-                            <p>Cancelled</p>
-                            <small>${request.cancellationDate}</small>
-                            <div class="step-note">${request.cancellationReason}</div>
-                        </div>
-                    </div>
-                `;
-                break;
-                
-            case 'rejected':
-                steps += `
-                    <div class="timeline-step">
-                        <div class="step-icon">
-                            <i class="fas fa-times-circle"></i>
-                        </div>
-                        <div class="step-content">
-                            <p>Rejected</p>
-                            <small>${request.rejectionDate}</small>
-                            <div class="step-note">${request.rejectionReason}</div>
-                        </div>
-                    </div>
-                `;
-                break;
-        }
-        
-        timelineSteps.innerHTML = steps;
     }
-
+    
+    if (request.status === 'scheduled') {
+        steps += `
+            <div class="timeline-step">
+                <div class="step-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="step-content">
+                    <p>Scheduled for collection</p>
+                    <small>${request.scheduledDate || 'Date TBD'} ${request.scheduledTime ? '· ' + request.scheduledTime : ''}</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (request.status === 'ongoing') {
+        steps += `
+            <div class="timeline-step">
+                <div class="step-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <div class="step-content">
+                    <p>Collection in progress</p>
+                    <small>Started: ${request.scheduledDate || request.date}</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (request.status === 'completed') {
+        steps += `
+            <div class="timeline-step">
+                <div class="step-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <div class="step-content">
+                    <p>Items collected</p>
+                    <small>${request.completedDate || 'Date TBD'} ${request.completionTime ? 'at ' + request.completionTime : ''}</small>
+                </div>
+            </div>
+        `;
+        steps += `
+            <div class="timeline-step">
+                <div class="step-icon">
+                    <i class="fas fa-flag-checkered"></i>
+                </div>
+                <div class="step-content">
+                    <p>Request completed</p>
+                    <small>${request.completedDate || 'Date TBD'}</small>
+                    ${request.completionNotes ? `<div class="step-note">${request.completionNotes}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    if (request.status === 'cancelled') {
+        steps += `
+            <div class="timeline-step">
+                <div class="step-icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div class="step-content">
+                    <p>Request cancelled</p>
+                    <small>${request.cancellationDate || request.date}</small>
+                    ${request.cancellationReason ? `<div class="step-note">Reason: ${request.cancellationReason}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    if (request.status === 'rejected') {
+        steps += `
+            <div class="timeline-step">
+                <div class="step-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="step-content">
+                    <p>Request rejected</p>
+                    <small>${request.rejectionDate || request.date}</small>
+                    ${request.rejectionReason ? `<div class="step-note">Reason: ${request.rejectionReason}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    timelineSteps.innerHTML = steps;
+}
     function updateAssignment(request) {
-        if (request.status === 'scheduled' || request.status === 'completed') {
+        if (request.status === 'scheduled' || request.status === 'ongoing' || request.status === 'completed') {
             assignmentCard.classList.remove('hidden');
             assignmentInfo.innerHTML = `
                 <div class="assignment-row">
                     <i class="fas fa-user"></i>
                     <div>
                         <span class="details-label">Collector</span>
-                        <span class="details-value">${request.assignedCollector || request.collector}</span>
+                        <span class="details-value">${request.assignedCollector || request.collector || 'Not assigned'}</span>
                     </div>
                 </div>
                 <div class="assignment-row">
                     <i class="fas fa-truck"></i>
                     <div>
                         <span class="details-label">Vehicle</span>
-                        <span class="details-value">${request.assignedVehicle || request.vehicle}</span>
+                        <span class="details-value">${request.assignedVehicle || request.vehicle || 'Not assigned'}</span>
                     </div>
                 </div>
             `;
@@ -629,6 +793,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         switch(request.status) {
             case 'scheduled':
+            case 'ongoing':
                 buttons = `
                     <button class="detail-btn primary" onclick="window.location.href='/main/html/admin/aJobs.html?job=${request.id}'">
                         <i class="fas fa-eye"></i> View Job
@@ -697,6 +862,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <strong>Reminder:</strong> Collection scheduled for ${request.scheduledDate}
                 `;
                 break;
+            case 'ongoing':
+                notes = `
+                    <i class="fas fa-truck"></i>
+                    <strong>Status:</strong> Collection in progress
+                `;
+                break;
         }
         
         detailNotes.innerHTML = notes;
@@ -722,31 +893,32 @@ document.addEventListener('DOMContentLoaded', function() {
         alert(`Viewing history for request #${reqId}`);
     };
 
-    window.filterByStatus = function(status) {
-        currentFilter = status;
-        
-        // Update filter chips
-        filterChips.forEach(chip => {
-            if (chip.dataset.filter === 'all') {
-                chip.classList.add('active');
-            } else {
-                chip.classList.remove('active');
-            }
-        });
-        
+window.filterByStatus = function(status) {
+    currentFilter = status;
+    
+    document.querySelectorAll('.status-panel').forEach(panel => {
+        if (panel.classList.contains(status)) {
+            panel.classList.add('active');
+        } else {
+            panel.classList.remove('active');
+        }
+    });
+    
+    if (!listView.classList.contains('hidden')) {
+   
         filterRequests();
         renderCurrentView();
-    };
+    } else {
 
-    // Event Listeners
+        listView.classList.remove('hidden');
+        detailView.classList.add('hidden');
+        filterRequests();
+        renderCurrentView();
+    }
+};
+
     searchInput.addEventListener('input', (e) => {
         currentSearch = e.target.value;
-        filterRequests();
-        renderCurrentView();
-    });
-
-    sortSelect.addEventListener('change', (e) => {
-        currentSort = e.target.value;
         filterRequests();
         renderCurrentView();
     });
@@ -774,6 +946,24 @@ document.addEventListener('DOMContentLoaded', function() {
         listView.classList.remove('hidden');
         detailView.classList.add('hidden');
     });
+
+    // All Requests button
+    const allRequestsBtn = document.getElementById('allRequestsBtn');
+    if (allRequestsBtn) {
+        allRequestsBtn.addEventListener('click', () => {
+            // Reset to show all requests
+            currentFilter = 'all';
+            
+            // Update active states on status panels
+            document.querySelectorAll('.status-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // Apply filter and render
+            filterRequests();
+            renderCurrentView();
+        });
+    }
 
     if (printBtn) {
         printBtn.addEventListener('click', () => {
@@ -823,6 +1013,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderCurrentView() {
+        console.log('renderCurrentView called with view:', currentView);
+        
         if (currentView === 'timeline') {
             timelineContainer.classList.remove('hidden');
             kanbanContainer.classList.add('hidden');
@@ -834,21 +1026,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize
-    updateStats();
-    updateActivityFeed();
-    filterRequests();
-    renderCurrentView();
-    
-    function setActiveNav() {
-        const navLinks = document.querySelectorAll('.c-navbar-desktop a, .c-navbar-side-items a');
-        navLinks.forEach(link => {
-            const href = link.getAttribute('href');
-            if (href && href.includes('aCollectionRequests.html')) {
-                link.classList.add('active');
-            }
-        });
+// Initialize the page
+console.log('Initializing page with all requests');
+
+// Reset all filters to default
+currentFilter = 'all';
+currentSearch = '';
+currentQuickFilter = 'all';
+currentSort = 'date-desc';
+currentView = 'timeline';
+
+// Clear search input
+if (searchInput) {
+    searchInput.value = '';
+}
+
+// Reset quick filter chips
+filterChips.forEach(chip => {
+    chip.classList.remove('active');
+});
+
+// Reset sort dropdown to default
+document.querySelectorAll('.sort-dropdown-content a').forEach(a => {
+    a.classList.remove('active-sort');
+    if (a.dataset.sort === 'date-desc') {
+        a.classList.add('active-sort');
+        if (selectedSortSpan) {
+            selectedSortSpan.textContent = a.textContent.trim();
+        }
     }
-    
-    setActiveNav();
+});
+
+// Reset status panel active states
+document.querySelectorAll('.status-panel').forEach(panel => {
+    panel.classList.remove('active');
+});
+
+// Update stats
+updateStats();
+updateActivityFeed();
+
+filteredRequests = collectionRequests.map(request => ({...request})); // Create a copy
+
+// Apply sorting
+sortRequests();
+
+// Update the result count
+updateResultsCount();
+
+// Force render the current view
+renderCurrentView();
+
+// Ensure timeline is visible
+timelineContainer.classList.remove('hidden');
+kanbanContainer.classList.add('hidden');
+
+// Update toggle buttons
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+    if (btn.dataset.view === 'timeline') {
+        btn.classList.add('active');
+    } else {
+        btn.classList.remove('active');
+    }
+});
+
+console.log('Page initialized with', filteredRequests.length, 'requests');
+
+function setActiveNav() {
+    const navLinks = document.querySelectorAll('.c-navbar-desktop a, .c-navbar-side-items a');
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.includes('aCollectionRequests.html')) {
+            link.classList.add('active');
+        }
+    });
+}
+
+setActiveNav();
 });
