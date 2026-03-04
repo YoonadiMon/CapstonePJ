@@ -88,17 +88,12 @@
         }
         .section-heading h3 svg { color: var(--MainBlue); flex-shrink: 0; }
         .section-heading a {
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-decoration: none;
+            font-size: 0.72rem; font-weight: 600; text-decoration: none;
             color: var(--MainBlue);
             background: hsla(225,94%,67%,.1);
             border: 1.5px solid hsla(225,94%,67%,.25);
-            border-radius: 20px;
-            padding: 3px 11px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+            border-radius: 20px; padding: 3px 11px;
+            display: inline-flex; align-items: center; gap: 4px;
             transition: background 0.18s, border-color 0.18s, color 0.18s;
             white-space: nowrap;
         }
@@ -146,6 +141,10 @@
             border: 1.5px solid hsl(130,40%,70%);
             border-radius: 20px; padding: 2px 9px;
             font-size: 0.68rem; font-weight: 700; margin-top: 4px;
+        }
+        .dark-mode .role-pill {
+            background: hsla(130,50%,15%,.6); color: hsl(130,60%,70%);
+            border-color: hsl(130,40%,35%);
         }
         .profile-grid { display: grid; grid-template-columns: 1fr 1fr; }
         .profile-grid-item {
@@ -212,37 +211,23 @@
         .item-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
         .td-muted { color: var(--Gray) !important; }
 
-        /* ── EXPAND / COLLAPSE ── */
-
-        /* Extra user rows: wrapped in a div that animates height */
+        /* EXPAND / COLLAPSE */
         .extra-users-wrap {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.35s ease;
         }
-        .extra-users-wrap.open {
-            max-height: 500px;
-        }
-        /* last user item inside extra block has no bottom border */
-        .extra-users-wrap .user-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
+        .extra-users-wrap.open { max-height: 500px; }
+        .extra-users-wrap .user-item:last-child { border-bottom: none; padding-bottom: 0; }
 
-        /* Extra table rows: hidden/shown with display */
-        .item-extra {
-            display: none;
-        }
-        .item-extra.open {
-            display: table-row;
-        }
+        .item-extra { display: none; }
+        .item-extra.open { display: table-row; }
 
         @media (max-width: 768px) {
             .stats-row { grid-template-columns: 1fr 1fr; }
             .two-col   { grid-template-columns: 1fr; }
         }
         @media (max-width: 480px) {
-            .stats-row { grid-template-columns: 1fr 1fr; }
             .welcome-banner { flex-direction: column; gap: 1rem; align-items: flex-start; }
         }
     </style>
@@ -356,7 +341,7 @@
                         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         My Profile
                     </h3>
-                    <a href="#" id="editProfileLink">
+                    <a href="/main/html/common/Profile.html?user=col1" id="editProfileLink">
                         <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         Edit Profile
                     </a>
@@ -366,7 +351,10 @@
                         <div class="profile-avatar" id="profileAvatar">RK</div>
                         <div>
                             <div class="profile-name" id="profileName">Rajan Kumar</div>
-                            <div class="role-pill">Collector</div>
+                            <div class="role-pill">
+                                <svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                                Collector
+                            </div>
                             <div class="profile-email" id="profileEmail">rajan.k@aftervolt.com</div>
                             <div class="profile-phone" id="profilePhone">+6 019 334 5566</div>
                         </div>
@@ -377,16 +365,8 @@
                             <div class="grid-lbl">Assigned Vehicle</div>
                         </div>
                         <div class="profile-grid-item">
-                            <div class="grid-val" id="profileArea">Petaling Jaya</div>
-                            <div class="grid-lbl">Collection Area</div>
-                        </div>
-                        <div class="profile-grid-item">
                             <div class="grid-val" id="profileLicense">GCK 1234</div>
                             <div class="grid-lbl">License No.</div>
-                        </div>
-                        <div class="profile-grid-item">
-                            <div class="grid-val">4.8 ★</div>
-                            <div class="grid-lbl">Rating</div>
                         </div>
                     </div>
                 </div>
@@ -446,7 +426,7 @@
         <!-- USERS + ITEMS -->
         <div class="two-col">
 
-            <!-- ── USERS ASSIGNED ── -->
+            <!-- USERS ASSIGNED -->
             <div>
                 <div class="section-heading">
                     <h3>
@@ -460,74 +440,48 @@
                 </div>
                 <div class="c-card">
                     <div class="c-card-body">
-
-                        <!-- Always visible: first 3 -->
                         <div class="user-item">
                             <div class="user-av" style="background:linear-gradient(135deg,hsl(225,70%,35%),hsl(225,80%,55%))">AZ</div>
-                            <div class="user-info">
-                                <div class="user-name">Ahmad Zaki</div>
-                                <div class="user-addr">12 Jalan Mawar, PJ</div>
-                            </div>
+                            <div class="user-info"><div class="user-name">Ahmad Zaki</div><div class="user-addr">12 Jalan Mawar, PJ</div></div>
                             <span class="pill pill-collected">Collected</span>
                         </div>
                         <div class="user-item">
                             <div class="user-av" style="background:linear-gradient(135deg,hsl(260,60%,30%),hsl(260,55%,52%))">SN</div>
-                            <div class="user-info">
-                                <div class="user-name">Siti Nora</div>
-                                <div class="user-addr">5 Lorong Dahlia, PJ</div>
-                            </div>
+                            <div class="user-info"><div class="user-name">Siti Nora</div><div class="user-addr">5 Lorong Dahlia, PJ</div></div>
                             <span class="pill pill-pending">Pending</span>
                         </div>
                         <div class="user-item" id="usersLastVisible">
                             <div class="user-av" style="background:linear-gradient(135deg,hsl(185,55%,28%),hsl(185,50%,48%))">LW</div>
-                            <div class="user-info">
-                                <div class="user-name">Lim Wei Jie</div>
-                                <div class="user-addr">88 Jalan Kenanga, PJ</div>
-                            </div>
+                            <div class="user-info"><div class="user-name">Lim Wei Jie</div><div class="user-addr">88 Jalan Kenanga, PJ</div></div>
                             <span class="pill pill-collected">Collected</span>
                         </div>
-
-                        <!-- Hidden extra rows, animated open -->
                         <div class="extra-users-wrap" id="extraUsersWrap">
                             <div class="user-item">
                                 <div class="user-av" style="background:linear-gradient(135deg,hsl(15,65%,30%),hsl(15,60%,50%))">MR</div>
-                                <div class="user-info">
-                                    <div class="user-name">Muthu Raj</div>
-                                    <div class="user-addr">3 Jalan Teratai, PJ</div>
-                                </div>
+                                <div class="user-info"><div class="user-name">Muthu Raj</div><div class="user-addr">3 Jalan Teratai, PJ</div></div>
                                 <span class="pill pill-scheduled">Scheduled</span>
                             </div>
                             <div class="user-item">
                                 <div class="user-av" style="background:linear-gradient(135deg,hsl(340,60%,30%),hsl(340,55%,52%))">NA</div>
-                                <div class="user-info">
-                                    <div class="user-name">Nurul Ain</div>
-                                    <div class="user-addr">27 Jalan Anggerik, PJ</div>
-                                </div>
+                                <div class="user-info"><div class="user-name">Nurul Ain</div><div class="user-addr">27 Jalan Anggerik, PJ</div></div>
                                 <span class="pill pill-scheduled">Scheduled</span>
                             </div>
                             <div class="user-item">
                                 <div class="user-av" style="background:linear-gradient(135deg,hsl(50,65%,30%),hsl(50,60%,50%))">KH</div>
-                                <div class="user-info">
-                                    <div class="user-name">Kavitha Harish</div>
-                                    <div class="user-addr">9 Jalan Cempaka, PJ</div>
-                                </div>
+                                <div class="user-info"><div class="user-name">Kavitha Harish</div><div class="user-addr">9 Jalan Cempaka, PJ</div></div>
                                 <span class="pill pill-pending">Pending</span>
                             </div>
                             <div class="user-item">
                                 <div class="user-av" style="background:linear-gradient(135deg,hsl(200,65%,30%),hsl(200,60%,50%))">RY</div>
-                                <div class="user-info">
-                                    <div class="user-name">Raj Yusof</div>
-                                    <div class="user-addr">14 Lorong Bayu, PJ</div>
-                                </div>
+                                <div class="user-info"><div class="user-name">Raj Yusof</div><div class="user-addr">14 Lorong Bayu, PJ</div></div>
                                 <span class="pill pill-collected">Collected</span>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
 
-            <!-- ── ITEMS COLLECTED ── -->
+            <!-- ITEMS COLLECTED -->
             <div>
                 <div class="section-heading">
                     <h3>
@@ -551,7 +505,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Always visible: first 4 -->
                                 <tr>
                                     <td><span class="item-dot" style="background:var(--MainBlue)"></span>Laptop</td>
                                     <td class="td-muted">Ahmad Zaki</td><td>2</td>
@@ -572,8 +525,6 @@
                                     <td class="td-muted">Lim Wei Jie</td><td>1</td>
                                     <td><span class="pill pill-collected">Done</span></td>
                                 </tr>
-
-                                <!-- Hidden extra rows -->
                                 <tr class="item-extra">
                                     <td><span class="item-dot" style="background:hsl(185,55%,40%)"></span>Monitor</td>
                                     <td class="td-muted">Lim Wei Jie</td><td>2</td>
@@ -632,7 +583,7 @@
             <div>
                 <b>Proxy</b><br>
                 <a href="/main/html/common/About.html">About</a><br>
-                <a href="#" id="editProfileFooterLink">Edit Profile</a><br>
+                <a href="/main/html/common/Profile.html?user=col1" id="editProfileFooterLink">Edit Profile</a><br>
                 <a href="/main/html/common/Setting.html">Setting</a>
             </div>
         </section>
@@ -640,14 +591,13 @@
 
     <script src="/main/javascript/mainScript.js"></script>
     <script>
-        // ── CURRENT USER ──────────────────────────────────────────────────
         const CURRENT_USER_ID = 'col1';
 
         const USERS_PREVIEW = {
             col1: {
                 name: 'Rajan Kumar', initials: 'RK',
                 email: 'rajan.k@aftervolt.com', phone: '+6 019 334 5566',
-                vehicle: 'VEH-042', area: 'Petaling Jaya', license: 'GCK 1234'
+                vehicle: 'VEH-042', license: 'GCK 1234'
             }
         };
 
@@ -668,52 +618,32 @@
             document.getElementById('profileEmail').textContent   = user.email;
             document.getElementById('profilePhone').textContent   = user.phone;
             document.getElementById('profileVehicle').textContent = user.vehicle;
-            document.getElementById('profileArea').textContent    = user.area;
             document.getElementById('profileLicense').textContent = user.license;
-
-            const profileUrl = `/main/html/common/Profile.html?user=${CURRENT_USER_ID}`;
-            document.getElementById('editProfileLink').href       = profileUrl;
-            document.getElementById('editProfileFooterLink').href = profileUrl;
         })();
 
-        // ── TOGGLE: USERS ASSIGNED ────────────────────────────────────────
+        // TOGGLE: USERS ASSIGNED
         let usersExpanded = false;
-
         function toggleUsers(e) {
             e.preventDefault();
             usersExpanded = !usersExpanded;
-
             const wrap = document.getElementById('extraUsersWrap');
             const icon = document.getElementById('usersToggleIcon');
             const text = document.getElementById('usersToggleText');
-
-            if (usersExpanded) {
-                wrap.classList.add('open');
-                icon.style.transform = 'rotate(180deg)';
-                icon.style.transition = 'transform 0.25s ease';
-                text.textContent = 'Show Less';
-            } else {
-                wrap.classList.remove('open');
-                icon.style.transform = 'rotate(0deg)';
-                text.textContent = 'View All';
-            }
+            wrap.classList.toggle('open', usersExpanded);
+            icon.style.cssText = `transform:rotate(${usersExpanded?180:0}deg);transition:transform .25s ease`;
+            text.textContent = usersExpanded ? 'Show Less' : 'View All';
         }
 
-        // ── TOGGLE: ITEMS COLLECTED ───────────────────────────────────────
+        // TOGGLE: ITEMS COLLECTED
         let itemsExpanded = false;
-
         function toggleItems(e) {
             e.preventDefault();
             itemsExpanded = !itemsExpanded;
-
-            document.querySelectorAll('.item-extra').forEach(row => {
-                row.classList.toggle('open', itemsExpanded);
-            });
-
+            document.querySelectorAll('.item-extra').forEach(row =>
+                row.classList.toggle('open', itemsExpanded));
             const icon = document.getElementById('itemsToggleIcon');
             const text = document.getElementById('itemsToggleText');
-            icon.style.transform = itemsExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
-            icon.style.transition = 'transform 0.25s ease';
+            icon.style.cssText = `transform:rotate(${itemsExpanded?180:0}deg);transition:transform .25s ease`;
             text.textContent = itemsExpanded ? 'Show Less' : 'View All';
         }
     </script>

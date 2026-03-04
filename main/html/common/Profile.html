@@ -544,9 +544,7 @@
                         <div class="form-group"><label>Vehicle ID</label><input type="text" value="${user.vehicleId}" readonly /></div>
                         <div class="form-group"><label>License No.</label><input type="text" value="${user.licenseNo}" readonly /></div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group full"><label>Collection Area</label><input type="text" id="area" value="${user.area}" /></div>
-                    </div>
+
                 </div>`;
 
             if (user.role === 'provider') roleSection = `
@@ -627,7 +625,6 @@
             currentUser.email     = email;
             currentUser.phone     = document.getElementById('phone')?.value.trim() || currentUser.phone;
             if (document.getElementById('department'))  currentUser.department  = document.getElementById('department').value;
-            if (document.getElementById('area'))        currentUser.area        = document.getElementById('area').value;
             if (document.getElementById('companyName')) currentUser.companyName = document.getElementById('companyName').value;
             if (document.getElementById('address'))     currentUser.address     = document.getElementById('address').value;
 
