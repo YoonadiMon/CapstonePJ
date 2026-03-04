@@ -24,6 +24,34 @@
         .page-header {
             margin-bottom: 1.25rem;
         }
+
+        /* ── BACK BUTTON ── */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--Gray);
+            text-decoration: none;
+            margin-bottom: 0.75rem;
+            padding: 5px 10px 5px 8px;
+            border-radius: 8px;
+            border: 1.5px solid var(--LowMainBlue);
+            background: var(--bg-color);
+            transition: color 0.15s, background 0.15s, border-color 0.15s;
+        }
+        .back-btn:hover {
+            color: var(--MainBlue);
+            background: var(--LightBlue);
+            border-color: var(--MainBlue);
+        }
+        .dark-mode .back-btn:hover {
+            background: var(--DarkerBlue);
+            color: var(--LightBlue);
+        }
+        .back-btn svg { flex-shrink: 0; }
+
         .page-header h1 {
             font-size: 1.5rem;
             font-weight: 700;
@@ -301,7 +329,15 @@
     <!-- Main Content -->
     <main>
         <div class="profile-page-wrapper">
+
+            <!-- PAGE HEADER -->
             <div class="page-header">
+                <a href="/main/html/common/Setting.html" class="back-btn">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path d="M19 12H5M12 5l-7 7 7 7"/>
+                    </svg>
+                    Back to Settings
+                </a>
                 <h1>Edit Profile</h1>
                 <p id="pageSubtitle">Update your profile information</p>
             </div>
@@ -355,15 +391,14 @@
                 Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
             </div>
             <div class="c-text c-text-label">+60 12 345 6789</div>
-            <div class="c-text"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3d5c5f5e7d5a505c5451135e5250">[email&#160;protected]</a></div>
+            <div class="c-text">abc@gmail.com</div>
         </section>
         <section class="c-footer-links-section" id="footerLinks"></section>
     </footer>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/main/javascript/mainScript.js"></script>
+    <script src="/main/javascript/mainScript.js"></script>
     <script>
         // ── USER DATA ──────────────────────────────────────────────────────
-        // Single source of truth. Add more users here as needed.
         const USERS = [
             {
                 id: 'admin1', role: 'admin',
@@ -483,15 +518,12 @@
         let currentUser = null;
         let originalValues = {};
 
-        // ── READ USER FROM URL (?user=col1) ───────────────────────────────
         function getUserFromUrl() {
             const params = new URLSearchParams(window.location.search);
             const userId = params.get('user');
-            // Match by ID, fall back to first user
             return USERS.find(u => u.id === userId) || USERS[0];
         }
 
-        // ── BUILD NAV FOR ROLE ────────────────────────────────────────────
         function buildNav(role) {
             const cfg = ROLE_CONFIG[role];
             const links = cfg.navLinks.map(l => `<a href="${l.href}">${l.label}</a>`).join('');
@@ -502,7 +534,6 @@
             document.getElementById('footerLinks').innerHTML = cfg.footerLinks;
         }
 
-        // ── FORM BUILDER ─────────────────────────────────────────────────
         function buildForm(user) {
             const common = `
                 <div class="form-section">
@@ -544,7 +575,6 @@
                         <div class="form-group"><label>Vehicle ID</label><input type="text" value="${user.vehicleId}" readonly /></div>
                         <div class="form-group"><label>License No.</label><input type="text" value="${user.licenseNo}" readonly /></div>
                     </div>
-
                 </div>`;
 
             if (user.role === 'provider') roleSection = `
@@ -565,7 +595,6 @@
             return common + roleSection;
         }
 
-        // ── RENDER ────────────────────────────────────────────────────────
         function renderProfile(user) {
             const cfg = ROLE_CONFIG[user.role];
             const initials = (user.firstName[0] + user.lastName[0]).toUpperCase();
@@ -574,7 +603,6 @@
             const av     = document.getElementById('avatarDisplay');
             const initialsEl = document.getElementById('avatarInitials');
 
-            // Banner + avatar colours
             if (document.body.classList.contains('dark-mode')) {
                 banner.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)';
                 av.style.background = '#1e3a8a';
@@ -600,7 +628,6 @@
             storeOriginals();
         }
 
-        // Re-render banner/avatar on theme toggle
         const themeObserver = new MutationObserver(() => renderProfile(currentUser));
         themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
@@ -612,7 +639,6 @@
             });
         }
 
-        // ── SAVE / CANCEL ─────────────────────────────────────────────────
         function saveChanges() {
             const first = document.getElementById('firstName')?.value.trim();
             const last  = document.getElementById('lastName')?.value.trim();
@@ -644,7 +670,6 @@
             showToast('Changes discarded.', 'info');
         }
 
-        // ── PHOTO UPLOAD ──────────────────────────────────────────────────
         function handlePhotoChange(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -660,7 +685,6 @@
             reader.readAsDataURL(file);
         }
 
-        // ── TOAST ─────────────────────────────────────────────────────────
         function showToast(message, type = 'success') {
             document.querySelector('.toast')?.remove();
             const colors = { success: 'hsl(145,50%,40%)', error: 'hsl(0,65%,52%)', info: 'hsl(225,100%,40%)' };
@@ -676,7 +700,6 @@
             }, 3000);
         }
 
-        // ── LOCALSTORAGE ──────────────────────────────────────────────────
         function saveToStorage() {
             localStorage.setItem('aftervolt_users', JSON.stringify(USERS));
         }
@@ -695,9 +718,9 @@
 
         // ── INIT ──────────────────────────────────────────────────────────
         loadFromStorage();
-        currentUser = getUserFromUrl();   // reads ?user= from URL
-        buildNav(currentUser.role);       // sets correct nav for their role
-        renderProfile(currentUser);       // renders their data
+        currentUser = getUserFromUrl();
+        buildNav(currentUser.role);
+        renderProfile(currentUser);
     </script>
 </body>
 </html>
