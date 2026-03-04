@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>View Issues - AfterVolt</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+    <style>
+        .issues-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .admin-header {
+            margin-bottom: 1.75rem;
+        }
+
+        .admin-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .admin-header p {
+            color: var(--Gray);
+            font-size: 0.95rem;
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 760px) {
+            .stats-overview {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .stat-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 12px;
+            padding: 1.25rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--shadow-color);
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--Gray);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .stat-open     { 
+            color: var(--MainBlue); 
+        }
+
+        .stat-progress { 
+            color: hsl(30, 90%, 50%); 
+        }
+
+        .stat-critical { 
+            color: hsl(0, 80%, 55%); 
+        }
+
+        .stat-resolved { 
+            color: hsl(145, 60%, 40%); 
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background-color: var(--MainBlue);
+            color: var(--White);
+            border-radius: 999px;
+            padding: 0.15rem 0.55rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .search-bar-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .issue-search {
+            flex: 1;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+            min-width: 0;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .issue-search::placeholder { 
+            color: var(--Gray); 
+        }
+
+        .issue-search:focus {
+            outline: none;
+            border-color: var(--MainBlue);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .search-btn {
+            background-color: var(--MainBlue);
+            color: var(--White);
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1.1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .search-btn:hover { 
+            background-color: var(--DarkerMainBlue); 
+        }
+
+        .search-btn:active { 
+            transform: scale(0.97); 
+        }
+
+        .dark-mode .search-btn {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        .clear-btn {
+            background-color: transparent;
+            color: var(--Gray);
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: color 0.2s, border-color 0.2s, transform 0.1s;
+            display: none;
+        }
+
+        .clear-btn.visible {
+            display: block;
+        }
+
+        .clear-btn:hover {
+            color: var(--text-color);
+            border-color: var(--Gray);
+        }
+
+        .clear-btn:active { 
+            transform: scale(0.97); 
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .filter-select {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            padding: 0.45rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            flex: 1;
+            min-width: 130px;
+            max-width: 400px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--MainBlue);
+            transform: translateY(-2px);
+        }
+
+        .issues-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .issue-item {
+            background-color: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            cursor: pointer;
+            transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+            position: relative;
+        }
+
+        .issue-item:hover {
+            box-shadow: 0 4px 16px var(--shadow-color);
+            border-color: var(--MainBlue);
+            transform: translateY(-1px);
+        }
+
+        .issue-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .issue-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+            flex-wrap: wrap;
+        }
+
+        .issue-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 420px;
+        }
+
+        .issue-preview {
+            font-size: 0.82rem;
+            color: var(--Gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.5rem;
+        }
+
+        .dark-mode .issue-preview {
+            color: var(--BlueGray);
+        }
+
+        .issue-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .issue-id {
+            font-size: 0.75rem;
+            color: var(--Gray);
+            font-weight: 600;
+        }
+
+        .issue-time {
+            font-size: 0.75rem;
+            color: var(--BlueGray);
+        }
+
+        .dark-mode .issue-time {
+            color: var(--Gray);
+        }
+
+        .badge-type {
+            background-color: var(--LightBlue);
+            color: var(--DarkerMainBlue);
+            border-radius: 6px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .badge-severity {
+            border-radius: 6px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .severity-low { 
+            background: hsl(145, 50%, 88%); 
+            color: hsl(145, 60%, 28%); 
+        }
+
+        .severity-medium   { 
+            background: hsl(45,  90%, 88%); 
+            color: hsl(35,  80%, 30%); 
+        }
+
+        .severity-high { 
+            background: hsl(25,  90%, 88%); 
+            color: hsl(20,  80%, 30%); 
+        }
+
+        .severity-critical { 
+            background: hsl(0,   70%, 90%); 
+            color: hsl(0,   70%, 35%); 
+        }
+
+        .badge-status {
+            border-radius: 6px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .status-open { 
+            background: hsl(225, 80%, 92%); 
+            color: var(--DarkerMainBlue); 
+        }
+
+        .status-inprogress { 
+            background: hsl(30, 80%, 90%);  
+            color: hsl(25, 80%, 30%); 
+        }
+
+        .status-resolved { 
+            background: hsl(145, 50%, 88%); 
+            color: hsl(145, 60%, 28%); 
+        }
+
+        .linked-id {
+            font-size: 0.72rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            background: var(--LightBlue);
+            color: var(--MainBlue);
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .linked-id:hover {
+            background: var(--LowMainBlue);
+        }
+
+        .dark-mode .linked-id {
+            background: var(--MainBlue);
+            color: var(--DarkBlue);
+        }
+
+        .issue-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .action-btn {
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.1s;
+            background-color: var(--MainBlue);
+            color: var(--White);
+        }
+
+        .action-btn:active { 
+            transform: scale(0.97); 
+        }
+
+        .action-btn:hover {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        .dark-mode .action-btn {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--Gray);
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .issue-actions { 
+                display: none; 
+            }
+            .issue-title { 
+                max-width: 200px; 
+            }
+        }
+
+        @media (max-width: 480px) {
+            .search-bar-wrapper,
+            .filters {
+                flex-direction: column;
+            }
+
+            .search-btn,
+            .clear-btn,
+            .filter-select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+    
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/admin/aHome.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links -->
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn"  id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="/main/html/admin/aHome.html">Home</a>
+                    <a href="/main/html/admin/aRequests.html">Requests</a><br>
+                    <a href="/main/html/admin/aJobs.html">Jobs</a><br>
+                    <a href="/main/html/admin/aIssue.html">Issue</a><br>
+                    <a href="/main/html/admin/aOperations.html">Operations</a><br>
+                    <a href="/main/html/admin/aReport.html">Report</a>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/admin/aHome.html">Home</a>
+            <a href="/main/html/admin/aRequests.html">Requests</a><br>
+            <a href="/main/html/admin/aJobs.html">Jobs</a><br>
+            <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            <a href="/main/html/admin/aOperations.html">Operations</a><br>
+            <a href="/main/html/admin/aReport.html">Report</a>
+        </nav>          
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+        
+    </header>
+    <hr>
+
+    <!-- Main Content -->
+    <main>
+        <div class="issues-container">
+
+            <!-- Admin Header -->
+            <div class="admin-header">
+                <h1>Hey Admin!</h1>
+                <p>Manage operational issues efficiently</p>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <div class="stat-number stat-open" id="statOpen">0</div>
+                    <div class="stat-label">Open Issues</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number stat-progress" id="statProgress">0</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number stat-critical" id="statCritical">0</div>
+                    <div class="stat-label">Critical</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number stat-resolved" id="statResolved">0</div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+            </div>
+
+            <!-- Issues Section -->
+            <div class="tickets-section">
+                <div class="section-header">
+                    <h2>Issues <span class="badge" id="totalBadge">0</span></h2>
+                </div>
+
+                <!-- Search -->
+                <div class="search-bar-wrapper">
+                    <input type="text" class="issue-search" id="issueSearch"
+                        placeholder="Search by subject, reporter, or ID…">
+                    <button class="search-btn" onclick="applyFilters()">Search</button>
+                    <button class="clear-btn" id="clearBtn" onclick="clearAll()">Clear</button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters">
+                    <select class="filter-select" id="typeFilter">
+                        <option value="all">All Types</option>
+                        <option value="operational">Operational</option>
+                        <option value="vehicle">Vehicle</option>
+                        <option value="safety">Safety</option>
+                        <option value="technical">Technical</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <select class="filter-select" id="severityFilter">
+                        <option value="all">All Severities</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                    <select class="filter-select" id="statusFilter">
+                        <option value="all">All Status</option>
+                        <option value="open">Open</option>
+                        <option value="inprogress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                    </select>
+                </div>
+
+                <!-- Issue List -->
+                <div class="issues-list" id="issuesList"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/admin/aHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Management</b><br>
+                <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            </div>
+            <div>
+                <b>System Operation</b><br>
+                <a href="/main/html/admin/aProviders.html">Providers</a><br>
+                <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
+                <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <script src="/main/javascript/mainScript.js"></script>
+    <script>
+        //dummy data
+        const ISSUES = [
+            {
+                issueID:        1,
+                requestID:      101,
+                jobID:          201,
+                reportedBy:     "John Tan",
+                assignedAdmin:  null,
+                issueType:      "vehicle",
+                severity:       "high",
+                subject:        "Engine Overheating",
+                description:    "Truck engine overheating during collection route on Jalan Ampang. Driver reports temperature gauge in red zone.",
+                status:         "open",
+                reportedAt:     "2025-06-10T08:23:00",
+                assignedAt:     null,
+                resolvedAt:     null,
+                notes:          null
+            },
+            {
+                issueID:        2,
+                requestID:      102,
+                jobID:          202,
+                reportedBy:     "Ahmad Razif",
+                assignedAdmin:  "Sarah Lee",
+                issueType:      "operational",
+                severity:       "medium",
+                subject:        "Collection Failed",
+                description:    "Collection could not be completed due to locked gate at customer premises. Multiple attempts made.",
+                status:         "inprogress",
+                reportedAt:     "2025-06-09T14:05:00",
+                assignedAt:     "2025-06-09T15:30:00",
+                resolvedAt:     null,
+                notes:          null
+            },
+            {
+                issueID:        3,
+                requestID:      106,
+                jobID:          206,
+                reportedBy:     "Daniel Foo",
+                assignedAdmin:  "Sarah Lee",
+                issueType:      "vehicle",
+                severity:       "high",
+                subject:        "Van Tyre Blowout",
+                description:    "Van tyre blowout on highway causing delay to 3 scheduled collections.",
+                status:         "resolved",
+                reportedAt:     "2025-06-08T07:55:00",
+                assignedAt:     "2025-06-08T08:00:00",
+                resolvedAt:     "2025-06-08T12:00:00",
+                notes:          "Roadside assistance deployed. Collections rescheduled."
+            }
+        ];
+
+        function formatType(type) {
+            const map = { operational:"Operational", vehicle:"Vehicle", safety:"Safety", technical:"Technical", other:"Other" };
+            return map[type] || type;
+        }
+
+        function formatSeverity(sev) {
+            return sev.charAt(0).toUpperCase() + sev.slice(1);
+        }
+
+        function formatStatus(status) {
+            if (status === "inprogress") return "In Progress";
+            return status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        function formatTime(dateStr) {
+            if (!dateStr) return "—";
+            const d = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - d;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHrs  = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            if (diffMins < 60) return diffMins + "m ago";
+            if (diffHrs  < 24) return diffHrs  + "h ago";
+            if (diffDays < 7)  return diffDays + "d ago";
+            return d.toLocaleDateString();
+        }
+
+        function truncate(str, len) {
+            if (!str) return "";
+            return str.length > len ? str.slice(0, len) + "…" : str;
+        }
+
+        function typeInitial(type) {
+            const map = { operational:"OP", vehicle:"VH", safety:"SF", technical:"TC", other:"OT" };
+            return map[type] || "??";
+        }
+
+        function renderIssues(issues) {
+            const list = document.getElementById("issuesList");
+
+            if (!issues.length) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <p>No issues found.</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = issues.map(issue => {
+                const linkedReq = issue.requestID
+                    ? `<a class="linked-id" href="/main/html/admin/aRequestDetail.html?id=${issue.requestID}" onclick="event.stopPropagation()">REQ #${issue.requestID}</a>`
+                    : "";
+                const linkedJob = issue.jobID
+                    ? `<a class="linked-id" href="/main/html/admin/aJobDetail.html?id=${issue.jobID}" onclick="event.stopPropagation()">JOB #${issue.jobID}</a>`
+                    : "";
+
+                return `
+                <div class="issue-item"
+                    data-type="${issue.issueType}"
+                    data-severity="${issue.severity}"
+                    data-status="${issue.status}"
+                    onclick="viewIssue(${issue.issueID})">
+
+                    <div class="issue-content">
+                        <div class="issue-header">
+                            <div class="issue-title">${truncate(issue.subject, 60)}</div>
+                        </div>
+                        <div class="issue-preview">${truncate(issue.description, 90)}</div>
+                        <div class="issue-meta">
+                            <span class="issue-id">#${issue.issueID}</span>
+                            <span class="badge-type">${formatType(issue.issueType)}</span>
+                            <span class="badge-severity severity-${issue.severity}">${formatSeverity(issue.severity)}</span>
+                            <span class="badge-status status-${issue.status}">${formatStatus(issue.status)}</span>
+                            <span class="issue-time">${formatTime(issue.reportedAt)}</span>
+                            ${linkedReq}
+                            ${linkedJob}
+                        </div>
+                    </div>
+
+                    <div class="issue-actions">
+                        <button class="action-btn" onclick="event.stopPropagation(); viewIssue(${issue.issueID})">
+                            View Details
+                        </button>
+                    </div>
+                </div>`;
+            }).join("");
+        }
+
+        function updateStats(issues) {
+            document.getElementById("statOpen").textContent     = issues.filter(i => i.status === "open").length;
+            document.getElementById("statProgress").textContent = issues.filter(i => i.status === "inprogress").length;
+            document.getElementById("statCritical").textContent = issues.filter(i => i.severity === "critical").length;
+            document.getElementById("statResolved").textContent = issues.filter(i => i.status === "resolved").length;
+            document.getElementById("totalBadge").textContent   = issues.length;
+        }
+
+        function applyFilters() {
+            var typeVal     = document.getElementById("typeFilter").value;
+            var severityVal = document.getElementById("severityFilter").value;
+            var statusVal   = document.getElementById("statusFilter").value;
+            var searchVal   = document.getElementById("issueSearch").value.trim().toLowerCase();
+
+            var filtered = ISSUES.filter(function(issue) {
+                var matchType     = typeVal     === "all" || issue.issueType === typeVal;
+                var matchSeverity = severityVal === "all" || issue.severity  === severityVal;
+                var matchStatus   = statusVal   === "all" || issue.status    === statusVal;
+                var matchSearch   = !searchVal  ||
+                    (issue.subject     && issue.subject.toLowerCase().indexOf(searchVal) !== -1)     ||
+                    (issue.description && issue.description.toLowerCase().indexOf(searchVal) !== -1) ||
+                    (issue.reportedBy  && issue.reportedBy.toLowerCase().indexOf(searchVal) !== -1)  ||
+                    String(issue.issueID).indexOf(searchVal) !== -1;
+                return matchType && matchSeverity && matchStatus && matchSearch;
+            });
+
+            renderIssues(filtered);
+            document.getElementById("totalBadge").textContent = filtered.length;
+
+            // show Clear button if anything is active
+            var hasFilters = searchVal || typeVal !== "all" || severityVal !== "all" || statusVal !== "all";
+            document.getElementById("clearBtn").classList.toggle("visible", !!hasFilters);
+        }
+
+        function clearAll() {
+            document.getElementById("issueSearch").value = "";
+            document.getElementById("typeFilter").value = "all";
+            document.getElementById("severityFilter").value = "all";
+            document.getElementById("statusFilter").value = "all";
+            document.getElementById("clearBtn").classList.remove("visible");
+            renderIssues(ISSUES);
+            document.getElementById("totalBadge").textContent = ISSUES.length;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            updateStats(ISSUES);
+            renderIssues(ISSUES);
+
+            // Search triggers on button click or Enter key
+            document.getElementById("issueSearch").addEventListener("keydown", function(e) {
+                if (e.key === "Enter") applyFilters();
+            });
+            document.getElementById("typeFilter").addEventListener("change", applyFilters);
+            document.getElementById("severityFilter").addEventListener("change", applyFilters);
+            document.getElementById("statusFilter").addEventListener("change", applyFilters);
+        });
+
+        function viewIssue(id) {
+            window.location.href = `/main/html/admin/aIssueDetail.html?id=${id}`;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            updateStats(ISSUES);
+            renderIssues(ISSUES);
+
+            document.getElementById("typeFilter").addEventListener("change", applyFilters);
+            document.getElementById("severityFilter").addEventListener("change", applyFilters);
+            document.getElementById("statusFilter").addEventListener("change", applyFilters);
+        });
+    </script>
+</body>
+</html>

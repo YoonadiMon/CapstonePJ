@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Issue #1 - AfterVolt</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="/main/style/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <style>
+        .detail-container {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .page-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: none;
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--Gray);
+            cursor: pointer;
+            text-decoration: none;
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .back-btn:hover {
+            border-color: var(--MainBlue);
+            color: var(--MainBlue);
+        }
+
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-color);
+        }
+
+        .page-title span {
+            color: var(--Gray);
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        .status-banner {
+            border-radius: 10px;
+            padding: 0.75rem 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-banner.banner-open {
+            background: var(--LowMainBlue);
+            color: var(--text-color);
+            border: 1px solid var(--MainBlue);
+        }
+
+        .status-banner.banner-assigned {
+            background: var(--sec-bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--BlueGray);
+        }
+
+        .card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 14px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--BlueGray);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dark-mode .card-title {
+            color: var(--Gray);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .info-grid { 
+                grid-template-columns: 1fr; 
+            }
+        }
+
+        .info-grid.full .info-field {
+            grid-column: 1 / -1;
+        }
+
+        .info-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .info-field.span-full {
+            grid-column: 1 / -1;
+        }
+
+        .info-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--Gray);
+        }
+
+        .dark-mode .info-label {
+            color: var(--BlueGray);
+        }
+
+        .info-value {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .info-value.muted {
+            color: var(--Gray);
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        .badge-severity, 
+        .badge-status, 
+        .badge-type, 
+        .badge-yn {
+            display: inline-block;
+            border-radius: 6px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .severity-low { 
+            background: hsl(145, 50%, 88%); 
+            color: hsl(145, 60%, 28%); 
+        }
+
+        .severity-medium   { 
+            background: hsl(45,  90%, 88%); 
+            color: hsl(35,  80%, 30%); 
+        }
+
+        .severity-high { 
+            background: hsl(25,  90%, 88%); 
+            color: hsl(20,  80%, 30%); 
+        }
+
+        .severity-critical { 
+            background: hsl(0,   70%, 90%); 
+            color: hsl(0,   70%, 35%); 
+        }
+
+        .status-open { 
+            background: hsl(225, 80%, 92%); 
+            color: var(--DarkerMainBlue); 
+        }
+
+        .status-inprogress { 
+            background: hsl(30, 80%, 90%);  
+            color: hsl(25, 80%, 30%); 
+        }
+
+        .status-resolved { 
+            background: hsl(145, 50%, 88%); 
+            color: hsl(145, 60%, 28%); 
+        }
+
+        .badge-type {
+            background-color: var(--DarkBlue);
+            color: var(--White);
+        }
+
+        .badge-yes { 
+            background: hsl(145, 50%, 88%); 
+            color: hsl(145, 60%, 28%); 
+        }
+
+        .badge-no { 
+            background: hsl(0, 60%, 92%);
+            color: red; 
+        }
+
+        .linked-id {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            color: var(--MainBlue);
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .linked-id:hover { 
+            text-decoration: underline; 
+        }
+
+        .assign-banner {
+            background: var(--bg-color);
+            border: 1px solid var(--MainBlue);
+            border-radius: 12px;
+            padding: 1.1rem 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .assign-banner-text strong {
+            display: block;
+            font-size: 0.95rem;
+            color: var(--MainBlue);
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+        }
+
+        .assign-banner-text p {
+            font-size: 0.8rem;
+            color: var(--Gray);
+        }
+
+        .dark-mode .assign-banner-text p {
+            color: var(--BlueGray);
+        }
+
+        .action-section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--Gray);
+            margin-bottom: 0.75rem;
+        }
+
+        .action-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .section-divider {
+            height: 1px;
+            background-color: var(--BlueGray);
+            margin: 1.25rem 0;
+            opacity: 0.5;
+            border: none;
+        }
+
+        .locked-msg {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            color: var(--Gray);
+        }
+
+        .locked-msg p {
+            font-size: 0.9rem;
+        }
+
+        .locked-msg img {
+            width: 2.5rem;
+            height: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        button {
+            font-size: 0.83rem;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        button:active { 
+            transform: scale(0.97); 
+        }
+
+        .dark-mode .c-btn-primary {
+            background: var(--DarkerMainBlue);
+            color: var(--White);
+        }
+
+        .c-btn-secondary { 
+            border: 1px solid var(--BlueGray); 
+        }
+
+        .btn-danger { 
+            background: hsl(0, 70%, 90%); 
+            color: red; 
+        }
+
+        .btn-danger:hover { 
+            background: hsl(0, 65%, 84%); 
+        }
+
+        .btn-warning { 
+            background: hsl(35, 90%, 90%); 
+            color: hsl(30, 80%, 30%); 
+        }
+
+        .btn-warning:hover { 
+            background: hsl(35, 85%, 83%); 
+        }
+
+        .btn-success { 
+            background: hsl(145, 50%, 88%); 
+            color: hsl(145, 55%, 28%); 
+        }
+
+        .btn-success:hover { 
+            background: hsl(145, 48%, 80%); 
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--Gray);
+        }
+
+        .form-select, .form-textarea {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--MainBlue);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 0.25rem;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active { 
+            display: flex; 
+        }
+
+        .modal {
+            background: var(--bg-color);
+            border-radius: 14px;
+            padding: 1.75rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            animation: modalIn 0.18s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: translateY(16px) scale(0.97); opacity: 0; }
+            to   { transform: none; opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 1.1rem;
+        }
+
+        .modal-desc {
+            font-size: 0.85rem;
+            color: var(--Gray);
+            margin-bottom: 1rem;
+        }
+
+        .required-star {
+            color: red;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1.25rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--DarkBlue);
+            color: var(--White);
+            padding: 0.7rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            z-index: 3000;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+    
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="/main/html/admin/aHome.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links -->
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn"  id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="/main/html/admin/aHome.html">Home</a>
+                    <a href="/main/html/admin/aRequests.html">Requests</a><br>
+                    <a href="/main/html/admin/aJobs.html">Jobs</a><br>
+                    <a href="/main/html/admin/aIssue.html">Issue</a><br>
+                    <a href="/main/html/admin/aOperations.html">Operations</a><br>
+                    <a href="/main/html/admin/aReport.html">Report</a>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/admin/aHome.html">Home</a>
+            <a href="/main/html/admin/aRequests.html">Requests</a><br>
+            <a href="/main/html/admin/aJobs.html">Jobs</a><br>
+            <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            <a href="/main/html/admin/aOperations.html">Operations</a><br>
+            <a href="/main/html/admin/aReport.html">Report</a>
+        </nav>          
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+        
+    </header>
+    <hr>
+
+    <!-- Main Content -->
+    <main>
+        <div class="detail-container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="page-header-left">
+                    <a href="/main/html/admin/aIssue.html" class="back-btn">
+                        ← Back to Home
+                    </a>
+                    <div class="page-title">Issue <span>#1</span></div>
+                </div>
+            </div>
+
+            <!-- Status Banner: OPEN -->
+            <div id="statusBanner" class="status-banner banner-open">
+                This issue is <span class='badge-status status-open'>Open</span> and has not been assigned to any admin yet.
+            </div>
+
+            <!-- Take On Issue Banner -->
+            <div class="assign-banner" id="assignBanner">
+                <div class="assign-banner-text">
+                    <strong>This issue is unassigned</strong>
+                    <p>Take ownership to unlock actions and begin resolving.</p>
+                </div>
+                <button class="c-btn-primary" onclick="takeOnIssue()">
+                    Take On This Issue
+                </button>
+            </div>
+
+            <!-- Issue Information -->
+            <div class="card">
+                <div class="card-title">Issue Information</div>
+                <div class="info-grid">
+                    <div class="info-field">
+                        <span class="info-label">Issue ID</span>
+                        <span class="info-value">#1</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Issue Type</span>
+                        <span class="info-value"><span class="badge-type">Vehicle</span></span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Severity</span>
+                        <span class="info-value"><span class="badge-severity severity-high">High</span></span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Status</span>
+                        <span class="info-value"><span class="badge-status status-open" id="statusBadge">Open</span></span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Reported By</span>
+                        <span class="info-value">John Tan</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Reported At</span>
+                        <span class="info-value">10 Jun 2025, 8:23 AM</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Assigned Admin</span>
+                        <span class="info-value muted" id="assignedAdminDisplay">Unassigned</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Assigned At</span>
+                        <span class="info-value muted" id="assignedAtDisplay">—</span>
+                    </div>
+                    <div class="info-field span-full">
+                        <span class="info-label">Subject</span>
+                        <span class="info-value">Engine Overheating</span>
+                    </div>
+                    <div class="info-field span-full">
+                        <span class="info-label">Description</span>
+                        <span class="info-value">Truck engine overheating during collection route on Jalan Ampang. Driver reports temperature gauge in red zone.</span>
+                    </div>
+                    <div class="info-field span-full">
+                        <span class="info-label">Resolution Notes</span>
+                        <span class="info-value muted">No resolution notes yet.</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Resolved By</span>
+                        <span class="info-value muted">—</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Resolved At</span>
+                        <span class="info-value muted">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Linked Job & Request Info -->
+            <div class="card">
+                <div class="card-title">Linked Job & Request Info</div>
+                <div class="info-grid">
+                    <div class="info-field">
+                        <span class="info-label">Linked Job</span>
+                        <span class="info-value">
+                            <a class="linked-id" href="/main/html/admin/aJobs.html">JOB #201</a>
+                        </span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Linked Request</span>
+                        <span class="info-value">
+                            <a class="linked-id" href="/main/html/admin/aRequests.html">REQ #101</a>
+                        </span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Current Job Status</span>
+                        <span class="info-value"><span class="badge-status status-open">In Progress</span></span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Assigned Collector</span>
+                        <span class="info-value">Ahmad Razif</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Assigned Vehicle</span>
+                        <span class="info-value">Truck WXY 1234 (3-ton)</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Assigned Centre</span>
+                        <span class="info-value">PJ Recycling Centre</span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Pickup Completed</span>
+                        <span class="info-value"><span class="badge-yn badge-no">No</span></span>
+                    </div>
+                    <div class="info-field">
+                        <span class="info-label">Drop-off Completed</span>
+                        <span class="info-value"><span class="badge-yn badge-no">No</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Action Panel (locked until taken on) -->
+            <div class="card" id="actionPanel">
+                <div class="card-title">Admin Action Panel</div>
+
+                <!-- Locked overlay message shown before take-on -->
+                <div id="lockedMsg" class="locked-msg">
+                    <img src="/main/assets/images/lock-icon-gray.svg" alt="Lock">
+                    <p>Take on this issue to unlock admin actions.</p>
+                </div>
+
+                <!-- Action content (shown after take-on) -->
+                <div id="actionContent" class="hidden">
+
+                    <!-- Pickup NOT completed -->
+                    <div class="action-section-label">Pickup Not Yet Completed</div>
+                    <div class="action-group">
+                        <button class="c-btn-secondary" onclick="openModal('modalReassignCollector')">Reassign Collector</button>
+                        <button class="c-btn-secondary" onclick="openModal('modalReassignVehicle')">Reassign Vehicle</button>
+                        <button class="btn-warning" onclick="openModal('modalReschedule')">Reschedule Pickup</button>
+                        <button class="btn-danger" onclick="openModal('modalCancelJob')">Cancel Job</button>
+                    </div>
+
+                    <hr class="section-divider">
+
+                    <div class="form-group">
+                        <label class="form-label">Admin Notes</label>
+                        <textarea class="form-textarea" id="adminNotes" placeholder="Add notes about actions taken or observations..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="c-btn-primary" onclick="saveChanges()">Save Changes</button>
+                        <button class="btn-success" onclick="openModal('modalMarkResolved')">Mark as Resolved</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/admin/aHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Management</b><br>
+                <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            </div>
+            <div>
+                <b>System Operation</b><br>
+                <a href="/main/html/admin/aProviders.html">Providers</a><br>
+                <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
+                <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <!-- Reassign Collector -->
+    <div class="modal-overlay" id="modalReassignCollector">
+        <div class="modal">
+            <div class="modal-title">Reassign Collector</div>
+            <div class="form-group">
+                <label class="form-label">Select New Collector</label>
+                <select class="form-select">
+                    <option value="">-- Select Collector --</option>
+                    <option>Lim Wei Kang</option>
+                    <option>Nurul Huda</option>
+                    <option>Raj Kumar</option>
+                    <option>Siti Aminah</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="c-btn-secondary c-btn-small" onclick="closeModal('modalReassignCollector')">Cancel</button>
+                <button class="c-btn-primary c-btn-small" onclick="confirmAction('modalReassignCollector', 'Collector reassigned successfully.')">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reassign Vehicle -->
+    <div class="modal-overlay" id="modalReassignVehicle">
+        <div class="modal">
+            <div class="modal-title">Reassign Vehicle</div>
+            <div class="form-group">
+                <label class="form-label">Select New Vehicle</label>
+                <select class="form-select">
+                    <option value="">-- Select Vehicle --</option>
+                    <option>Van ABC 5678 (1-ton)</option>
+                    <option>Lorry DEF 9012 (5-ton)</option>
+                    <option>Truck GHI 3456 (3-ton)</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="c-btn-secondary c-btn-small" onclick="closeModal('modalReassignVehicle')">Cancel</button>
+                <button class="c-btn-primary c-btn-small" onclick="confirmAction('modalReassignVehicle', 'Vehicle reassigned successfully.')">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reschedule Pickup -->
+    <div class="modal-overlay" id="modalReschedule">
+        <div class="modal">
+            <div class="modal-title">Reschedule Pickup</div>
+            <div class="form-group">
+                <label class="form-label">New Pickup Date & Time</label>
+                <input type="datetime-local" class="form-select">
+            </div>
+            <div class="modal-actions">
+                <button class="c-btn-secondary c-btn-small" onclick="closeModal('modalReschedule')">Cancel</button>
+                <button class="c-btn-primary c-btn-small" onclick="confirmAction('modalReschedule', 'Pickup rescheduled successfully.')">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Job -->
+    <div class="modal-overlay" id="modalCancelJob">
+        <div class="modal">
+            <div class="modal-title">Cancel Job #201</div>
+            <div class="form-group">
+                <label class="form-label">Reason for Cancellation</label>
+                <textarea class="form-textarea" placeholder="Describe why this job is being cancelled..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="c-btn-secondary c-btn-small" onclick="closeModal('modalCancelJob')">Back</button>
+                <button class="btn-danger c-btn-small" onclick="confirmAction('modalCancelJob', 'Job #201 has been cancelled.')">Confirm Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mark as Resolved -->
+    <div class="modal-overlay" id="modalMarkResolved">
+        <div class="modal">
+            <div class="modal-title">Mark Issue as Resolved</div>
+            <p class="modal-desc">
+                Please provide resolution notes before marking this issue as resolved.
+            </p>
+            <div class="form-group">
+                <label class="form-label">Resolution Notes <span class="required-star">*</span></label>
+                <textarea class="form-textarea" id="resolveNotes" placeholder="Describe how this issue was resolved..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="c-btn-secondary c-btn-small" onclick="closeModal('modalMarkResolved')">Cancel</button>
+                <button class="btn-success c-btn-small" onclick="markResolved()">Mark Resolved</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="/main/javascript/mainScript.js"></script>
+    <script>
+        // dummy data
+        const ISSUE = {
+            issueID:       1,
+            requestID:     101,
+            jobID:         201,
+            reportedBy:    "John Tan",
+            assignedAdmin: null,
+            issueType:     "vehicle",
+            severity:      "high",
+            subject:       "Engine Overheating",
+            description:   "Truck engine overheating during collection route on Jalan Ampang. Driver reports temperature gauge in red zone.",
+            status:        "open",
+            reportedAt:    "2025-06-10T08:23:00",
+            assignedAt:    null,
+            resolvedAt:    null,
+            notes:         null
+        };
+
+        const CURRENT_ADMIN = "Sarah Lee";
+        var isAssigned = ISSUE.assignedAdmin !== null;
+
+        // Initialize page - ensure it starts in the correct state
+        document.addEventListener('DOMContentLoaded', function() {
+            // Reset to initial state on page load
+            resetToInitialState();
+        });
+
+        function resetToInitialState() {
+            // Reset the ISSUE data
+            ISSUE.assignedAdmin = null;
+            ISSUE.assignedAt = null;
+            ISSUE.status = "open";
+            isAssigned = false;
+            
+            // Show assign banner
+            document.getElementById("assignBanner").style.display = "flex";
+            
+            // Hide action content, show locked message
+            document.getElementById("lockedMsg").style.display = "block";
+            document.getElementById("actionContent").style.display = "none";
+            
+            // Reset assigned admin display
+            document.getElementById("assignedAdminDisplay").textContent = "Unassigned";
+            document.getElementById("assignedAdminDisplay").classList.add("muted");
+            
+            // Reset assigned at display
+            document.getElementById("assignedAtDisplay").textContent = "—";
+            document.getElementById("assignedAtDisplay").classList.add("muted");
+            
+            // Reset status badge
+            var badge = document.getElementById("statusBanner");
+            badge.textContent = "Open";
+            badge.className = "badge-status status-open";
+            
+            // Reset status banner to original open message
+            var banner = document.getElementById("statusBanner");
+            banner.className = "status-banner banner-open";
+            banner.innerHTML = "This issue is <span class='badge-status status-open'>Open</span> and has not been assigned to any admin yet.";
+            
+            // Clear any notes
+            document.getElementById("adminNotes").value = "";
+        }
+
+        function takeOnIssue() {
+            isAssigned = true;
+            ISSUE.assignedAdmin = CURRENT_ADMIN;
+            ISSUE.assignedAt    = new Date().toISOString();
+            ISSUE.status = "inprogress"; 
+
+            // Hide assign banner, unlock actions
+            document.getElementById("assignBanner").style.display  = "none";
+            document.getElementById("lockedMsg").style.display     = "none";
+            document.getElementById("actionContent").style.display = "block";
+
+            // Update assigned admin fields
+            document.getElementById("assignedAdminDisplay").textContent = CURRENT_ADMIN;
+            document.getElementById("assignedAdminDisplay").classList.remove("muted");
+
+            var now = new Date();
+            document.getElementById("assignedAtDisplay").textContent =
+                now.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" }) +
+                ", " + now.toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" });
+            document.getElementById("assignedAtDisplay").classList.remove("muted");
+
+            // Update status badge to In Progress
+            var badge = document.getElementById("statusBadge");
+            badge.textContent = "In Progress";
+            badge.className = "badge-status status-inprogress";
+            
+            // Update status banner with the new message
+            var banner = document.getElementById("statusBanner");
+            banner.classList.remove("banner-open");
+            banner.classList.add("banner-assigned");
+            banner.innerHTML = 'This issue is <span class="badge-status status-inprogress">In Progress</span> managed by ' + CURRENT_ADMIN + '.';
+
+            showToast("You have taken on Issue #1. Status changed to In Progress.");
+        }
+
+        function openModal(id)  { document.getElementById(id).classList.add("active"); }
+        function closeModal(id) { document.getElementById(id).classList.remove("active"); }
+
+        function confirmAction(modalId, message) {
+            closeModal(modalId);
+            showToast(message);
+        }
+
+        function markResolved() {
+            var notes = document.getElementById("resolveNotes").value.trim();
+            if (!notes) {
+                showToast("Please add resolution notes before resolving.");
+                return;
+            }
+            closeModal("modalMarkResolved");
+            
+            // Update resolved info
+            document.querySelector('.info-field:has(.info-label:contains("Resolved By")) .info-value').textContent = CURRENT_ADMIN;
+            document.querySelector('.info-field:has(.info-label:contains("Resolved At")) .info-value').textContent = 
+                new Date().toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" }) +
+                ", " + new Date().toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" });
+            
+            showToast("Issue #1 marked as resolved.");
+        }
+
+        function saveChanges() {
+            showToast("Changes saved successfully.");
+        }
+
+        function showToast(msg) {
+            var t = document.getElementById("toast");
+            t.textContent = msg;
+            t.classList.add("show");
+            setTimeout(function() { t.classList.remove("show"); }, 3000);
+        }
+    </script>
+</body>
+</html>

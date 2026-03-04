@@ -22,17 +22,23 @@
         .back-button {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-            color: var(--MainBlue);
-            text-decoration: none;
+            gap: 0.5rem;
+            background: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
             font-weight: 500;
-            transition: color 0.3s;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
         }
 
         .back-button:hover {
-            color: var(--DarkerBlue);
-            text-decoration: underline;
+            background: var(--sec-bg-color);
+            border-color: var(--MainBlue);
         }
 
         .page-header {
@@ -56,7 +62,7 @@
             color: var(--BlueGray);
         }
 
-        .search-add-section {
+        .search-section {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -106,18 +112,6 @@
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
-        }
-        
-        .add-btn{
-            padding: 0.5rem 1.5rem;
-            background: var(--MainBlue);
-            color: var(--White);
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            align-self: stretch;
         }
 
         .users-table-container {
@@ -173,15 +167,6 @@
             background: var(--Gray);
         }
 
-        .users-table tbody tr td a {
-            text-decoration: none;
-        }
-
-        .users-table tbody tr td a:hover {
-            text-decoration: underline;
-            color: var(--BlueGray);
-        }
-
         .user-info {
             display: flex;
             align-items: center;
@@ -232,13 +217,11 @@
         }
 
         .dark-mode .search-btn,
-        .dark-mode .add-btn, 
         .dark-mode .action-btn {
             background-color: var(--DarkerMainBlue);
         }
 
         .search-btn:hover,
-        .add-btn:hover, 
         .action-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px var(--BlueGray);
@@ -246,13 +229,246 @@
         }
 
         .dark-mode .search-btn:hover,
-        .dark-mode .add-btn:hover, 
         .dark-mode .action-btn:hover {
             box-shadow: 0 4px 12px var(--Gray);
         }
 
         .action-btn.delete-btn {
             background: red;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            background: var(--bg-color);
+        }
+
+        .alert-success {
+            color: green;
+            border: 1px solid green;
+        }
+
+        .alert-error {
+            color: red;
+            border: 1px solid red;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--Gray);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal h2 {
+            font-size: 1.6rem;
+            color: var(--text-color);
+            margin-bottom: 1.5rem;
+            padding-right: 2rem;
+        }
+
+        .modal h2.danger { 
+            color: red; 
+        }
+
+        .modal-small { 
+            max-width: 480px; 
+        }
+
+        .view-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .view-field label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--BlueGray);
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        .view-field span {
+            font-size: 1rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .view-field.full { 
+            grid-column: 1 / -1; 
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-field { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 0.4rem; 
+        }
+
+        .form-field.full { 
+            grid-column: 1 / -1; 
+        }
+
+        .form-field label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--BlueGray);
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            background: var(--bg-color);
+            transition: border 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            border-color: var(--MainBlue);
+            box-shadow: 0 0 0 3px var(--LightBlue);
+            outline: none;
+        }
+
+        .form-field textarea { 
+            resize: vertical; 
+            min-height: 80px; 
+        }
+
+        .form-field select { 
+            padding-left: 0.5rem; 
+        }
+
+        .delete-info-box {
+            background: var(--LightBlue);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .dark-mode .delete-info-box { 
+            background: var(--LowMainBlue); 
+        }
+
+        .delete-info-box strong { 
+            color: var(--MainBlue); 
+        }
+
+        .delete-info-box .info-name { 
+            color: var(--text-color); 
+            font-weight: 600; 
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+
+        .btn-modal {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-cancel {
+            background: var(--BlueGray);
+            color: var(--text-color);
+        }
+
+        .btn-cancel:hover { 
+            background: var(--Gray); 
+        }
+
+        .btn-confirm-delete {
+            background: red;
+            color: var(--White);
+        }
+
+        .btn-confirm-delete:hover {
+            background: red;
+            transform: translateY(-2px);
+        }
+
+        .btn-save {
+            background: var(--MainBlue);
+            color: var(--White);
+        }
+
+        .btn-save:hover {
+            background: var(--DarkerBlue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--BlueGray);
+        }
+
+        .dark-mode .btn-save { 
+            background: var(--DarkerMainBlue); 
         }
 
         /* Responsive Design */
@@ -271,17 +487,13 @@
                 font-size: 2rem;
             }
             
-            .search-add-section {
+            .search-section {
                 flex-direction: column;
                 align-items: stretch;
             }
 
             .search-form {
                 flex-direction: column;
-            }
-            
-            .add-btn {
-                width: 100%;
             }
 
             .users-table-container {
@@ -290,6 +502,18 @@
 
             .users-table {
                 min-width: 800px;
+            }
+
+            .view-grid, .form-grid { 
+                grid-template-columns: 1fr; 
+            }
+
+            .view-field.full, .form-field.full { 
+                grid-column: 1; 
+            }
+
+            .modal { 
+                padding: 1.5rem; 
             }
         }
     </style>
@@ -370,16 +594,13 @@
                 <p class="user-count">Total Providers:</p>
             </div>
 
-            <div class="search-add-section">
+            <div class="search-section">
                 <form method="GET" class="search-form">
                     <input type="text" name="search" class="search-input" 
                         placeholder="Search by name, username, email, or phone..." 
                         value="" >
                     <button type="submit" class="search-btn">Search</button>
                 </form>
-                <button class="add-btn" onclick="">
-                    + Add New Provider
-                </button>
             </div>
 
             <div class="users-table-container">
@@ -397,27 +618,26 @@
                     <tbody>
                         <tr>
                             <td class="left">
-                                <div class="user-info"> 
+                                <div class="user-info">
                                     <div class="user-details">
-                                        <h4>Full Name</h4>
-                                        <p>@username</p>
+                                        <h4>Ahmad Razif</h4>
+                                        <p>@ahmad_razif</p>
                                     </div>
                                 </div>
-                                </a>
                             </td>
-                            <td>namename@email.com</td>
+                            <td>ahmad.razif@email.com</td>
                             <td>+60123456789</td>
                             <td>Kuala Lumpur</td>
                             <td>23/02/2026</td>
                             <td>
-                                <div  class="action-btns">
-                                    <button class="action-btn" onclick="">
+                                <div class="action-btns">
+                                    <button class="action-btn" onclick="openViewModal(0)" title="View">
                                         <img src="/main/assets/images/view-icon-white.svg" alt="View">
                                     </button>
-                                    <button class="action-btn" onclick="">
+                                    <button class="action-btn" onclick="openEditModal(0)" title="Edit">
                                         <img src="/main/assets/images/edit-icon-white.svg" alt="Edit">
                                     </button>
-                                    <button class="action-btn delete-btn" onclick="">
+                                    <button class="action-btn delete-btn" onclick="openDeleteModal(0)" title="Delete">
                                         <img src="/main/assets/images/delete-icon-white.svg" alt="Delete">
                                     </button>
                                 </div>
@@ -425,27 +645,26 @@
                         </tr>
                         <tr>
                             <td class="left">
-                                <div class="user-info"> 
+                                <div class="user-info">
                                     <div class="user-details">
-                                        <h4>Full Name</h4>
-                                        <p>@username</p>
+                                        <h4>Siti Nurul</h4>
+                                        <p>@siti_nurul</p>
                                     </div>
                                 </div>
-                                </a>
                             </td>
-                            <td>namename@email.com</td>
-                            <td>+60123456789</td>
-                            <td>Kuala Lumpur</td>
-                            <td>23/02/2026</td>
+                            <td>siti.nurul@email.com</td>
+                            <td>+60197654321</td>
+                            <td>Selangor</td>
+                            <td>21/02/2026</td>
                             <td>
                                 <div class="action-btns">
-                                    <button class="action-btn" onclick="">
+                                    <button class="action-btn" onclick="openViewModal(1)" title="View">
                                         <img src="/main/assets/images/view-icon-white.svg" alt="View">
                                     </button>
-                                    <button class="action-btn" onclick="">
+                                    <button class="action-btn" onclick="openEditModal(1)" title="Edit">
                                         <img src="/main/assets/images/edit-icon-white.svg" alt="Edit">
                                     </button>
-                                    <button class="action-btn delete-btn" onclick="">
+                                    <button class="action-btn delete-btn" onclick="openDeleteModal(1)" title="Delete">
                                         <img src="/main/assets/images/delete-icon-white.svg" alt="Delete">
                                     </button>
                                 </div>
@@ -503,6 +722,224 @@
         </section>
     </footer>
 
+    <!-- View Modal -->
+     <div class="modal-overlay" id="viewModal">
+        <div class="modal">
+            <h2>Provider Details</h2>
+            <div class="view-grid">
+                <div class="view-field">
+                    <label>Full Name</label>
+                    <span id="view-fullname">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Username</label>
+                    <span id="view-username">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Email</label>
+                    <span id="view-email">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Phone</label>
+                    <span id="view-phone">—</span>
+                </div>
+                <div class="view-field">
+                    <label>State</label>
+                    <span id="view-state">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Postcode</label>
+                    <span id="view-postcode">—</span>
+                </div>
+                <div class="view-field full">
+                    <label>Address</label>
+                    <span id="view-address">—</span>
+                </div>
+                <div class="view-field full">
+                    <label>Points</label>
+                    <span id="view-points">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Created At</label>
+                    <span id="view-createdAt">—</span>
+                </div>
+                <div class="view-field">
+                    <label>Last Login</label>
+                    <span id="view-lastLogin">—</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal btn-cancel" onclick="closeModal('viewModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+     <!-- Edit Modal -->
+     <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h2>Edit Provider</h2>
+            <form id="editForm">
+                <input type="hidden" id="edit-id">
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="edit-fullname">Full Name</label>
+                        <input type="text" id="edit-fullname" name="fullname" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-username">Username</label>
+                        <input type="text" id="edit-username" name="username" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-email">Email</label>
+                        <input type="email" id="edit-email" name="email" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-phone">Phone</label>
+                        <input type="text" id="edit-phone" name="phone" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-state">State</label>
+                        <select id="edit-state" name="state">
+                            <option value="">-- Select State --</option>
+                            <option>Kuala Lumpur</option>
+                            <option>Selangor</option>
+                            <option>Penang</option>
+                            <option>Johor</option>
+                            <option>Perak</option>
+                            <option>Kedah</option>
+                            <option>Kelantan</option>
+                            <option>Terengganu</option>
+                            <option>Pahang</option>
+                            <option>Negeri Sembilan</option>
+                            <option>Melaka</option>
+                            <option>Sabah</option>
+                            <option>Sarawak</option>
+                            <option>Putrajaya</option>
+                            <option>Labuan</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit-postcode">Postcode</label>
+                        <input type="text" id="edit-postcode" name="postcode">
+                    </div>
+                    <div class="form-field full">
+                        <label for="edit-address">Address</label>
+                        <textarea id="edit-address" name="address"></textarea>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-modal btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+                    <!-- PHP: name="edit_provider" -->
+                    <button type="submit" class="btn-modal btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+     <div class="modal-overlay" id="deleteModal">
+        <div class="modal modal-small">
+            <h2 class="danger">Confirm Deletion</h2>
+            <p>Are you sure you want to delete this provider? This action <strong>cannot be undone</strong>.</p>
+            <div class="delete-info-box">
+                <strong>Provider: </strong><span class="info-name" id="delete-name">—</span><br>
+                <strong>Username: </strong><span class="info-name" id="delete-username">—</span>
+            </div>
+            <form id="deleteForm">
+                <input type="hidden" id="delete-id">
+                <div class="modal-buttons">
+                    <button type="button" class="btn-modal btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                    <button type="submit" class="btn-modal btn-confirm-delete">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/main/javascript/mainScript.js"></script>
+    <script>
+        // dummy data
+        const providers = [
+            {
+                id: 1,
+                fullname:  'Ahmad Razif',
+                username:  'ahmad_razif',
+                email:     'ahmad.razif@email.com',
+                phone:     '+60123456789',
+                state:     'Kuala Lumpur',
+                postcode:  '50450',
+                address:   'No. 12, Jalan Bukit Bintang, 50450 Kuala Lumpur',
+                points:    120,
+                createdAt: '01/01/2025',
+                lastLogin: '23/02/2026'
+            },
+            {
+                id: 2,
+                fullname:  'Siti Nurul',
+                username:  'siti_nurul',
+                email:     'siti.nurul@email.com',
+                phone:     '+60197654321',
+                state:     'Selangor',
+                postcode:  '40150',
+                address:   'No. 5, Jalan SS 2/6, 47300 Petaling Jaya, Selangor',
+                points:    85,
+                createdAt: '15/03/2025',
+                lastLogin: '21/02/2026'
+            }
+        ];
+
+        function openModal(id) {
+            const modalElement = document.getElementById(id);
+            modalElement.classList.add('active');
+            document.body.classList.add('stopScroll');
+            const modalContent = modalElement.querySelector('.modal');
+            if (modalContent) {
+                modalContent.scrollTop = 0;
+        }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.classList.remove('stopScroll');
+        }
+        
+        // View
+        function openViewModal(index) {
+            const p = providers[index];
+            document.getElementById('view-fullname').textContent = p.fullname;
+            document.getElementById('view-username').textContent = '@' + p.username;
+            document.getElementById('view-email').textContent = p.email;
+            document.getElementById('view-phone').textContent = p.phone;
+            document.getElementById('view-state').textContent = p.state;
+            document.getElementById('view-postcode').textContent = p.postcode;
+            document.getElementById('view-address').textContent = p.address;
+            document.getElementById('view-points').textContent = p.points + ' pts';
+            document.getElementById('view-createdAt').textContent = p.createdAt;
+            document.getElementById('view-lastLogin').textContent = p.lastLogin;
+            openModal('viewModal');
+        }
+
+        // edit
+        function openEditModal(index) {
+            const p = providers[index];
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('edit-fullname').value = p.fullname;
+            document.getElementById('edit-username').value = p.username;
+            document.getElementById('edit-email').value = p.email;
+            document.getElementById('edit-phone').value = p.phone;
+            document.getElementById('edit-state').value = p.state;
+            document.getElementById('edit-postcode').value = p.postcode;
+            document.getElementById('edit-address').value = p.address;
+            openModal('editModal');
+        }
+
+        // delete
+        function openDeleteModal(index) {
+            const p = providers[index];
+            document.getElementById('delete-id').value = p.id;
+            document.getElementById('delete-name').textContent = p.fullname;
+            document.getElementById('delete-username').textContent = '@' + p.username;
+            openModal('deleteModal');
+        }
+    </script>
 </body>
 </html>

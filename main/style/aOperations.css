@@ -1,0 +1,746 @@
+.operations-main {
+    margin: 1rem 2rem;
+    padding: 0 2rem;
+    max-width: 1600px;
+    width: calc(100% - 4rem);
+    align-self: center;
+}
+
+.ops-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+}
+
+.ops-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 0.25rem 0;
+}
+
+.ops-breadcrumb {
+    color: var(--Gray);
+    font-size: 0.9rem;
+}
+
+.ops-breadcrumb .current {
+    color: var(--MainBlue);
+    font-weight: 500;
+}
+
+.ops-schedule-container {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 1000px) {
+    .ops-schedule-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ops-requests-queue {
+    background-color: var(--sec-bg-color);
+    border-radius: 28px;
+    padding: 1.5rem;
+    box-shadow: 0 6px 14px var(--shadow-color);
+    height: fit-content;
+}
+
+.queue-header {
+    margin-bottom: 1.5rem;
+}
+
+.queue-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.queue-actions {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.ops-filter-select {
+    padding: 0.6rem 1rem;
+    border-radius: 40px;
+    border: 1px solid var(--BlueGray);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    outline: none;
+    min-width: 150px;
+}
+
+.ops-search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.6rem 1rem;
+    border-radius: 40px;
+    border: 1px solid var(--BlueGray);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.ops-filter-select:focus,
+.ops-search-input:focus {
+    border-color: var(--MainBlue);
+    box-shadow: 0 0 0 2px var(--LowMainBlue);
+}
+
+.request-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.request-card {
+    background-color: var(--bg-color);
+    border-radius: 20px;
+    padding: 1.2rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+.request-card:hover {
+    border-color: var(--MainBlue);
+    box-shadow: 0 6px 12px var(--shadow-color);
+}
+
+.request-card.selected {
+    border: 2px solid var(--MainBlue);
+    background-color: var(--LightBlue);
+}
+
+.dark-mode .request-card.selected {
+    background-color: var(--DarkBlue);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+}
+
+.request-id {
+    font-weight: 700;
+    color: var(--MainBlue);
+    font-size: 1rem;
+}
+
+.request-urgent {
+    background-color: #ff4757;
+    color: white;
+    padding: 0.2rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.card-body {
+    margin-bottom: 1rem;
+}
+
+.provider-name {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.3rem;
+}
+
+.e-waste-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.5rem 0;
+}
+
+.item-chip {
+    background-color: var(--LowMainBlue);
+    color: var(--text-color);
+    padding: 0.2rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--Gray);
+}
+
+.preferred-date {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* Pagination */
+.pagination-controls {
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding: 0.5rem 0;
+    width: 100%;
+}
+
+.pagination-controls .c-btn-small {
+    background: transparent; 
+    border: none; 
+    color: var(--MainBlue);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    transition: all 0.2s ease;
+    min-width: auto; 
+}
+
+.pagination-controls .c-btn-small:hover:not(:disabled) {
+    color: var(--DarkerMainBlue);
+    text-decoration: underline;
+    background: transparent; 
+}
+
+.pagination-controls .c-btn-small:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    color: var(--Gray);
+}
+
+.page-indicator {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: left;
+    opacity: 0.6; 
+    margin-left: 0.5rem;
+}
+
+/* Dark mode */
+.dark-mode .pagination-controls .c-btn-small {
+    color: var(--LightBlue);
+}
+
+.dark-mode .pagination-controls .c-btn-small:hover:not(:disabled) {
+    color: var(--White);
+}
+
+.dark-mode .page-indicator {
+    color: var(--White);
+    opacity: 0.5;
+}
+
+.ops-assignment-panel {
+    background-color: var(--bg-color);
+    border-radius: 28px;
+    padding: 1.8rem;
+    box-shadow: 0 6px 18px var(--shadow-color);
+    border: 1px solid var(--BlueGray);
+    height: fit-content;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.panel-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.request-id-badge {
+    background-color: var(--DarkBlue);
+    color: white;
+    padding: 0.3rem 1.2rem;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.selected-request-summary {
+    background-color: var(--sec-bg-color);
+    border-radius: 20px;
+    padding: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.summary-row {
+    display: flex;
+    margin-bottom: 0.5rem;
+}
+
+.summary-label {
+    min-width: 100px;
+    color: var(--Gray);
+    font-weight: 500;
+}
+
+.summary-value {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.summary-address {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    padding: 0.5rem;
+    border-radius: 12px;
+    margin-top: 0.3rem;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 1.8rem;
+}
+
+.form-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.assign-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.custom-dropdown {
+    position: relative;
+    flex: 1;
+}
+
+.custom-dropdown-select {
+    width: 100%;
+    padding: 0.6rem 1.2rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.custom-dropdown-select:hover {
+    border-color: var(--MainBlue);
+    background-color: var(--LightBlue);
+}
+
+.custom-dropdown-select .arrow {
+    color: var(--DarkBlue);
+    font-size: 0.7rem;
+}
+
+.custom-dropdown-menu {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-color);
+    border: 1px solid var(--BlueGray);
+    border-radius: 16px;
+    box-shadow: 0 8px 16px var(--shadow-color);
+    z-index: 1000;
+    display: none;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.custom-dropdown-menu.show {
+    display: block;
+}
+
+.custom-dropdown-item {
+    padding: 0.7rem 1rem;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    transition: background-color 0.2s ease;
+}
+
+.custom-dropdown-item:hover {
+    background-color: var(--LightBlue);
+}
+
+.custom-dropdown-item.selected {
+    background-color: var(--MainBlue);
+    color: var(--White);
+}
+
+/* Dark mode */
+.dark-mode .custom-dropdown-select {
+    background-color: var(--DarkBlue);
+    border-color: var(--MainBlue);
+    color: var(--White);
+}
+
+.dark-mode .custom-dropdown-select:hover {
+    background-color: var(--DarkerBlue);
+}
+
+.dark-mode .custom-dropdown-menu {
+    background-color: var(--DarkBlue);
+    border-color: var(--MainBlue);
+}
+
+.dark-mode .custom-dropdown-item {
+    color: var(--White);
+}
+
+.dark-mode .custom-dropdown-item:hover {
+    background-color: var(--DarkerBlue);
+}
+
+.dark-mode .custom-dropdown-item.selected {
+    background-color: var(--MainBlue);
+}
+
+/* Updated dropdown styling to match sort dropdown */
+.ops-select {
+    flex: 1;
+    padding: 0.6rem 1.2rem;
+    border-radius: 30px;
+    border: 1px solid var(--BlueGray);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ops-select:hover {
+    border-color: var(--MainBlue);
+    background-color: var(--LightBlue);
+}
+
+.ops-select:focus {
+    border-color: var(--MainBlue);
+    box-shadow: 0 0 0 2px var(--LowMainBlue);
+}
+
+.ops-select option {
+    padding: 0.7rem 1rem;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    font-weight: normal;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-dot.green {
+    background-color: #2ecc71;
+    box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
+}
+
+.status-dot.red {
+    background-color: #e74c3c;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+}
+
+.view-btn {
+    background-color: var(--LowMainBlue);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    border: none;
+    cursor: pointer;
+}
+
+.collector-availability-hint,
+.vehicle-status-hint {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--Gray);
+    padding-left: 0.5rem;
+}
+
+.centre-capacity {
+    background-color: var(--LightBlue);
+    padding: 0.3rem 1rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--DarkBlue);
+    white-space: nowrap;
+}
+
+.datetime-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ops-datetime-input {
+    padding: 0.8rem 1rem;
+    border-radius: 40px;
+    border: 1px solid var(--BlueGray);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    outline: none;
+    width: 100%;
+}
+
+.ops-textarea {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--BlueGray);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+}
+
+.ops-textarea:focus {
+    border-color: var(--MainBlue);
+}
+
+.assignment-actions {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0 1rem 0;  
+    flex-wrap: wrap;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 0.5rem;  
+    margin-bottom: 1.5rem;
+}
+
+.assignment-actions .c-btn-primary.c-btn-big,
+.assignment-actions .c-btn-secondary {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    border-radius: 30px;
+    min-width: 0;
+}
+
+#confirmAssignmentBtn,
+#resetAssignmentBtn {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+}
+
+.form-section:last-of-type {
+    margin-bottom: 0.5rem;  
+}
+
+.assignment-actions {
+    display: flex;
+    gap: 1rem;
+    margin: 0.5rem 0 1rem 0;  
+    flex-wrap: wrap;
+}
+
+/* Recent Timeline */
+.recent-assignments h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.timeline-mini {
+    background-color: var(--sec-bg-color);
+    border-radius: 20px;
+    padding: 1rem;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px dashed var(--BlueGray);
+    font-size: 0.85rem;
+}
+
+.timeline-item:last-child {
+    border-bottom: none;
+}
+
+.timeline-time {
+    color: var(--Gray);
+    min-width: 60px;
+}
+
+.timeline-event {
+    color: var(--text-color);
+}
+
+.timeline-event strong {
+    color: var(--MainBlue);
+}
+
+.bulk-ops-section {
+    background-color: var(--sec-bg-color);
+    border-radius: 24px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.bulk-ops-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+    color: var(--Gray);
+}
+
+/* Dark mode adjustments */
+.dark-mode .request-card.selected {
+    background-color: var(--DarkBlue);
+}
+
+.dark-mode .centre-capacity {
+    background-color: var(--DarkerBlue);
+    color: var(--White);
+}
+
+/* Dark mode styles for dropdowns */
+.dark-mode .ops-select {
+    background-color: var(--DarkBlue);
+    border-color: var(--MainBlue);
+    color: var(--White);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+
+.dark-mode .ops-select:hover {
+    background-color: var(--DarkerBlue);
+}
+
+.dark-mode .ops-select option {
+    background-color: var(--DarkBlue);
+    color: var(--White);
+}
+
+/* Capacity Circle */
+.centre-capacity-container {
+    display: flex;
+    align-items: center;
+    margin-left: 0.5rem;
+}
+
+.capacity-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: conic-gradient(var(--MainBlue) 0deg, var(--LightBlue) 0deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: background 0.3s ease;
+}
+
+.capacity-circle span {
+    background: var(--bg-color);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: var(--DarkBlue);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.dark-mode .capacity-circle span {
+    background: var(--DarkBlue);
+    color: var(--White);
+}
+
+/* Empty state */
+.empty-requests {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--Gray);
+}
+
+.empty-requests i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-requests h3 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
