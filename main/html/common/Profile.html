@@ -28,19 +28,20 @@
             font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 0.2rem;
+            color: var(--text-color);
         }
         .page-header p {
             font-size: 0.85rem;
-            color: var(--c-gray, #6b7280);
+            color: var(--Gray);
         }
 
         /* Profile Card */
         .profile-card {
-            border: 1px solid rgba(99, 132, 255, 0.3);
+            border: 1px solid var(--LowMainBlue);
             border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            background: var(--c-bg, #fff);
+            box-shadow: 0 4px 20px var(--shadow-color);
+            background: var(--bg-color);
         }
 
         .profile-banner {
@@ -64,7 +65,7 @@
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            border: 3px solid var(--c-bg, #fff);
+            border: 3px solid var(--bg-color);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -75,7 +76,7 @@
             cursor: pointer;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 10px var(--shadow-color);
         }
         .avatar:hover .avatar-overlay { opacity: 1; }
         .avatar-overlay {
@@ -95,8 +96,16 @@
         }
 
         .avatar-name-block { padding-bottom: 4px; }
-        .full-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 2px; }
-        .user-email { font-size: 0.78rem; color: var(--c-gray, #6b7280); }
+        .full-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+            color: var(--text-color);
+        }
+        .user-email {
+            font-size: 0.78rem;
+            color: var(--Gray);
+        }
 
         .role-badge {
             display: inline-flex;
@@ -109,29 +118,34 @@
             margin-top: 6px;
             border: 1.5px solid;
         }
-        .role-admin     { background: hsla(237,52%,93%,1); color: hsl(237,52%,30%); border-color: hsl(237,40%,75%); }
+        .role-admin     { background: hsla(237,52%,93%,1); color: hsl(233, 85%, 63%); border-color: hsl(237,40%,75%); }
         .role-collector { background: hsla(130,50%,92%,1); color: #2e7d32;          border-color: hsl(130,40%,70%); }
-        .role-provider  { background: hsla(260,50%,93%,1); color: #4527a0;          border-color: hsl(260,40%,75%); }
+        .role-provider  { background: hsla(260,50%,93%,1); color: #3d75e4;          border-color: hsl(260,40%,75%); }
+
+        .dark-mode .role-admin     { background: hsla(237,52%,20%,0.6); color: hsl(237,80%,80%); border-color: hsl(237,40%,45%); }
+        .dark-mode .role-collector { background: hsla(130,50%,15%,0.6); color: hsl(130,60%,70%); border-color: hsl(130,40%,35%); }
+        .dark-mode .role-provider  { background: hsla(260,50%,20%,0.6); color: hsl(260,80%,80%); border-color: hsl(260,40%,45%); }
 
         .locked-note {
             display: flex;
             align-items: center;
             gap: 5px;
             font-size: 0.68rem;
-            color: #8a9bc4;
+            color: var(--Gray);
             margin-top: 5px;
+            opacity: 0.75;
         }
 
         /* Divider */
         .card-divider {
             border: none;
-            border-top: 1px solid rgba(99, 132, 255, 0.2);
+            border-top: 1px solid var(--LowMainBlue);
             margin: 0;
         }
 
         /* Form Sections */
         .form-section { padding: 1.2rem 1.5rem; }
-        .form-section + .form-section { border-top: 1px solid rgba(99, 132, 255, 0.1); }
+        .form-section + .form-section { border-top: 1px solid var(--LowMainBlue); }
 
         .section-title {
             font-size: 0.82rem;
@@ -140,7 +154,10 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            color: hsl(237,52%,36%);
+            color: var(--MainBlue);
+        }
+        .dark-mode .section-title {
+            color: var(--LightBlue);
         }
 
         .form-row {
@@ -156,7 +173,7 @@
         .form-group label {
             font-size: 0.7rem;
             font-weight: 700;
-            color: var(--c-gray, #6b7280);
+            color: var(--Gray);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -165,23 +182,23 @@
         .form-group input[type="email"],
         .form-group input[type="tel"] {
             padding: 0.5rem 0.7rem;
-            border: 1.5px solid rgba(99, 132, 255, 0.35);
+            border: 1.5px solid var(--LowMainBlue);
             border-radius: 8px;
             font-size: 0.88rem;
             font-family: 'Inter', sans-serif;
-            background: var(--c-bg, #fff);
-            color: var(--c-text, #1e1e1e);
+            background: var(--bg-color);
+            color: var(--text-color);
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
             width: 100%;
         }
         .form-group input:focus {
-            border-color: hsl(225,94%,67%);
-            box-shadow: 0 0 0 3px hsla(225,94%,67%,0.2);
+            border-color: var(--MainBlue);
+            box-shadow: 0 0 0 3px var(--LowMainBlue);
         }
         .form-group input[readonly] {
-            background: hsla(220,100%,95%,0.5);
-            color: #8a9bc4;
+            background: var(--sec-bg-color);
+            color: var(--Gray);
             cursor: not-allowed;
             border-color: transparent;
         }
@@ -193,15 +210,15 @@
         /* Form Footer */
         .form-footer {
             padding: 0.9rem 1.5rem;
-            border-top: 1px solid rgba(99, 132, 255, 0.2);
+            border-top: 1px solid var(--LowMainBlue);
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            background: hsla(220,100%,96%,0.5);
+            background: var(--sec-bg-color);
         }
 
         .btn-cancel {
-            background: hsl(237,52%,36%);
+            background: var(--DarkerMainBlue);
             color: white;
             border: none;
             border-radius: 24px;
@@ -211,10 +228,10 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        .btn-cancel:hover { background: hsl(240,60%,20%); }
+        .btn-cancel:hover { background: var(--MainBlue); }
 
         .btn-save {
-            background: hsl(225,94%,67%);
+            background: var(--MainBlue);
             color: white;
             border: none;
             border-radius: 24px;
@@ -224,28 +241,11 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        .btn-save:hover { background: hsl(225,100%,40%); }
+        .btn-save:hover { background: var(--DarkerMainBlue); }
 
         /* Toast */
         @keyframes slideIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         @keyframes slideOut { from { opacity:1; transform:translateY(0); }   to { opacity:0; transform:translateY(10px); } }
-
-        /* Dark mode overrides for form elements */
-        body.dark-mode .profile-card { background: var(--c-bg, #1a1a2e); }
-        body.dark-mode .form-group input[type="text"],
-        body.dark-mode .form-group input[type="email"],
-        body.dark-mode .form-group input[type="tel"] {
-            background: var(--c-bg, #1a1a2e);
-            color: var(--c-text, #fff);
-        }
-        body.dark-mode .form-group input[readonly] {
-            background: hsla(237,52%,20%,0.5);
-        }
-        body.dark-mode .form-footer {
-            background: hsla(237,52%,20%,0.5);
-        }
-        body.dark-mode .section-title { color: hsl(220,100%,90%); }
-        body.dark-mode .avatar { border-color: var(--c-bg, #1a1a2e); }
 
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; }
@@ -256,17 +256,16 @@
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
 
-    <!-- Logo + Name & Navbar -->
+    <!-- Logo + Name & Navbar — rendered dynamically per role -->
     <header>
-        <!-- Logo + Name -->
         <section class="c-logo-section">
-            <a href="/main/html/provider/pHome.html" class="c-logo-link">
+            <a href="#" id="navLogoLink" class="c-logo-link">
                 <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
         </section>
 
-        <!-- Menu Links Mobile -->
+        <!-- Mobile Nav -->
         <nav class="c-navbar-side">
             <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
             <div id="sidebarNav" class="c-navbar-side-menu">
@@ -280,24 +279,14 @@
                             <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-
-                    <a href="/main/html/provider/pHome.html">Home</a>
-                    <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a>
-                    <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
-                    <a href="/main/html/provider/pEwasteGuide.html">E-waste Guide</a>
-                    <a href="/main/html/common/About.html">About</a>
+                    <div id="mobileNavLinks"></div>
                 </div>
             </div>
         </nav>
 
-        <!-- Menu Links Desktop + Tablet -->
-        <nav class="c-navbar-desktop">
-            <a href="/main/html/provider/pHome.html">Home</a>
-            <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a>
-            <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
-            <a href="/main/html/provider/pEwasteGuide.html">E-waste Guide</a>
-            <a href="/main/html/common/About.html">About</a>
-        </nav>
+        <!-- Desktop Nav -->
+        <nav class="c-navbar-desktop" id="desktopNavLinks"></nav>
+
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
                 <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
@@ -354,63 +343,41 @@
     </main>
 
     <hr>
+
     <!-- Footer -->
     <footer>
-        <!-- Column 1 -->
         <section class="c-footer-info-section">
-            <a href="/main/html/provider/pHome.html">
+            <a href="#" id="footerLogoLink">
                 <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
             <div class="c-text c-text-center">
                 Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
             </div>
-            <div class="c-text c-text-label">
-                +60 12 345 6789
-            </div>
-            <div class="c-text">
-                abc@gmail.com
-            </div>
+            <div class="c-text c-text-label">+60 12 345 6789</div>
+            <div class="c-text"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3d5c5f5e7d5a505c5451135e5250">[email&#160;protected]</a></div>
         </section>
-
-        <!-- Column 2 -->
-        <section class="c-footer-links-section">
-            <div>
-                <b>Recycling</b><br>
-                <a href="/main/html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
-                <a href="/main/html/provider/pWasteType.html">E-Waste Types</a>
-            </div>
-            <div>
-                <b>My Activity</b><br>
-                <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
-                <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
-            </div>
-            <div>
-                <b>Proxy</b><br>
-                <a href="/main/html/common/About.html">About</a><br>
-                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
-                <a href="/main/html/common/Setting.html">Setting</a>
-            </div>
-        </section>
+        <section class="c-footer-links-section" id="footerLinks"></section>
     </footer>
 
-    <script src="/main/javascript/mainScript.js"></script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/main/javascript/mainScript.js"></script>
     <script>
         // ── USER DATA ──────────────────────────────────────────────────────
+        // Single source of truth. Add more users here as needed.
         const USERS = [
             {
                 id: 'admin1', role: 'admin',
                 firstName: 'Sarah', lastName: 'Lim',
                 email: 'sarah.lim@aftervolt.com', phone: '+6 012 111 2233',
                 department: 'Operations', staffId: 'ADM-001',
-                bgGradient: 'linear-gradient(135deg, hsl(240,60%,20%) 0%, hsl(237,52%,36%) 100%)'
+                bgGradient: 'linear-gradient(135deg, hsl(200, 90%, 80%) 0%, hsl(180, 85%, 75%) 100%)'
             },
             {
                 id: 'col1', role: 'collector',
                 firstName: 'Rajan', lastName: 'Kumar',
                 email: 'rajan.k@aftervolt.com', phone: '+6 019 334 5566',
                 vehicleId: 'VEH-042', licenseNo: 'GCK 1234', area: 'Petaling Jaya',
-                bgGradient: 'linear-gradient(135deg, hsl(130,60%,18%) 0%, hsl(130,50%,38%) 100%)'
+                bgGradient: 'linear-gradient(135deg, hsl(130,55%,85%) 0%, hsl(150,50%,78%) 100%)'
             },
             {
                 id: 'prov1', role: 'provider',
@@ -418,26 +385,124 @@
                 email: 'wei.chen@greencycle.com', phone: '+6 03 7890 1234',
                 companyName: 'GreenCycle Sdn Bhd', regNo: 'RC-20193847',
                 address: 'No. 12, Jalan Recycling, Shah Alam',
-                bgGradient: 'linear-gradient(135deg, hsl(260,60%,22%) 0%, hsl(260,52%,48%) 100%)'
+                bgGradient: 'linear-gradient(135deg, hsl(260,60%,88%) 0%, hsl(280,55%,82%) 100%)'
             }
         ];
 
         const ROLE_CONFIG = {
-            admin:     { label: 'Admin',     badgeClass: 'role-admin',
-                         subtitle: 'Manage your administrator profile',
-                         icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>` },
-            collector: { label: 'Collector', badgeClass: 'role-collector',
-                         subtitle: 'Manage your collector profile',
-                         icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>` },
-            provider:  { label: 'Provider',  badgeClass: 'role-provider',
-                         subtitle: 'Manage your provider profile',
-                         icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` }
+            admin: {
+                label: 'Admin',
+                badgeClass: 'role-admin',
+                subtitle: 'Manage your administrator profile',
+                homeUrl: '/main/html/admin/aHome.html',
+                icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+                navLinks: [
+                    { label: 'Home',       href: '/main/html/admin/aHome.html' },
+                    { label: 'Requests',   href: '/main/html/admin/aRequests.html' },
+                    { label: 'Jobs',       href: '/main/html/admin/aJobs.html' },
+                    { label: 'Issue',      href: '/main/html/admin/aIssue.html' },
+                    { label: 'Operations', href: '/main/html/admin/aOperations.html' },
+                    { label: 'Report',     href: '/main/html/admin/aReport.html' }
+                ],
+                footerLinks: `
+                    <div><b>Management</b><br>
+                        <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                        <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                        <a href="/main/html/admin/aIssue.html">Issue</a>
+                    </div>
+                    <div><b>System Operation</b><br>
+                        <a href="/main/html/admin/aProviders.html">Providers</a><br>
+                        <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
+                        <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
+                        <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
+                        <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+                    </div>
+                    <div><b>Proxy</b><br>
+                        <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                        <a href="/main/html/common/Setting.html">Setting</a>
+                    </div>`
+            },
+            collector: {
+                label: 'Collector',
+                badgeClass: 'role-collector',
+                subtitle: 'Manage your collector profile',
+                homeUrl: '/main/html/collector/cHome.html',
+                icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
+                navLinks: [
+                    { label: 'Home',         href: '/main/html/collector/cHome.html' },
+                    { label: 'My Jobs',      href: '/main/html/collector/cMyJobs.html' },
+                    { label: 'Ongoing Jobs', href: '/main/html/collector/cInProgress.html' },
+                    { label: 'History',      href: '/main/html/collector/cCompletedJobs.html' },
+                    { label: 'About',        href: '/main/html/common/About.html' }
+                ],
+                footerLinks: `
+                    <div><b>My Jobs</b><br>
+                        <a href="/main/html/collector/cMyJobs.html">My Jobs</a><br>
+                        <a href="/main/html/collector/cInProgress.html">In Progress</a><br>
+                        <a href="/main/html/collector/cCompletedJobs.html">Completed Jobs</a>
+                    </div>
+                    <div><b>Support</b><br>
+                        <a href="/main/html/collector/cReportIssues.html">Report Issue</a>
+                    </div>
+                    <div><b>Proxy</b><br>
+                        <a href="/main/html/common/About.html">About</a><br>
+                        <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                        <a href="/main/html/common/Setting.html">Setting</a>
+                    </div>`
+            },
+            provider: {
+                label: 'Provider',
+                badgeClass: 'role-provider',
+                subtitle: 'Manage your provider profile',
+                homeUrl: '/main/html/provider/pHome.html',
+                icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+                navLinks: [
+                    { label: 'Home',             href: '/main/html/provider/pHome.html' },
+                    { label: 'Schedule Pickup',  href: '/main/html/provider/pSchedulePickup.html' },
+                    { label: 'My Pickup',        href: '/main/html/provider/pMainPickup.html' },
+                    { label: 'E-waste Guide',    href: '/main/html/provider/pEwasteGuide.html' },
+                    { label: 'About',            href: '/main/html/common/About.html' }
+                ],
+                footerLinks: `
+                    <div><b>Recycling</b><br>
+                        <a href="/main/html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
+                        <a href="/main/html/provider/pWasteType.html">E-Waste Types</a>
+                    </div>
+                    <div><b>My Activity</b><br>
+                        <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
+                        <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
+                    </div>
+                    <div><b>Proxy</b><br>
+                        <a href="/main/html/common/About.html">About</a><br>
+                        <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                        <a href="/main/html/common/Setting.html">Setting</a>
+                    </div>`
+            }
         };
 
-        let currentUser = USERS[0];
+        let currentUser = null;
         let originalValues = {};
 
-        // ── FORM BUILDER ────────────────────────────────────────────────────
+        // ── READ USER FROM URL (?user=col1) ───────────────────────────────
+        function getUserFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const userId = params.get('user');
+            // Match by ID, fall back to first user
+            return USERS.find(u => u.id === userId) || USERS[0];
+        }
+
+        // ── BUILD NAV FOR ROLE ────────────────────────────────────────────
+        function buildNav(role) {
+            const cfg = ROLE_CONFIG[role];
+            const links = cfg.navLinks.map(l => `<a href="${l.href}">${l.label}</a>`).join('');
+            document.getElementById('desktopNavLinks').innerHTML = links;
+            document.getElementById('mobileNavLinks').innerHTML  = links;
+            document.getElementById('navLogoLink').href    = cfg.homeUrl;
+            document.getElementById('footerLogoLink').href = cfg.homeUrl;
+            document.getElementById('footerLinks').innerHTML = cfg.footerLinks;
+        }
+
+        // ── FORM BUILDER ─────────────────────────────────────────────────
         function buildForm(user) {
             const common = `
                 <div class="form-section">
@@ -457,7 +522,17 @@
 
             let roleSection = '';
 
-
+            if (user.role === 'admin') roleSection = `
+                <div class="form-section">
+                    <div class="section-title">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Admin Details
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Department</label><input type="text" id="department" value="${user.department}" /></div>
+                        <div class="form-group"><label>Staff ID</label><input type="text" value="${user.staffId}" readonly /></div>
+                    </div>
+                </div>`;
 
             if (user.role === 'collector') roleSection = `
                 <div class="form-section">
@@ -492,25 +567,44 @@
             return common + roleSection;
         }
 
-        // ── RENDER ───────────────────────────────────────────────────────────
+        // ── RENDER ────────────────────────────────────────────────────────
         function renderProfile(user) {
             const cfg = ROLE_CONFIG[user.role];
             const initials = (user.firstName[0] + user.lastName[0]).toUpperCase();
 
-            document.getElementById('profileBanner').style.background = user.bgGradient;
-            const av = document.getElementById('avatarDisplay');
-            av.style.background = user.bgGradient;
+            const banner = document.getElementById('profileBanner');
+            const av     = document.getElementById('avatarDisplay');
+            const initialsEl = document.getElementById('avatarInitials');
+
+            // Banner + avatar colours
+            if (document.body.classList.contains('dark-mode')) {
+                banner.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)';
+                av.style.background = '#1e3a8a';
+                initialsEl.style.color = '#ffffff';
+            } else {
+                banner.style.background = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)';
+                av.style.background = '#93c5fd';
+                initialsEl.style.color = '#1e293b';
+            }
             av.style.backgroundImage = '';
-            document.getElementById('avatarInitials').textContent = initials;
-            document.getElementById('displayName').textContent = user.firstName + ' ' + user.lastName;
+
+            initialsEl.textContent = initials;
+            document.getElementById('displayName').textContent  = user.firstName + ' ' + user.lastName;
             document.getElementById('displayEmail').textContent = user.email;
+
             const badge = document.getElementById('roleBadge');
             badge.className = 'role-badge ' + cfg.badgeClass;
             badge.innerHTML = cfg.icon + ' ' + cfg.label;
+
             document.getElementById('pageSubtitle').textContent = cfg.subtitle;
-            document.getElementById('profileForm').innerHTML = buildForm(user);
+            document.getElementById('profileForm').innerHTML    = buildForm(user);
+
             storeOriginals();
         }
+
+        // Re-render banner/avatar on theme toggle
+        const themeObserver = new MutationObserver(() => renderProfile(currentUser));
+        themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
         function storeOriginals() {
             originalValues = {};
@@ -520,7 +614,7 @@
             });
         }
 
-        // ── SAVE / CANCEL ────────────────────────────────────────────────────
+        // ── SAVE / CANCEL ─────────────────────────────────────────────────
         function saveChanges() {
             const first = document.getElementById('firstName')?.value.trim();
             const last  = document.getElementById('lastName')?.value.trim();
@@ -539,8 +633,7 @@
 
             document.getElementById('displayName').textContent  = first + ' ' + last;
             document.getElementById('displayEmail').textContent = email;
-            const initials = (first[0] + last[0]).toUpperCase();
-            document.getElementById('avatarInitials').textContent = initials;
+            document.getElementById('avatarInitials').textContent = (first[0] + last[0]).toUpperCase();
             storeOriginals();
             saveToStorage();
             showToast('Profile saved successfully!', 'success');
@@ -554,7 +647,7 @@
             showToast('Changes discarded.', 'info');
         }
 
-        // ── PHOTO UPLOAD ─────────────────────────────────────────────────────
+        // ── PHOTO UPLOAD ──────────────────────────────────────────────────
         function handlePhotoChange(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -570,7 +663,7 @@
             reader.readAsDataURL(file);
         }
 
-        // ── TOAST ────────────────────────────────────────────────────────────
+        // ── TOAST ─────────────────────────────────────────────────────────
         function showToast(message, type = 'success') {
             document.querySelector('.toast')?.remove();
             const colors = { success: 'hsl(145,50%,40%)', error: 'hsl(0,65%,52%)', info: 'hsl(225,100%,40%)' };
@@ -586,7 +679,7 @@
             }, 3000);
         }
 
-        // ── LOCALSTORAGE ─────────────────────────────────────────────────────
+        // ── LOCALSTORAGE ──────────────────────────────────────────────────
         function saveToStorage() {
             localStorage.setItem('aftervolt_users', JSON.stringify(USERS));
         }
@@ -603,9 +696,11 @@
             } catch(e) {}
         }
 
-        // ── INIT ──────────────────────────────────────────────────────────────
+        // ── INIT ──────────────────────────────────────────────────────────
         loadFromStorage();
-        renderProfile(currentUser);
+        currentUser = getUserFromUrl();   // reads ?user= from URL
+        buildNav(currentUser.role);       // sets correct nav for their role
+        renderProfile(currentUser);       // renders their data
     </script>
 </body>
 </html>
