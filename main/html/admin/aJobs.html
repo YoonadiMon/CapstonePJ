@@ -85,45 +85,47 @@
                 <div class="jobs-stats-grid" id="statsContainer"></div>
 
                 <!-- Filter Bar -->
-                <div class="filter-bar">
-                    <div class="filter-group">
-                        <!-- Status Filter Dropdown -->
-                        <div class="filter-dropdown">
-                            <button class="filter-dropdown-btn" id="filterDropdownBtn">
-                                <i class="fas fa-filter"></i> <span id="selectedFilter">All Jobs</span> <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="filter-dropdown-content" id="filterDropdownContent">
-                                <a href="#" data-filter="all" class="active-filter"><i class="fas fa-list"></i> All Jobs</a>
-                                <a href="#" data-filter="pending"><i class="far fa-clock"></i> Pending</a>
-                                <a href="#" data-filter="accepted"><i class="fas fa-check-circle"></i> Accepted</a>
-                                <a href="#" data-filter="rejected"><i class="fas fa-times-circle"></i> Rejected</a>
-                                <a href="#" data-filter="ongoing"><i class="fas fa-sync-alt"></i> Ongoing</a>
-                                <a href="#" data-filter="delayed"><i class="fas fa-exclamation-triangle"></i> Delayed</a>
-                                <a href="#" data-filter="pickedup"><i class="fas fa-box"></i> Picked up</a>
-                                <a href="#" data-filter="completed"><i class="fas fa-check-double"></i> Completed</a>
-                                <a href="#" data-filter="cancelled"><i class="fas fa-ban"></i> Cancelled</a>
-                                <a href="#" data-filter="failed"><i class="fas fa-times-circle"></i> Failed</a>
-                            </div>
-                        </div>
+<div class="filter-bar">
+    <div class="filter-group">
 
-                        <!-- Search Box -->
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" placeholder="Search jobs by ID, provider, collector..." id="searchInput">
-                        </div>
-                    </div>
-                </div>
+        <!-- Status Filter Dropdown -->
+        <div class="filter-dropdown">
+            <button class="filter-dropdown-btn" id="filterDropdownBtn">
+                <i class="fas fa-filter"></i> <span id="selectedFilter">All Jobs</span> <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="filter-dropdown-content" id="filterDropdownContent">
+                <a href="#" data-filter="all" class="active-filter"><i class="fas fa-list"></i> All Jobs</a>
+                <a href="#" data-filter="pending"><i class="far fa-clock"></i> Pending</a>
+                <a href="#" data-filter="accepted"><i class="fas fa-check-circle"></i> Accepted</a>
+                <a href="#" data-filter="rejected"><i class="fas fa-times-circle"></i> Rejected</a>
+                <a href="#" data-filter="ongoing"><i class="fas fa-sync-alt"></i> Ongoing</a>
+                <a href="#" data-filter="delayed"><i class="fas fa-exclamation-triangle"></i> Delayed</a>
+                <a href="#" data-filter="pickedup"><i class="fas fa-box"></i> Picked up</a>
+                <a href="#" data-filter="completed"><i class="fas fa-check-double"></i> Completed</a>
+                <a href="#" data-filter="cancelled"><i class="fas fa-ban"></i> Cancelled</a>
+                <a href="#" data-filter="failed"><i class="fas fa-times-circle"></i> Failed</a>
+            </div>
+        </div>
 
-                <!-- Sort Section -->
-                <div class="sort-options-container">
-                    <span class="sort-label">Sort by:</span>
-                    <button class="sort-btn" id="sortDescBtn">
-                        <i class="fas fa-sort-amount-down"></i> Newest
-                    </button>
-                    <button class="sort-btn" id="sortAscBtn">
-                        <i class="fas fa-sort-amount-up"></i> Oldest
-                    </button>
-                </div>
+        <!-- Search Box -->
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search jobs by ID, provider, collector..." id="searchInput">
+        </div>
+    </div>
+</div>
+
+<!-- Sort Section -->
+<div class="sort-container">
+    <div class="sort-slider">
+        <button class="sort-slider-btn" id="sortDescBtn">
+            <i class="fas fa-sort-amount-down"></i> Newest
+        </button>
+        <button class="sort-slider-btn" id="sortAscBtn">
+            <i class="fas fa-sort-amount-up"></i> Oldest
+        </button>
+    </div>
+</div>
 
                 <!-- Timeline Container -->
                 <div class="jobs-timeline-container" id="timelineContainer"></div>
@@ -225,7 +227,7 @@
             <div>
                 <b>Management</b><br>
                 <a href="/main/html/admin/aCollectionRequests.html">Collection Requests</a><br>
-                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aCollectionJobs.html">Collection Jobs</a><br>
                 <a href="/main/html/admin/aIssue.html">Issue</a><br>
             </div>
             <div>

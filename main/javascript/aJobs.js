@@ -432,7 +432,7 @@ function setupEventListeners() {
         renderListView();
     });
 
-    // Sort buttons
+    // Sort buttons - now with slider styling
     sortDescBtn.addEventListener('click', function() {
         currentSort = 'desc';
         sortDescBtn.classList.add('active');
@@ -569,7 +569,6 @@ function renderListView() {
             <div class="no-jobs-modern">
                 <i class="fas fa-search"></i>
                 <p>No jobs found</p>
-                <div class="suggestion">Try adjusting your filters or search term</div>
             </div>
         `;
         return;
@@ -737,30 +736,75 @@ function showJobDetail(jobId) {
     detailItemsCount.textContent = jobData.items.length;
 
     let itemsHtml = '';
-    jobData.items.forEach(item => {
+    jobData.items.forEach((item, index) => {
+        // Sample image URLs 
+        const itemImages = [
+            { url: '/main/assets/images/sample-item1.jpg', name: 'Front view' },
+            { url: '/main/assets/images/sample-item2.jpg', name: 'Back view' },
+            { url: '/main/assets/images/sample-item3.jpg', name: 'Label' }
+        ].filter(img => img.url);
+        
         itemsHtml += `
-            <div class="info-row-modern">
-                <span class="info-label-modern">${item.id}</span>
-                <span class="info-value-modern"><strong>${item.name}</strong> - ${item.brand} (${item.weight} kg)</span>
-            </div>
-            <div class="info-row-modern">
-                <span class="info-label-modern">Drop-off</span>
-                <span class="info-value-modern">${item.dropoff}</span>
-            </div>
-            <div class="info-row-modern" style="border-bottom: 1px dashed var(--BlueGray); margin-bottom: 0.5rem;">
-                <span class="info-label-modern">Description</span>
-                <span class="info-value-modern">${item.description}</span>
+            <div class="job-detail-item-card" data-item-id="${item.id}">
+                <div class="job-detail-item-header">
+                    <span class="job-detail-item-id">${item.id}</span>
+                    <span class="job-detail-item-weight"><i class="fas fa-weight-hanging"></i> ${item.weight} kg</span>
+                </div>
+                
+                <div class="job-detail-item-name">
+                    <i class="fas fa-box"></i> ${item.name}
+                </div>
+                
+                <div class="job-detail-item-brand">
+                    <span class="brand-label">Model/Brand:</span>
+                    <span class="brand-value">${item.brand}</span>
+                </div>
+                
+                <div class="job-detail-item-action-row">
+                    <!-- Description first -->
+                    <div class="job-detail-item-description">
+                        <div class="description-label">
+                            <i class="fas fa-pen"></i> Description
+                        </div>
+                        <div class="description-text">
+                            ${item.description}
+                        </div>
+                    </div>
+                    
+                    <div class="job-detail-item-image-wrapper">
+                        ${itemImages.length > 0 ? `
+                            <button class="view-image-btn" onclick="openLightbox(${index}, 0)">
+                                <i class="fas fa-image"></i> View Image
+                            </button>
+                        ` : `
+                            <div class="no-images">
+                                <i class="fas fa-image"></i> No image
+                            </div>
+                        `}
+                    </div>
+                </div>
+                
+                <!-- Drop-off Information -->
+                <div class="job-detail-item-details">
+                    <div class="job-detail-item-detail">
+                        <span class="detail-label">Drop-off</span>
+                        <span class="detail-value"><i class="fas fa-location-dot"></i> ${item.dropoff}</span>
+                    </div>
+                </div>
             </div>
         `;
     });
     detailItemsList.innerHTML = itemsHtml;
 
-    let timelineHtml = `
+    // Initialize timelineHtml as an empty string
+    let timelineHtml = '';
+
+    timelineHtml += `
         <div class="timeline-item-modern">
             <div class="timeline-marker-modern"></div>
-            <div class="timeline-content-modern">
+            <div class="timeline-content-modern" style="cursor: default;">
                 <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${new Date(job.datetime).toLocaleString()}</div>
-                <div class="timeline-desc-modern"><i class="fas fa-paper-plane"></i> Request created</div>
+                <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-paper-plane"></i> Request created</div>
             </div>
         </div>
     `;
@@ -769,9 +813,9 @@ function showJobDetail(jobId) {
         timelineHtml += `
             <div class="timeline-item-modern">
                 <div class="timeline-marker-modern" style="background: var(--MainBlue);"></div>
-                <div class="timeline-content-modern">
+                <div class="timeline-content-modern" style="cursor: default;">
                     <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${new Date(new Date(job.datetime).getTime() - 24*60*60000).toLocaleString()}</div>
-                    <div class="timeline-desc-modern"><i class="fas fa-check-circle"></i> Accepted & assigned to ${job.collector}</div>
+                    <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-check-circle"></i> Accepted & assigned to ${job.collector}</div>
                 </div>
             </div>
         `;
@@ -779,9 +823,9 @@ function showJobDetail(jobId) {
         timelineHtml += `
             <div class="timeline-item-modern">
                 <div class="timeline-marker-modern" style="background: #b83e3e;"></div>
-                <div class="timeline-content-modern">
+                <div class="timeline-content-modern" style="cursor: default;">
                     <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${new Date(new Date(job.datetime).getTime() + 24*60*60000).toLocaleString()}</div>
-                    <div class="timeline-desc-modern"><i class="fas fa-times-circle"></i> Rejected: ${job.rejectReason || 'Unacceptable items'}</div>
+                    <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-times-circle"></i> Rejected: ${job.rejectReason || 'Unacceptable items'}</div>
                 </div>
             </div>
         `;
@@ -789,9 +833,9 @@ function showJobDetail(jobId) {
         timelineHtml += `
             <div class="timeline-item-modern">
                 <div class="timeline-marker-modern" style="background: #666666;"></div>
-                <div class="timeline-content-modern">
+                <div class="timeline-content-modern" style="cursor: default;">
                     <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${new Date(new Date(job.datetime).getTime() + 12*60*60000).toLocaleString()}</div>
-                    <div class="timeline-desc-modern"><i class="fas fa-ban"></i> Cancelled: ${job.cancelReason || 'Provider cancelled'}</div>
+                    <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-ban"></i> Cancelled: ${job.cancelReason || 'Provider cancelled'}</div>
                 </div>
             </div>
         `;
@@ -801,9 +845,9 @@ function showJobDetail(jobId) {
         timelineHtml += `
             <div class="timeline-item-modern">
                 <div class="timeline-marker-modern"></div>
-                <div class="timeline-content-modern">
+                <div class="timeline-content-modern" style="cursor: default;">
                     <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${new Date(job.datetime).toLocaleTimeString()}</div>
-                    <div class="timeline-desc-modern"><i class="fas fa-truck"></i> Collection started</div>
+                    <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-truck"></i> Collection started</div>
                 </div>
             </div>
         `;
@@ -813,9 +857,9 @@ function showJobDetail(jobId) {
         timelineHtml += `
             <div class="timeline-item-modern">
                 <div class="timeline-marker-modern" style="background: #b55f0e;"></div>
-                <div class="timeline-content-modern">
+                <div class="timeline-content-modern" style="cursor: default;">
                     <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${new Date(new Date(job.datetime).getTime() + 75*60000).toLocaleTimeString()}</div>
-                    <div class="timeline-desc-modern"><i class="fas fa-exclamation-triangle"></i> Delayed: ${job.delayReason}</div>
+                    <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-exclamation-triangle"></i> Delayed: ${job.delayReason}</div>
                 </div>
             </div>
         `;
@@ -825,9 +869,9 @@ function showJobDetail(jobId) {
         timelineHtml += `
             <div class="timeline-item-modern">
                 <div class="timeline-marker-modern"></div>
-                <div class="timeline-content-modern">
+                <div class="timeline-content-modern" style="cursor: default;">
                     <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${new Date(new Date(job.datetime).getTime() + 150*60000).toLocaleTimeString()}</div>
-                    <div class="timeline-desc-modern"><i class="fas fa-check-circle"></i> Items picked up</div>
+                    <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-check-circle"></i> Items picked up</div>
                 </div>
             </div>
         `;
@@ -837,9 +881,9 @@ function showJobDetail(jobId) {
         timelineHtml += `
             <div class="timeline-item-modern">
                 <div class="timeline-marker-modern" style="background: #1f6c2f;"></div>
-                <div class="timeline-content-modern">
+                <div class="timeline-content-modern" style="cursor: default;">
                     <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${job.completedAt ? new Date(job.completedAt).toLocaleString() : new Date(new Date(job.datetime).getTime() + 240*60000).toLocaleString()}</div>
-                    <div class="timeline-desc-modern"><i class="fas fa-flag-checkered"></i> Job completed</div>
+                    <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-flag-checkered"></i> Job completed</div>
                 </div>
             </div>
         `;
@@ -849,9 +893,9 @@ function showJobDetail(jobId) {
         timelineHtml += `
             <div class="timeline-item-modern">
                 <div class="timeline-marker-modern" style="background: #b83e3e;"></div>
-                <div class="timeline-content-modern">
+                <div class="timeline-content-modern" style="cursor: default;">
                     <div class="timeline-time-modern"><i class="fas fa-clock"></i> ${new Date(new Date(job.datetime).getTime() + 180*60000).toLocaleTimeString()}</div>
-                    <div class="timeline-desc-modern"><i class="fas fa-times-circle"></i> Failed: ${job.failReason || 'Collection failed'}</div>
+                    <div class="timeline-desc-modern" style="margin-top: 0.5rem;"><i class="fas fa-times-circle"></i> Failed: ${job.failReason || 'Collection failed'}</div>
                 </div>
             </div>
         `;
@@ -859,10 +903,14 @@ function showJobDetail(jobId) {
 
     detailTimeline.innerHTML = timelineHtml;
 
+    console.log('detailActionButtons element:', detailActionButtons);
+
+    if (!detailActionButtons) {
+        console.error('detailActionButtons not found!');
+        detailActionButtons = document.getElementById('detailActionButtons');
+    }
+
     let buttonsHtml = `
-        <button class="btn-modern-primary" id="viewRequestBtn2">
-            <i class="fas fa-external-link-alt"></i> View Request ${job.requestId}
-        </button>
         <button class="btn-modern-outline" id="reportIssueBtn">
             <i class="fas fa-flag"></i> Report Issue
         </button>
@@ -876,7 +924,20 @@ function showJobDetail(jobId) {
         `;
     }
 
-    detailActionButtons.innerHTML = buttonsHtml;
+    // Clear and set the HTML
+    detailActionButtons.innerHTML = '';
+    detailActionButtons.insertAdjacentHTML('beforeend', buttonsHtml);
+
+    // Verify the button was added and attach event listener
+    setTimeout(() => {
+        const reportBtn = document.getElementById('reportIssueBtn');
+        console.log('Report button exists:', !!reportBtn);
+        if (reportBtn) {
+            reportBtn.addEventListener('click', () => {
+                showReportIssueModal(job);
+            });
+        }
+    }, 50);
 
     document.getElementById('viewRequestBtn2')?.addEventListener('click', () => {
         alert(`Viewing request ${job.requestId}`);
@@ -885,14 +946,6 @@ function showJobDetail(jobId) {
     document.getElementById('viewRequestBtn')?.addEventListener('click', () => {
         alert(`Viewing request ${job.requestId}`);
     });
-
-    const reportBtn = document.getElementById('reportIssueBtn');
-    if (reportBtn) {
-        reportBtn.addEventListener('click', () => {
-            const reason = prompt('Describe the issue:');
-            if (reason) alert(`Issue reported for ${job.id}: ${reason}`);
-        });
-    }
 
     const reassignBtn = document.getElementById('reassignJobBtn');
     if (reassignBtn) {
@@ -973,5 +1026,242 @@ window.confirmReassign = function(jobId) {
     closeReassignModal();
     renderListView();
 };
+
+// Image Lightbox functionality
+let currentLightboxIndex = 0;
+let currentItemIndex = 0;
+let lightboxImages = [];
+
+function openLightbox(itemIndex, imageIndex) {
+
+    const sampleImages = [
+        { url: '/main/assets/images/sample-item1.jpg', name: 'Front view' },
+        { url: '/main/assets/images/sample-item2.jpg', name: 'Back view' },
+        { url: '/main/assets/images/sample-item3.jpg', name: 'Label' }
+    ].filter(img => img.url);
+    
+    lightboxImages = sampleImages;
+    currentItemIndex = itemIndex;
+    currentLightboxIndex = imageIndex;
+    
+    // Create lightbox if it doesn't exist
+    let lightbox = document.getElementById('imageLightbox');
+    if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'imageLightbox';
+        lightbox.className = 'image-lightbox';
+        lightbox.innerHTML = `
+            <div class="lightbox-content">
+                <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+                <button class="lightbox-nav prev" onclick="navigateLightbox(-1)">❮</button>
+                <button class="lightbox-nav next" onclick="navigateLightbox(1)">❯</button>
+                <img id="lightboxImage" src="" alt="Item image">
+                <div class="lightbox-counter" id="lightboxCounter"></div>
+            </div>
+        `;
+        document.body.appendChild(lightbox);
+    }
+    
+    updateLightboxImage();
+    lightbox.classList.add('active');
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('imageLightbox');
+    if (lightbox) {
+        lightbox.classList.remove('active');
+    }
+}
+
+function navigateLightbox(direction) {
+    currentLightboxIndex += direction;
+    if (currentLightboxIndex < 0) {
+        currentLightboxIndex = lightboxImages.length - 1;
+    } else if (currentLightboxIndex >= lightboxImages.length) {
+        currentLightboxIndex = 0;
+    }
+    updateLightboxImage();
+}
+
+function updateLightboxImage() {
+    const lightboxImg = document.getElementById('lightboxImage');
+    const counter = document.getElementById('lightboxCounter');
+    
+    if (lightboxImg && lightboxImages.length > 0) {
+        lightboxImg.src = lightboxImages[currentLightboxIndex].url;
+        lightboxImg.alt = lightboxImages[currentLightboxIndex].name;
+        
+        if (counter) {
+            counter.textContent = `${currentLightboxIndex + 1} / ${lightboxImages.length}`;
+        }
+    }
+}
+
+// Close lightbox with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    } else if (e.key === 'ArrowLeft') {
+        navigateLightbox(-1);
+    } else if (e.key === 'ArrowRight') {
+        navigateLightbox(1);
+    }
+});
+
+// Report Issue Modal Function
+function showReportIssueModal(job) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('reportIssueModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'reportIssueModal';
+        modal.className = 'report-issue-modal';
+        document.body.appendChild(modal);
+    }
+    
+    // Get current date and time for default values
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+    
+    modal.innerHTML = `
+        <div class="report-issue-content">
+            <div class="report-issue-header">
+                <h3><i class="fas fa-flag"></i> Report Issue - ${job.id}</h3>
+                <button class="report-issue-close" onclick="closeReportIssueModal()">&times;</button>
+            </div>
+            <div class="report-issue-body">
+                <form id="reportIssueForm">
+                    <div class="issue-form-group">
+                        <label><i class="fas fa-exclamation-triangle"></i> Issue Type</label>
+                        <select id="issueType" required>
+                            <option value="">-- Select Issue Type --</option>
+                            <option value="collection">Collection Issue</option>
+                            <option value="item">Item Damage/Missing</option>
+                            <option value="provider">Provider Issue</option>
+                            <option value="collector">Collector Issue</option>
+                            <option value="vehicle">Vehicle Problem</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="issue-form-group">
+                        <label><i class="fas fa-tag"></i> Priority</label>
+                        <div class="issue-priority">
+                            <label class="priority-option low">
+                                <input type="radio" name="priority" value="low" checked> Low
+                            </label>
+                            <label class="priority-option medium">
+                                <input type="radio" name="priority" value="medium"> Medium
+                            </label>
+                            <label class="priority-option high">
+                                <input type="radio" name="priority" value="high"> High
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="issue-form-group">
+                        <label><i class="fas fa-heading"></i> Title</label>
+                        <input type="text" id="issueTitle" placeholder="Brief summary of the issue" required>
+                    </div>
+                    
+                    <div class="issue-form-group">
+                        <label><i class="fas fa-align-left"></i> Description</label>
+                        <textarea id="issueDescription" placeholder="Detailed description of the issue..." required></textarea>
+                    </div>
+                    
+                    <div class="issue-form-group">
+                        <label><i class="fas fa-calendar"></i> Date & Time</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="date" id="issueDate" value="${dateStr}" style="flex: 1;" required>
+                            <input type="time" id="issueTime" value="${timeStr}" style="flex: 1;" required>
+                        </div>
+                    </div>
+                    
+                    <div class="issue-form-group">
+                        <label><i class="fas fa-user"></i> Reported By</label>
+                        <input type="text" id="reportedBy" value="Admin" required>
+                    </div>
+                </form>
+            </div>
+            <div class="report-issue-footer">
+                <button class="btn-modern-outline" onclick="closeReportIssueModal()">Cancel</button>
+                <button class="btn-modern-primary" onclick="submitIssueReport('${job.id}')">Submit Report</button>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+    
+    // Add click event to priority options for visual feedback
+    document.querySelectorAll('.priority-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.priority-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            this.classList.add('selected');
+        });
+    });
+    
+    // Close when clicking outside the modal
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeReportIssueModal();
+        }
+    });
+}
+
+// Close report issue modal - FIXED
+window.closeReportIssueModal = function() {
+    const modal = document.getElementById('reportIssueModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+};
+
+// Submit issue report
+window.submitIssueReport = function(jobId) {
+    // Get form values
+    const issueType = document.getElementById('issueType')?.value;
+    const priority = document.querySelector('input[name="priority"]:checked')?.value;
+    const title = document.getElementById('issueTitle')?.value;
+    const description = document.getElementById('issueDescription')?.value;
+    const date = document.getElementById('issueDate')?.value;
+    const time = document.getElementById('issueTime')?.value;
+    const reportedBy = document.getElementById('reportedBy')?.value;
+    
+    // Validate form
+    if (!issueType || !title || !description) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    // Create report object
+    const report = {
+        jobId: jobId,
+        issueType: issueType,
+        priority: priority,
+        title: title,
+        description: description,
+        dateTime: `${date} ${time}`,
+        reportedBy: reportedBy,
+        reportedAt: new Date().toISOString(),
+        status: 'pending'
+    };
+    
+    console.log('Issue Report Submitted:', report);
+    
+    alert(`Issue report submitted successfully!\n\nReport ID: ${generateReportId()}\nIssue: ${title}\nPriority: ${priority}`);
+    
+    closeReportIssueModal();
+};
+
+function generateReportId() {
+    return 'ISS' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+}
+
+function makeTimelineExpandable() {
+    console.log('Timeline displayed in simple mode');
+}
 
 window.initializeJobsPage = initializeJobsPage;

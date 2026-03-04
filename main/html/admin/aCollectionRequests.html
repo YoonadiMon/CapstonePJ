@@ -79,12 +79,17 @@
 
     <!-- Main Content -->
     <main>
+        <!-- Page Header -->
+        <div class="ops-page-header">
+            <div>
+                <h1 class="ops-title">Collection Requests</h1>
+            </div>
+        </div>
+
         <div class="dashboard-container">
             <!-- Left Sidebar - Status Overview -->
             <div class="dashboard-sidebar">
                 <div class="sidebar-header">
-                    <h2>Collection Hub</h2>
-                    <p>Manage all collection requests</p>
                 </div>
                 
                 <div class="status-panels">
@@ -101,50 +106,62 @@
                         </div>
                     </div>
                     
-                    <div class="status-panel completed" onclick="filterByStatus('completed')">
-                        <div class="panel-icon">
-                            <i class="fas fa-check-double"></i>
-                        </div>
-                        <div class="panel-info">
-                            <span class="panel-label">Completed</span>
-                            <span class="panel-count" id="completedCount">0</span>
-                        </div>
-                        <div class="panel-trend">
-                            <i class="fas fa-check"></i> 12 this month
-                        </div>
-                    </div>
-                    
-                    <div class="status-panel cancelled" onclick="filterByStatus('cancelled')">
-                        <div class="panel-icon">
-                            <i class="fas fa-ban"></i>
-                        </div>
-                        <div class="panel-info">
-                            <span class="panel-label">Cancelled</span>
-                            <span class="panel-count" id="cancelledCount">0</span>
-                        </div>
-                        <div class="panel-trend">
-                            <i class="fas fa-exclamation"></i> 3 this week
-                        </div>
-                    </div>
-                    
-                    <div class="status-panel rejected" onclick="filterByStatus('rejected')">
-                        <div class="panel-icon">
-                            <i class="fas fa-times-circle"></i>
-                        </div>
-                        <div class="panel-info">
-                            <span class="panel-label">Rejected</span>
-                            <span class="panel-count" id="rejectedCount">0</span>
-                        </div>
-                        <div class="panel-trend">
-                            <i class="fas fa-info"></i> 1 pending review
-                        </div>
-                    </div>
-                </div>
+                     <div class="status-panel ongoing" onclick="filterByStatus('ongoing')">
+        <div class="panel-icon">
+            <i class="fas fa-sync-alt"></i> 
+        </div>
+        <div class="panel-info">
+            <span class="panel-label">Ongoing</span>
+            <span class="panel-count" id="ongoingCount">0</span>
+        </div>
+        <div class="panel-trend">
+            <i class="fas fa-clock"></i> In progress
+        </div>
+    </div>
+    
+    <div class="status-panel completed" onclick="filterByStatus('completed')">
+        <div class="panel-icon">
+            <i class="fas fa-check-double"></i>
+        </div>
+        <div class="panel-info">
+            <span class="panel-label">Completed</span>
+            <span class="panel-count" id="completedCount">0</span>
+        </div>
+        <div class="panel-trend">
+            <i class="fas fa-check"></i> 12 this month
+        </div>
+    </div>
+    
+    <div class="status-panel cancelled" onclick="filterByStatus('cancelled')">
+        <div class="panel-icon">
+            <i class="fas fa-ban"></i>
+        </div>
+        <div class="panel-info">
+            <span class="panel-label">Cancelled</span>
+            <span class="panel-count" id="cancelledCount">0</span>
+        </div>
+        <div class="panel-trend">
+            <i class="fas fa-exclamation"></i> 3 this week
+        </div>
+    </div>
+    
+    <div class="status-panel rejected" onclick="filterByStatus('rejected')">
+        <div class="panel-icon">
+            <i class="fas fa-times-circle"></i>
+        </div>
+        <div class="panel-info">
+            <span class="panel-label">Rejected</span>
+            <span class="panel-count" id="rejectedCount">0</span>
+        </div>
+        <div class="panel-trend">
+            <i class="fas fa-info"></i> 1 pending review
+        </div>
+    </div>
+</div>
                 
                 <div class="quick-filters">
                     <h4>Quick Filters</h4>
                     <div class="filter-chips">
-                        <span class="filter-chip active" data-filter="all">All Requests</span>
                         <span class="filter-chip" data-filter="this-week">This Week</span>
                         <span class="filter-chip" data-filter="this-month">This Month</span>
                         <span class="filter-chip" data-filter="high-weight">High Weight (>20kg)</span>
@@ -172,86 +189,99 @@
                         <button class="action-btn" id="exportBtn">
                             <i class="fas fa-download"></i> Export
                         </button>
-                        <button class="action-btn primary" onclick="window.location.href='/main/html/admin/aRequests.html'">
-                            <i class="fas fa-plus"></i> New Request
-                        </button>
                     </div>
                 </div>
                 
-                <!-- LIST VIEW SECTION -->
-                <div id="collectionListView" class="view-section">
-                    <!-- Results Bar -->
-                    <div class="results-bar">
-                        <div class="results-info">
-                            <span id="resultCount">Showing 0 requests</span>
-                            <span class="results-divider"></span>
-                            <span class="results-total" id="totalCount">Total: 0</span>
-                        </div>
-                        <div class="results-sort">
-                            <label for="sortSelect">Sort by:</label>
-                            <select id="sortSelect" class="sort-select">
-                                <option value="date-desc">Newest First</option>
-                                <option value="date-asc">Oldest First</option>
-                                <option value="weight-desc">Weight (High to Low)</option>
-                                <option value="weight-asc">Weight (Low to High)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Timeline View (instead of grid/list) -->
-                    <div id="timelineContainer" class="timeline-view">
-                        <!-- Timeline items will be inserted here -->
-                    </div>
-                    
-                    <!-- Kanban View (alternative) -->
-                    <div id="kanbanContainer" class="kanban-view hidden">
-                        <div class="kanban-column" data-status="scheduled">
-                            <div class="kanban-header scheduled">
-                                <span>Scheduled</span>
-                                <span class="column-count" id="kanbanScheduledCount">0</span>
-                            </div>
-                            <div class="kanban-cards" id="kanbanScheduled"></div>
-                        </div>
-                        <div class="kanban-column" data-status="completed">
-                            <div class="kanban-header completed">
-                                <span>Completed</span>
-                                <span class="column-count" id="kanbanCompletedCount">0</span>
-                            </div>
-                            <div class="kanban-cards" id="kanbanCompleted"></div>
-                        </div>
-                        <div class="kanban-column" data-status="cancelled">
-                            <div class="kanban-header cancelled">
-                                <span>Cancelled</span>
-                                <span class="column-count" id="kanbanCancelledCount">0</span>
-                            </div>
-                            <div class="kanban-cards" id="kanbanCancelled"></div>
-                        </div>
-                        <div class="kanban-column" data-status="rejected">
-                            <div class="kanban-header rejected">
-                                <span>Rejected</span>
-                                <span class="column-count" id="kanbanRejectedCount">0</span>
-                            </div>
-                            <div class="kanban-cards" id="kanbanRejected"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- View Toggle -->
-                    <div class="view-toggle">
-                        <button class="toggle-btn active" data-view="timeline">
-                            <i class="fas fa-stream"></i> Timeline
-                        </button>
-                        <button class="toggle-btn" data-view="kanban">
-                            <i class="fas fa-columns"></i> Kanban
-                        </button>
-                    </div>
-                    
-                    <!-- Empty State -->
-                    <div id="emptyState" class="empty-state hidden">
-                        <i class="fas fa-box-open"></i>
-                        <h3>No collection requests found</h3>
-                        <p>Try adjusting your filters or search criteria</p>
+<!-- LIST VIEW SECTION -->
+<div id="collectionListView" class="view-section">
+    <!-- Results Bar -->
+    <div class="results-bar">
+        <div class="results-info">
+            <span id="resultCount">Showing 0 requests</span>
+        </div>
+        <div class="results-actions">
+            <button class="all-requests-btn" id="allRequestsBtn">
+                <i class="fas fa-list"></i> All Requests
+            </button>
+            <div class="results-sort">
+                <div class="sort-dropdown" id="sortDropdown">
+                    <button class="sort-dropdown-btn" id="sortDropdownBtn">
+                        <i class="fas fa-sort-amount-down"></i>
+                        <span id="selectedSort">Newest First</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="sort-dropdown-content" id="sortDropdownContent">
+                        <a href="#" data-sort="date-desc" class="active-sort">
+                            <i class="fas fa-calendar-alt"></i> Newest First
+                        </a>
+                        <a href="#" data-sort="date-asc">
+                            <i class="fas fa-calendar-alt"></i> Oldest First
+                        </a>
+                        <a href="#" data-sort="weight-desc">
+                            <i class="fas fa-weight-hanging"></i> Weight (High to Low)
+                        </a>
+                        <a href="#" data-sort="weight-asc">
+                            <i class="fas fa-weight-hanging"></i> Weight (Low to High)
+                        </a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div> <!-- Close results-bar -->
+    
+    <!-- Timeline View -->
+    <div id="timelineContainer" class="timeline-view">
+        <!-- Timeline items will be inserted here -->
+    </div>
+    
+    <!-- Kanban View -->
+    <div id="kanbanContainer" class="kanban-view hidden">
+        <div class="kanban-column" data-status="scheduled">
+            <div class="kanban-header scheduled">
+                <span>Scheduled</span>
+                <span class="column-count" id="kanbanScheduledCount">0</span>
+            </div>
+            <div class="kanban-cards" id="kanbanScheduled"></div>
+        </div>
+        <div class="kanban-column" data-status="completed">
+            <div class="kanban-header completed">
+                <span>Completed</span>
+                <span class="column-count" id="kanbanCompletedCount">0</span>
+            </div>
+            <div class="kanban-cards" id="kanbanCompleted"></div>
+        </div>
+        <div class="kanban-column" data-status="cancelled">
+            <div class="kanban-header cancelled">
+                <span>Cancelled</span>
+                <span class="column-count" id="kanbanCancelledCount">0</span>
+            </div>
+            <div class="kanban-cards" id="kanbanCancelled"></div>
+        </div>
+        <div class="kanban-column" data-status="rejected">
+            <div class="kanban-header rejected">
+                <span>Rejected</span>
+                <span class="column-count" id="kanbanRejectedCount">0</span>
+            </div>
+            <div class="kanban-cards" id="kanbanRejected"></div>
+        </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state hidden">
+        <i class="fas fa-box-open"></i>
+        <h3>No requests found</h3>
+    </div>
+    
+    <!-- View Toggle -->
+    <div class="view-toggle">
+        <button class="toggle-btn active" data-view="timeline">
+            <i class="fas fa-stream"></i> Timeline
+        </button>
+        <button class="toggle-btn" data-view="kanban">
+            <i class="fas fa-columns"></i> Kanban
+        </button>
+    </div>
+</div> <!-- Close collectionListView -->
                 
                 <!-- DETAIL VIEW SECTION -->
                 <div id="collectionDetailView" class="view-section hidden">
@@ -364,7 +394,7 @@
                                 <div class="detail-card">
                                     <h3><i class="fas fa-history"></i> Timeline</h3>
                                     <div class="timeline-steps" id="timelineSteps">
-                                        <!-- Timeline steps will be inserted here -->
+                                        <!-- Timeline info will be inserted here -->
                                     </div>
                                 </div>
                                 
@@ -420,7 +450,7 @@
             <div>
                 <b>Management</b><br>
                 <a href="/main/html/admin/aCollectionRequests.html">Collection Requests</a><br>
-                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aCollectionJobs.html">Collection Jobs</a><br>
                 <a href="/main/html/admin/aIssue.html">Issue</a><br>
             </div>
             <div>

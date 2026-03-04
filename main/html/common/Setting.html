@@ -237,6 +237,16 @@
         .strength-seg.strong { background: hsl(145,50%,45%); }
         .strength-text { font-size: 0.7rem; color: var(--Gray); margin-top: 4px; }
 
+        /* STATIC INFO */
+        .static-info {
+            padding: 0.5rem 0.7rem;
+            border: 1.5px solid var(--LowMainBlue);
+            border-radius: 8px;
+            font-size: 0.88rem;
+            color: var(--text-color);
+            background: var(--sec-bg-color);
+        }
+
         @media (max-width: 768px) {
             .settings-layout { grid-template-columns: 1fr; }
             .form-row { grid-template-columns: 1fr; }
@@ -369,35 +379,6 @@
                         </div>
                     </div>
 
-                    <div class="c-card">
-                        <div class="c-card-header">
-                            <div class="c-card-title">Two-Factor Authentication</div>
-                            <div class="c-card-desc">Add an extra layer of security to your account</div>
-                        </div>
-                        <div class="c-card-body">
-                            <div class="toggle-row">
-                                <div>
-                                    <div class="toggle-label">Enable 2FA</div>
-                                    <div class="toggle-sub">Require a verification code when signing in</div>
-                                </div>
-                                <label class="c-toggle">
-                                    <input type="checkbox" id="toggle2fa" onchange="saveSetting('2fa', this.checked)">
-                                    <span class="c-toggle-track"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-row">
-                                <div>
-                                    <div class="toggle-label">Login Alerts</div>
-                                    <div class="toggle-sub">Get notified of new sign-ins to your account</div>
-                                </div>
-                                <label class="c-toggle">
-                                    <input type="checkbox" id="toggleAlerts" checked onchange="saveSetting('alerts', this.checked)">
-                                    <span class="c-toggle-track"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
                 <!-- APPEARANCE -->
@@ -449,26 +430,17 @@
                     <div class="c-card">
                         <div class="c-card-header">
                             <div class="c-card-title">Language & Region</div>
-                            <div class="c-card-desc">Set your preferred language, timezone and date format</div>
+                            <div class="c-card-desc">Set your preferred date and time format</div>
                         </div>
                         <div class="c-card-body">
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Language</label>
-                                    <select id="language" onchange="savePref('language', this.value)">
-                                        <option value="en" selected>English</option>
-                                        <option value="ms">Bahasa Melayu</option>
-                                        <option value="zh">Chinese (Simplified)</option>
-                                        <option value="ta">Tamil</option>
-                                    </select>
+                                    <div class="static-info">English</div>
                                 </div>
                                 <div class="form-group">
                                     <label>Timezone</label>
-                                    <select id="timezone" onchange="savePref('timezone', this.value)">
-                                        <option value="asia_kl" selected>Asia/Kuala Lumpur (GMT+8)</option>
-                                        <option value="asia_sg">Asia/Singapore (GMT+8)</option>
-                                        <option value="utc">UTC (GMT+0)</option>
-                                    </select>
+                                    <div class="static-info">Asia/Kuala Lumpur (GMT+8)</div>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -554,26 +526,12 @@
         });
 
         // ── PERSIST SETTINGS ─────────────────────────────────────────────
-        function saveSetting(key, value) {
-            localStorage.setItem('setting_' + key, value);
-            showToast('Setting saved.');
-        }
         function savePref(key, value) {
             localStorage.setItem('pref_' + key, value);
         }
         function loadSettings() {
-            // Toggles
-            const toggleMap = {
-                '2fa': 'toggle2fa',
-                'alerts': 'toggleAlerts'
-            };
-            Object.entries(toggleMap).forEach(([key, elId]) => {
-                const saved = localStorage.getItem('setting_' + key);
-                const el = document.getElementById(elId);
-                if (el && saved !== null) el.checked = saved === 'true';
-            });
             // Selects
-            ['fontSize','density','language','timezone','dateFormat','timeFormat'].forEach(key => {
+            ['fontSize','density','dateFormat','timeFormat'].forEach(key => {
                 const saved = localStorage.getItem('pref_' + key);
                 const el = document.getElementById(key);
                 if (el && saved) el.value = saved;
@@ -628,7 +586,7 @@
 
         // ── LANGUAGE SAVE ────────────────────────────────────────────────
         function saveLanguagePrefs() {
-            ['language','timezone','dateFormat','timeFormat'].forEach(key => {
+            ['dateFormat','timeFormat'].forEach(key => {
                 savePref(key, document.getElementById(key).value);
             });
             showToast('Language & region preferences saved!');

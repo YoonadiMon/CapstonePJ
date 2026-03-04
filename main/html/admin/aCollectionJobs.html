@@ -4,24 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Collection Operations - AfterVolt</title>
+    <title>Collection Jobs - AfterVolt</title>
     <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
 
     <link rel="stylesheet" href="/main/style/style.css">
     <link rel="stylesheet" href="/main/style/aCollectionJobs.css">
-
-    <!-- Leaflet CSS for map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 </head>
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
     
-    <!-- Logo + Name & Navbar -->
     <header>
         <!-- Logo + Name -->
         <section class="c-logo-section">
@@ -48,23 +45,23 @@
                     </section>
 
                     <a href="/main/html/admin/aHome.html">Home</a>
-                    <a href="/main/html/admin/aRequests.html">Requests</a><br>
-                    <a href="/main/html/admin/aJobs.html">Jobs</a><br>
-                    <a href="/main/html/admin/aIssue.html">Issue</a><br>
-                    <a href="/main/html/admin/aOperations.html">Operations</a><br>
+                    <a href="/main/html/admin/aRequests.html">Requests</a>
+                    <a href="/main/html/admin/aJobs.html">Jobs</a>
+                    <a href="/main/html/admin/aIssue.html">Issue</a>
+                    <a href="/main/html/admin/aOperations.html">Operations</a>
                     <a href="/main/html/admin/aReport.html">Report</a>
                 </div>
             </div>
+
         </nav>
 
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
             <a href="/main/html/admin/aHome.html">Home</a>
-            <a href="/main/html/admin/aRequests.html">Requests</a><br>
-            <a href="/main/html/admin/aJobs.html">Jobs</a><br>
-            <a href="/main/html/admin/aCollectionJobs.html">Collection Jobs</a><br>
-            <a href="/main/html/admin/aIssue.html">Issue</a><br>
-            <a href="/main/html/admin/aOperations.html">Operations</a><br>
+            <a href="/main/html/admin/aRequests.html">Requests</a>
+            <a href="/main/html/admin/aJobs.html">Jobs</a>
+            <a href="/main/html/admin/aIssue.html">Issue</a>
+            <a href="/main/html/admin/aOperations.html">Operations</a>
             <a href="/main/html/admin/aReport.html">Report</a>
         </nav>          
         <section class="c-navbar-more">
@@ -79,54 +76,13 @@
     </header>
     <hr>
 
-    <!-- Main Content -->
-    <main class="collection-ops-main">
-        <div class="ops-container">
-            <!-- Header with Live Status -->
+    <!-- Main Content - ADDED MAIN TAG AND PAGE-CONTAINER -->
+    <main>
+        <div class="page-container">
             <div class="ops-header">
-                <div class="header-title">
-                    <h1>Collection Operations</h1>
-                    <div class="live-badge">
-                        <span class="live-dot"></span>
-                        LIVE
-                    </div>
-                </div>
-                <div class="header-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">Active Collections</span>
-                        <span class="stat-value" id="activeCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Delayed</span>
-                        <span class="stat-value warning" id="headerDelayedCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Handover</span>
-                        <span class="stat-value danger" id="headerHandoverCount">0</span>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <button class="btn-refresh" id="refreshBtn">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="btn-view-toggle" id="toggleViewBtn">
-                        <i class="fas fa-map" id="viewIcon"></i>
-                        <span id="viewToggleText">Map View</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Alert Banner for Handover -->
-            <div class="alert-banner" id="handoverBanner" style="display: none;">
-                <div class="alert-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="alert-message">
-                    <strong>Handover Required</strong>
-                    <span id="bannerHandoverCount">0</span> failed job(s) need immediate reassignment
-                </div>
-                <button class="alert-action" onclick="scrollToHandover()">
-                    View <i class="fas fa-arrow-right"></i>
+                <h1>Collection Jobs</h1>
+                <button class="btn-refresh" id="refreshBtn"> <!-- temporary -->
+                    <i class="fas fa-sync-alt"></i>
                 </button>
             </div>
 
@@ -134,44 +90,20 @@
             <div class="dashboard-grid">
                 <!-- Left Column - Job Lists -->
                 <div class="jobs-column">
-                    <!-- Collector Status Bar -->
-                    <div class="collector-status-bar">
-                        <div class="collector-filter">
-                            <button class="collector-filter-btn active" data-collector="all">All</button>
-                            <button class="collector-filter-btn" data-collector="Ahmad Bin Yusof">Ahmad</button>
-                            <button class="collector-filter-btn" data-collector="Siti Nurhaliza">Siti</button>
-                            <button class="collector-filter-btn" data-collector="Mei Ling">Mei Ling</button>
-                            <button class="collector-filter-btn" data-collector="Tan Sri Aziz">Tan Sri</button>
+                    
+                    <!-- Handover Required Panel - FIRST -->
+                    <div class="handover-panel" id="handoverPanel">
+                        <div class="panel-header danger">
+                            <i class="fas fa-exchange-alt"></i>
+                            <h3>Handover Required</h3>
+                            <span class="panel-badge" id="panelHandoverCount">0</span>
                         </div>
-                        <div class="collector-online">
-                            <span class="online-dot"></span>
-                            <span>4 Online</span>
+                        <div class="panel-content" id="handoverList">
+                            <!-- Handover jobs will be loaded here -->
                         </div>
                     </div>
 
-                    <!-- Priority Queue -->
-                    <div class="queue-section">
-                        <div class="section-header">
-                            <h2><i class="fas fa-clock"></i> Priority Queue</h2>
-                            <span class="section-badge" id="priorityCount">0</span>
-                        </div>
-                        <div class="queue-list" id="priorityQueue">
-                            <!-- Priority jobs will be loaded here -->
-                        </div>
-                    </div>
-
-                    <!-- Active Collections by Collector -->
-                    <div class="collectors-section">
-                        <div class="section-header">
-                            <h2><i class="fas fa-truck"></i> Active Collections</h2>
-                            <span class="section-badge" id="activeCollectionsCount">0</span>
-                        </div>
-                        <div class="collectors-grid" id="collectorsGrid">
-                            <!-- Collector cards will be loaded here -->
-                        </div>
-                    </div>
-
-                    <!-- Delayed Jobs Panel -->
+                    <!-- Delayed Jobs Panel - SECOND -->
                     <div class="delayed-panel" id="delayedPanel">
                         <div class="panel-header warning">
                             <i class="fas fa-exclamation-triangle"></i>
@@ -183,15 +115,36 @@
                         </div>
                     </div>
 
-                    <!-- Handover Required Panel -->
-                    <div class="handover-panel" id="handoverPanel">
-                        <div class="panel-header danger">
-                            <i class="fas fa-exchange-alt"></i>
-                            <h3>Handover Required</h3>
-                            <span class="panel-badge" id="panelHandoverCount">0</span>
+                    <!-- Pickup Failed Section -->
+                    <div class="pickup-failed-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-exclamation-triangle" style="color: #ffa502;"></i>Failed Drop-Off</h2>
+                            <span class="section-badge" id="pendingDropoffCount">0</span>
                         </div>
-                        <div class="panel-content" id="handoverList">
-                            <!-- Handover jobs will be loaded here -->
+                        
+                        <div class="info-message" style="background: #fff3cd; border-left: 4px solid #ffa502; padding: 0.8rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <i class="fas fa-info-circle" style="color: #b55f0e;"></i>
+                            <span style="color: #b55f0e; font-size: 0.9rem;"> Need centre reassignment</span>
+                        </div>
+                        
+                        <div class="pending-dropoff-list" id="pendingDropoffList">
+                            <!-- Pending drop-off jobs will be loaded here -->
+                        </div>
+                        
+                        <!-- Quick Stats for this status -->
+                        <div class="dropoff-stats" style="display: flex; gap: 1rem; margin-top: 1rem; padding: 0.8rem; background: var(--sec-bg-color); border-radius: 12px;">
+                            <div style="flex: 1; text-align: center;">
+                                <span style="font-size: 1.3rem; font-weight: 700; color: #ffa502;" id="itemsInTransit">0</span>
+                                <span style="display: block; font-size: 0.7rem; color: var(--Gray);">Items in Transit</span>
+                            </div>
+                            <div style="flex: 1; text-align: center;">
+                                <span style="font-size: 1.3rem; font-weight: 700; color: var(--MainBlue);" id="affectedCollectors">0</span>
+                                <span style="display: block; font-size: 0.7rem; color: var(--Gray);">Affected Collectors</span>
+                            </div>
+                            <div style="flex: 1; text-align: center;">
+                                <span style="font-size: 1.3rem; font-weight: 700; color: #2ecc71;" id="centresAvailable">0</span>
+                                <span style="display: block; font-size: 0.7rem; color: var(--Gray);">Centres Available</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -216,30 +169,6 @@
                             <button class="map-control-btn" onclick="zoomToFit()">
                                 <i class="fas fa-expand"></i>
                             </button>
-                        </div>
-
-                        <!-- Collector Legend -->
-                        <div class="map-legend">
-                            <div class="legend-item">
-                                <span class="legend-dot collector-1"></span>
-                                <span>Ahmad</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-dot collector-2"></span>
-                                <span>Siti</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-dot collector-3"></span>
-                                <span>Mei Ling</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-dot collector-4"></span>
-                                <span>Tan Sri</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-dot delayed"></span>
-                                <span>Delayed</span>
-                            </div>
                         </div>
                     </div>
 
@@ -273,75 +202,68 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- ACTIVE COLLECTORS BOX -->
+                    <div class="active-collectors-box">
+                        <div class="box-header">
+                            <h3><i class="fas fa-users"></i> Active Collections</h3>
+                            <span class="collector-count" id="activeCollectorCount">0</span>
+                        </div>
+                        <div class="collector-list" id="activeCollectorList">
+                            <!-- Collectors will be loaded here -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Reassign Modal (same style but enhanced) -->
-    <div class="ops-modal" id="reassignModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header danger">
-                <h3><i class="fas fa-exchange-alt"></i> Reassign Job</h3>
-                <button class="modal-close" onclick="closeReassignModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="job-info-bar" id="modalJobInfo">
-                    <!-- Job info will be populated -->
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label><i class="fas fa-user"></i> New Collector</label>
-                        <select id="newCollectorSelect" class="collector-select">
-                            <option value="">-- Select Collector --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-truck"></i> New Vehicle</label>
-                        <select id="newVehicleSelect" class="vehicle-select">
-                            <option value="">-- Select Vehicle --</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label><i class="fas fa-comment"></i> Handover Notes</label>
-                    <textarea id="reassignNotes" placeholder="Add instructions for the new collector..."></textarea>
-                </div>
+    <hr>
 
-                <div class="eta-estimate" id="etaEstimate">
-                    <i class="fas fa-clock"></i>
-                    <span>Estimated pickup: <strong id="etaTime">--</strong></span>
-                </div>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="/main/html/admin/aHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
             </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeReassignModal()">Cancel</button>
-                <button class="btn-primary danger" onclick="confirmReassign()">
-                    <i class="fas fa-exchange-alt"></i> Confirm Reassignment
-                </button>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
             </div>
-        </div>
-    </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Management</b><br>
+                <a href="/main/html/admin/aCollectionRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aIssue.html">Issue</a><br>
+            </div>
+            <div>
+                <b>System Operation</b><br>
+                <a href="/main/html/admin/aProviders.html">Providers</a><br>
+                <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
+                <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
 
-    <!-- Job Details Quick View Modal -->
-    <div class="ops-modal" id="jobQuickViewModal" style="display: none;">
-        <div class="modal-content small">
-            <div class="modal-header">
-                <h3><i class="fas fa-info-circle"></i> Job Details</h3>
-                <button class="modal-close" onclick="closeJobQuickView()">&times;</button>
-            </div>
-            <div class="modal-body" id="quickViewContent">
-                <!-- Job details will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeJobQuickView()">Close</button>
-                <button class="btn-primary" onclick="viewFullJobDetails()">View Full Details</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/main/javascript/mainScript.js"></script>
     <script src="/main/javascript/aCollectionJobs.js"></script>

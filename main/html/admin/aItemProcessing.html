@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Item Processing – AfterVolt</title>
+    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+    <link rel="stylesheet" href="/main/style/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+    <style>
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+        }
+        .page-header-left h1 {
+            font-size: 1.3rem; font-weight: 700; color: var(--text-color); margin-bottom: 3px;
+        }
+        .page-header-left p {
+            font-size: 0.8rem; color: var(--Gray);
+        }
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--MainBlue); color: #fff;
+            border: none; border-radius: 24px;
+            padding: 0.45rem 1.1rem;
+            font-size: 0.82rem; font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer; transition: background 0.2s;
+            white-space: nowrap; flex-shrink: 0;
+        }
+        .btn-primary:hover { background: var(--DarkerMainBlue); }
+
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.85rem;
+        }
+        .stat-card {
+            background: var(--bg-color);
+            border: 1px solid var(--LowMainBlue);
+            border-radius: 12px;
+            padding: 1rem 1.1rem;
+            box-shadow: 0 1px 6px var(--shadow-color);
+            display: flex; align-items: center; gap: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover, .stat-card.active {
+            border-color: var(--MainBlue);
+            box-shadow: 0 2px 12px var(--shadow-color);
+        }
+        .stat-card.active { background: hsla(225,94%,67%,.05); }
+        .stat-icon {
+            width: 38px; height: 38px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .stat-icon.blue   { background: hsla(225,94%,67%,.12); color: var(--MainBlue); }
+        .stat-icon.orange { background: hsla(30,90%,55%,.12);  color: hsl(30,72%,40%); }
+        .stat-icon.yellow { background: hsla(50,90%,55%,.12);  color: hsl(45,72%,36%); }
+        .stat-icon.green  { background: hsla(145,50%,45%,.12); color: hsl(145,50%,34%); }
+        .stat-icon.red    { background: hsla(0,65%,52%,.10);   color: hsl(0,60%,44%); }
+        .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--text-color); line-height: 1; }
+        .stat-label { font-size: 0.69rem; color: var(--Gray); margin-top: 3px; }
+
+        /* ── SECTION HEADING ── */
+        .section-heading {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+        .section-heading h3 {
+            font-size: 0.88rem; font-weight: 700; color: var(--text-color);
+            display: flex; align-items: center; gap: 7px; margin: 0;
+        }
+        .section-heading h3 svg { color: var(--MainBlue); flex-shrink: 0; }
+
+        /* ── FILTERS BAR ── */
+        .filters-bar {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .search-wrap {
+            position: relative; flex: 1; min-width: 200px;
+        }
+        .search-wrap svg {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            color: var(--Gray); pointer-events: none;
+        }
+        .search-input {
+            width: 100%; padding: 0.45rem 0.7rem 0.45rem 32px;
+            border: 1.5px solid var(--LowMainBlue);
+            border-radius: 8px; font-size: 0.83rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color); color: var(--text-color);
+            outline: none; transition: border-color 0.2s;
+        }
+        .search-input:focus { border-color: var(--MainBlue); }
+
+        .filter-select {
+            padding: 0.45rem 0.7rem;
+            border: 1.5px solid var(--LowMainBlue);
+            border-radius: 8px; font-size: 0.83rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color); color: var(--text-color);
+            outline: none; cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .filter-select:focus { border-color: var(--MainBlue); }
+
+        /* ── CARD ── */
+        .c-card {
+            background: var(--bg-color);
+            border: 1px solid var(--LowMainBlue);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px var(--shadow-color);
+        }
+        .c-card-body { padding: 1rem 1.2rem; }
+
+        /* ── DATA TABLE ── */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            font-size: 0.76rem; font-weight: 700; color: var(--text-color);
+            text-transform: uppercase; letter-spacing: .04em;
+            padding: 12px 10px 12px 0; text-align: left;
+            border-bottom: 2px solid var(--LowMainBlue);
+            white-space: nowrap;
+        }
+        .data-table td {
+            font-size: 0.81rem; color: var(--text-color);
+            padding: 10px 10px 10px 0;
+            border-bottom: 1px solid var(--LowMainBlue);
+            vertical-align: middle;
+        }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr { transition: background 0.12s; }
+        .data-table tbody tr:hover { background: hsla(225,94%,67%,.04); }
+        .td-muted { color: var(--Gray) !important; font-size: 0.77rem !important; }
+
+        /* item id */
+        .item-id {
+            font-size: 0.72rem; font-weight: 700;
+            color: var(--MainBlue); font-family: monospace;
+            background: hsla(225,94%,67%,.09);
+            border-radius: 6px; padding: 2px 6px;
+        }
+
+        /* item name cell */
+        .item-name-cell { display: flex; align-items: center; gap: 8px; }
+        .item-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        }
+        .item-name { font-size: 0.83rem; font-weight: 600; color: var(--text-color); }
+        .item-cat  { font-size: 0.68rem; color: var(--Gray); margin-top: 1px; }
+
+        /* provider cell */
+        .u-av {
+            width: 26px; height: 26px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.58rem; font-weight: 700; color: #fff; flex-shrink: 0;
+            vertical-align: middle; margin-right: 6px;
+        }
+
+        /* ── PILLS ── */
+        .pill {
+            font-size: 0.65rem; font-weight: 700;
+            padding: 2px 9px; border-radius: 20px;
+            white-space: nowrap; display: inline-block;
+        }
+        .pill-pending    { background: hsla(50,90%,55%,.14);   color: hsl(45,72%,32%); }
+        .pill-assigned   { background: hsla(225,94%,67%,.13);  color: var(--DarkerMainBlue); }
+        .pill-processing { background: hsla(30,90%,55%,.13);   color: hsl(30,72%,36%); }
+        .pill-done       { background: hsla(145,50%,45%,.13);  color: hsl(145,50%,30%); }
+        .pill-cancelled  { background: hsla(0,60%,50%,.10);    color: hsl(0,52%,42%); }
+
+        /* stage pipeline */
+        .stage-wrap { display: flex; align-items: center; gap: 4px; }
+        .stage-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--LowMainBlue); flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .stage-dot.done    { background: hsl(145,50%,42%); }
+        .stage-dot.active  { background: var(--MainBlue); }
+        .stage-line {
+            flex: 1; height: 2px; background: var(--LowMainBlue); min-width: 10px;
+            transition: background 0.2s;
+        }
+        .stage-line.done { background: hsl(145,50%,42%); }
+        .stage-label {
+            font-size: 0.67rem; color: var(--Gray); white-space: nowrap;
+        }
+
+        /* action buttons */
+        .action-btn {
+            font-size: 0.65rem; font-weight: 600;
+            padding: 3px 9px; border-radius: 14px; border: 1.5px solid;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 3px;
+            transition: background 0.15s; font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+        }
+        .action-btn-blue {
+            color: var(--MainBlue);
+            background: hsla(225,94%,67%,.09);
+            border-color: hsla(225,94%,67%,.25);
+        }
+        .action-btn-blue:hover  { background: hsla(225,94%,67%,.18); }
+        .action-btn-green {
+            color: hsl(145,50%,32%);
+            background: hsla(145,50%,45%,.10);
+            border-color: hsla(145,50%,45%,.28);
+        }
+        .action-btn-green:hover { background: hsla(145,50%,45%,.18); }
+        .action-btn-gray {
+            color: var(--Gray);
+            background: var(--sec-bg-color);
+            border-color: var(--LowMainBlue);
+        }
+        .action-btn-gray:hover  { background: var(--LowMainBlue); }
+
+        /* ── DETAIL PANEL (expand row) ── */
+        .detail-row { display: none; }
+        .detail-row.open { display: table-row; }
+        .detail-panel {
+            padding: 1rem 1.2rem 1rem 1.5rem;
+            background: hsla(225,94%,67%,.03);
+            border-bottom: 1px solid var(--LowMainBlue);
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .detail-item .d-label {
+            font-size: 0.67rem; font-weight: 700; color: var(--Gray);
+            text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px;
+        }
+        .detail-item .d-val {
+            font-size: 0.85rem; font-weight: 600; color: var(--text-color);
+        }
+
+        /* stage selector */
+        .stage-selector {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            padding: 0.8rem 1rem;
+            background: var(--bg-color);
+            border: 1px solid var(--LowMainBlue);
+            border-radius: 10px;
+            margin-bottom: 0.9rem;
+        }
+        .stage-selector-label {
+            font-size: 0.72rem; font-weight: 700; color: var(--Gray);
+            text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0;
+        }
+        .stage-btn {
+            font-size: 0.71rem; font-weight: 600; padding: 4px 12px;
+            border-radius: 20px; border: 1.5px solid var(--LowMainBlue);
+            background: var(--bg-color); color: var(--Gray);
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.15s;
+        }
+        .stage-btn:hover   { border-color: var(--MainBlue); color: var(--MainBlue); }
+        .stage-btn.current { background: var(--MainBlue); color: #fff; border-color: var(--MainBlue); }
+        .stage-btn.passed  { background: hsla(145,50%,45%,.13); color: hsl(145,50%,32%); border-color: hsla(145,50%,45%,.3); }
+
+        /* assign collector row */
+        .assign-row {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .assign-select {
+            padding: 0.4rem 0.65rem;
+            border: 1.5px solid var(--LowMainBlue);
+            border-radius: 8px; font-size: 0.83rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color); color: var(--text-color);
+            outline: none; min-width: 180px;
+        }
+        .assign-select:focus { border-color: var(--MainBlue); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            padding: 3rem 1rem; text-align: center;
+        }
+        .empty-state svg { color: var(--Gray); opacity: .4; margin-bottom: 0.7rem; }
+        .empty-state p { font-size: 0.85rem; color: var(--Gray); }
+
+        /* ── MODAL ── */
+        .modal-backdrop {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45); z-index: 8000;
+            align-items: center; justify-content: center;
+        }
+        .modal-backdrop.open { display: flex; }
+        .modal-box {
+            background: var(--bg-color); border-radius: 14px;
+            border: 1px solid var(--LowMainBlue);
+            box-shadow: 0 8px 40px rgba(0,0,0,.25);
+            padding: 1.5rem 1.6rem; max-width: 420px; width: 92%;
+            animation: modalIn .2s ease;
+        }
+        @keyframes modalIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        .modal-title { font-size: 1rem; font-weight: 700; color: var(--text-color); margin-bottom: 1rem; }
+        .modal-form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+        .modal-form-group label {
+            font-size: 0.69rem; font-weight: 700; color: var(--Gray);
+            text-transform: uppercase; letter-spacing: .05em;
+        }
+        .modal-form-group input,
+        .modal-form-group select,
+        .modal-form-group textarea {
+            padding: 0.48rem 0.7rem;
+            border: 1.5px solid var(--LowMainBlue);
+            border-radius: 8px; font-size: 0.86rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color); color: var(--text-color);
+            outline: none; transition: border-color 0.2s;
+        }
+        .modal-form-group input:focus,
+        .modal-form-group select:focus,
+        .modal-form-group textarea:focus { border-color: var(--MainBlue); }
+        .modal-form-group textarea { resize: vertical; min-height: 70px; }
+        .modal-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.1rem; }
+        .btn-cancel-sm {
+            background: var(--sec-bg-color); border: 1.5px solid var(--LowMainBlue);
+            color: var(--text-color); border-radius: 24px; padding: 0.4rem 1rem;
+            font-size: 0.83rem; font-family: 'Inter', sans-serif; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-cancel-sm:hover { background: var(--LowMainBlue); }
+        .btn-save-sm {
+            background: var(--MainBlue); color: #fff; border: none;
+            border-radius: 24px; padding: 0.4rem 1.1rem;
+            font-size: 0.83rem; font-family: 'Inter', sans-serif; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-save-sm:hover { background: var(--DarkerMainBlue); }
+
+        /* ── TOAST ── */
+        @keyframes toastIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes toastOut { from { opacity:1; } to { opacity:0; } }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) {
+            .stats-row { grid-template-columns: repeat(3, 1fr); }
+            .detail-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .page-header { flex-direction: column; }
+            .detail-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .detail-grid { grid-template-columns: 1fr; }
+            .filters-bar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+
+    <header>
+        <section class="c-logo-section">
+            <a href="/main/html/admin/aHome.html" class="c-logo-link">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <nav class="c-navbar-side">
+            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+                        </button>
+                        <a href="/main/html/common/Setting.html">
+                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+                    <a href="/main/html/admin/aHome.html">Home</a>
+                    <a href="/main/html/admin/aRequests.html">Requests</a>
+                    <a href="/main/html/admin/aJobs.html">Jobs</a>
+                    <a href="/main/html/admin/aIssue.html">Issue</a>
+                    <a href="/main/html/admin/aOperations.html">Operations</a>
+                    <a href="/main/html/admin/aReport.html">Report</a>
+                </div>
+            </div>
+        </nav>
+
+        <nav class="c-navbar-desktop">
+            <a href="/main/html/admin/aHome.html">Home</a>
+            <a href="/main/html/admin/aRequests.html">Requests</a>
+            <a href="/main/html/admin/aJobs.html">Jobs</a>
+            <a href="/main/html/admin/aIssue.html">Issue</a>
+            <a href="/main/html/admin/aOperations.html">Operations</a>
+            <a href="/main/html/admin/aReport.html">Report</a>
+        </nav>
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+            </button>
+            <a href="/main/html/common/Setting.html">
+                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+    </header>
+
+    <hr>
+
+    <main>
+
+        <!-- ── PAGE HEADER ── -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1>Item Processing</h1>
+                <p>Manage submitted items, assign collectors and track processing stages</p>
+            </div>
+            <button class="btn-primary" onclick="openAddModal()">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Item
+            </button>
+        </div>
+
+        <!-- ── STATS ── -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card active" onclick="filterByStatus('all', this)">
+                <div class="stat-icon blue">
+                    <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                </div>
+                <div>
+                    <div class="stat-value" id="statAll">0</div>
+                    <div class="stat-label">All Items</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('Pending', this)">
+                <div class="stat-icon yellow">
+                    <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div>
+                    <div class="stat-value" id="statPending">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('Assigned', this)">
+                <div class="stat-icon blue">
+                    <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </div>
+                <div>
+                    <div class="stat-value" id="statAssigned">0</div>
+                    <div class="stat-label">Assigned</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('Processing', this)">
+                <div class="stat-icon orange">
+                    <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                </div>
+                <div>
+                    <div class="stat-value" id="statProcessing">0</div>
+                    <div class="stat-label">Processing</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('Completed', this)">
+                <div class="stat-icon green">
+                    <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                    <div class="stat-value" id="statCompleted">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TABLE ── -->
+        <div>
+            <div class="section-heading">
+                <h3>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                    Items List
+                    <span id="filterLabel" style="font-size:0.7rem;font-weight:400;color:var(--Gray);margin-left:4px"></span>
+                </h3>
+                <div class="filters-bar">
+                    <div class="search-wrap">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" class="search-input" placeholder="Search items, providers…" id="searchInput" oninput="renderTable()">
+                    </div>
+                    <select class="filter-select" id="categoryFilter" onchange="renderTable()">
+                        <option value="">All Categories</option>
+                        <option>Electronics</option>
+                        <option>Appliances</option>
+                        <option>Batteries</option>
+                        <option>Computers</option>
+                        <option>Peripherals</option>
+                        <option>Other</option>
+                    </select>
+                    <select class="filter-select" id="collectorFilter" onchange="renderTable()">
+                        <option value="">All Collectors</option>
+                        <option>Rajan Kumar</option>
+                        <option>Farid Azmi</option>
+                        <option>Kavitha Harish</option>
+                        <option>Unassigned</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="c-card">
+                <div class="c-card-body" style="padding:0">
+                    <table class="data-table" id="itemsTable">
+                        <thead>
+                            <tr style="padding:0 1.2rem">
+                                <th style="padding-left:1.2rem">ID</th>
+                                <th>Item</th>
+                                <th>Provider</th>
+                                <th>Collector</th>
+                                <th>Qty</th>
+                                <th>Stage</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody"></tbody>
+                    </table>
+                    <div id="emptyState" class="empty-state" style="display:none">
+                        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                        <p>No items match your current filters.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <hr>
+
+    <footer>
+        <section class="c-footer-info-section">
+            <a href="/main/html/admin/aHome.html">
+                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">+60 12 345 6789</div>
+            <div class="c-text"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="eb8a8988ab8c868a8287c5888486">[email&#160;protected]</a></div>
+        </section>
+        <section class="c-footer-links-section">
+            <div>
+                <b>Management</b><br>
+                <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="/main/html/admin/aIssue.html">Issue</a>
+            </div>
+            <div>
+                <b>System Operation</b><br>
+                <a href="/main/html/admin/aProviders.html">Providers</a><br>
+                <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
+                <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="/main/html/common/Profile.html">Edit Profile</a><br>
+                <a href="/main/html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <!-- ── ADD ITEM MODAL ── -->
+    <div class="modal-backdrop" id="addModal">
+        <div class="modal-box">
+            <div class="modal-title">Add New Item</div>
+            <div class="modal-form-row">
+                <div class="modal-form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="newItemName" placeholder="e.g. Laptop">
+                </div>
+                <div class="modal-form-group">
+                    <label>Category</label>
+                    <select id="newItemCat">
+                        <option>Electronics</option>
+                        <option>Appliances</option>
+                        <option>Batteries</option>
+                        <option>Computers</option>
+                        <option>Peripherals</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-form-row">
+                <div class="modal-form-group">
+                    <label>Provider</label>
+                    <select id="newItemProvider">
+                        <option>Ahmad Zaki</option>
+                        <option>Rajan Kumar</option>
+                        <option>Siti Nora</option>
+                        <option>Lim Wei Jie</option>
+                        <option>Muthu Raj</option>
+                        <option>Farid Azmi</option>
+                        <option>Amirah Hassan</option>
+                        <option>Wei Chen</option>
+                    </select>
+                </div>
+                <div class="modal-form-group">
+                    <label>Quantity</label>
+                    <input type="number" id="newItemQty" min="1" value="1">
+                </div>
+            </div>
+            <div class="modal-form-group">
+                <label>Assign Collector</label>
+                <select id="newItemCollector">
+                    <option value="">— Unassigned —</option>
+                    <option>Rajan Kumar</option>
+                    <option>Farid Azmi</option>
+                    <option>Kavitha Harish</option>
+                </select>
+            </div>
+            <div class="modal-form-group">
+                <label>Notes</label>
+                <textarea id="newItemNotes" placeholder="Optional notes…"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel-sm" onclick="closeAddModal()">Cancel</button>
+                <button class="btn-save-sm" onclick="addItem()">Add Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── CONFIRM COMPLETE MODAL ── -->
+    <div class="modal-backdrop" id="completeModal">
+        <div class="modal-box">
+            <div class="modal-title">Mark as Completed?</div>
+            <p style="font-size:0.83rem;color:var(--Gray);margin-bottom:1.1rem;line-height:1.55">
+                This will mark <strong id="completeItemName"></strong> as fully completed and close the processing record.
+            </p>
+            <div class="modal-actions">
+                <button class="btn-cancel-sm" onclick="closeCompleteModal()">Cancel</button>
+                <button class="btn-save-sm" onclick="confirmComplete()" style="background:hsl(145,50%,38%)">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    Confirm Complete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/main/javascript/mainScript.js"></script>
+    <script>
+    // ── DATA ─────────────────────────────────────────────────────────────
+    const STAGES = ['Collected', 'Received', 'Sorting', 'Processing', 'Quality Check', 'Completed'];
+
+    const COLLECTORS = ['Rajan Kumar', 'Farid Azmi', 'Kavitha Harish'];
+
+    const AVATAR_COLOURS = {
+        'Ahmad Zaki':    'linear-gradient(135deg,hsl(225,70%,35%),hsl(225,80%,55%))',
+        'Rajan Kumar':   'linear-gradient(135deg,hsl(130,55%,28%),hsl(130,50%,46%))',
+        'Siti Nora':     'linear-gradient(135deg,hsl(260,60%,30%),hsl(260,55%,52%))',
+        'Lim Wei Jie':   'linear-gradient(135deg,hsl(185,55%,28%),hsl(185,50%,48%))',
+        'Muthu Raj':     'linear-gradient(135deg,hsl(15,65%,30%),hsl(15,60%,50%))',
+        'Farid Azmi':    'linear-gradient(135deg,hsl(340,60%,30%),hsl(340,55%,52%))',
+        'Amirah Hassan': 'linear-gradient(135deg,hsl(50,65%,30%),hsl(50,60%,50%))',
+        'Wei Chen':      'linear-gradient(135deg,hsl(200,65%,30%),hsl(200,60%,50%))',
+        'Kavitha Harish':'linear-gradient(135deg,hsl(290,55%,30%),hsl(290,50%,50%))',
+        'Nurul Ain':     'linear-gradient(135deg,hsl(170,55%,28%),hsl(170,50%,46%))',
+        'Raj Yusof':     'linear-gradient(135deg,hsl(20,60%,30%),hsl(20,55%,50%))',
+    };
+
+    const ITEM_COLOURS = [
+        'hsl(225,80%,60%)','hsl(145,50%,42%)','hsl(30,80%,55%)',
+        'hsl(260,52%,55%)','hsl(185,55%,45%)','hsl(15,65%,50%)',
+        'hsl(50,70%,48%)','hsl(340,60%,52%)','hsl(200,65%,50%)','hsl(290,55%,50%)'
+    ];
+
+    let items = [
+        { id:'ITM-001', name:'Laptop',      cat:'Computers',    provider:'Ahmad Zaki',    collector:'Rajan Kumar',    qty:2, stage:5, status:'Completed', date:'2025-06-01', notes:'Handle with care.' },
+        { id:'ITM-002', name:'Phone',       cat:'Electronics',  provider:'Ahmad Zaki',    collector:'Rajan Kumar',    qty:1, stage:5, status:'Completed', date:'2025-06-01', notes:'' },
+        { id:'ITM-003', name:'TV',          cat:'Appliances',   provider:'Siti Nora',     collector:'Farid Azmi',     qty:1, stage:3, status:'Processing', date:'2025-06-02', notes:'55 inch panel.' },
+        { id:'ITM-004', name:'Printer',     cat:'Peripherals',  provider:'Lim Wei Jie',   collector:'Rajan Kumar',    qty:1, stage:5, status:'Completed', date:'2025-06-02', notes:'' },
+        { id:'ITM-005', name:'Monitor',     cat:'Computers',    provider:'Lim Wei Jie',   collector:'Kavitha Harish', qty:2, stage:3, status:'Processing', date:'2025-06-03', notes:'24" dual monitors.' },
+        { id:'ITM-006', name:'Keyboard',    cat:'Peripherals',  provider:'Muthu Raj',     collector:'Farid Azmi',     qty:3, stage:1, status:'Assigned',   date:'2025-06-03', notes:'' },
+        { id:'ITM-007', name:'Tablet',      cat:'Electronics',  provider:'Amirah Hassan', collector:'Rajan Kumar',    qty:1, stage:2, status:'Processing', date:'2025-06-04', notes:'' },
+        { id:'ITM-008', name:'Router',      cat:'Electronics',  provider:'Wei Chen',      collector:'Kavitha Harish', qty:2, stage:5, status:'Completed', date:'2025-06-04', notes:'' },
+        { id:'ITM-009', name:'UPS Battery', cat:'Batteries',    provider:'Amirah Hassan', collector:'Farid Azmi',     qty:4, stage:1, status:'Assigned',   date:'2025-06-05', notes:'Heavy – 2 units per carton.' },
+        { id:'ITM-010', name:'Microwave',   cat:'Appliances',   provider:'Nurul Ain',     collector:'',               qty:1, stage:0, status:'Pending',    date:'2025-06-05', notes:'Door hinge broken.' },
+        { id:'ITM-011', name:'Hard Drive',  cat:'Computers',    provider:'Raj Yusof',     collector:'Kavitha Harish', qty:6, stage:4, status:'Processing', date:'2025-06-06', notes:'Data wipe required.' },
+        { id:'ITM-012', name:'Air Purifier',cat:'Appliances',   provider:'Siti Nora',     collector:'',               qty:1, stage:0, status:'Pending',    date:'2025-06-06', notes:'' },
+    ];
+
+    let idCounter = 13;
+    let activeStatusFilter = 'all';
+    let completeTargetId = null;
+
+    // ── INITIALS ──────────────────────────────────────────────────────────
+    function initials(name) {
+        if (!name) return '?';
+        const p = name.trim().split(' ');
+        return (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase();
+    }
+
+    // ── STATS ─────────────────────────────────────────────────────────────
+    function updateStats() {
+        document.getElementById('statAll').textContent       = items.length;
+        document.getElementById('statPending').textContent   = items.filter(i=>i.status==='Pending').length;
+        document.getElementById('statAssigned').textContent  = items.filter(i=>i.status==='Assigned').length;
+        document.getElementById('statProcessing').textContent= items.filter(i=>i.status==='Processing').length;
+        document.getElementById('statCompleted').textContent = items.filter(i=>i.status==='Completed').length;
+    }
+
+    // ── FILTER BY STATUS CARD ─────────────────────────────────────────────
+    function filterByStatus(status, card) {
+        activeStatusFilter = status;
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        const label = document.getElementById('filterLabel');
+        label.textContent = status === 'all' ? '' : `· ${status}`;
+        renderTable();
+    }
+
+    // ── STAGE PIPELINE SVG ────────────────────────────────────────────────
+    function stagePipeline(stage) {
+        const total = STAGES.length - 1; // 0..5
+        let html = '<div class="stage-wrap" title="' + STAGES[stage] + '">';
+        for (let i = 0; i <= total; i++) {
+            const cls = i < stage ? 'done' : (i === stage ? 'active' : '');
+            html += `<div class="stage-dot ${cls}"></div>`;
+            if (i < total) html += `<div class="stage-line ${i < stage ? 'done' : ''}"></div>`;
+        }
+        html += `</div><div class="stage-label" style="margin-top:3px">${STAGES[stage]}</div>`;
+        return html;
+    }
+
+    // ── STATUS PILL ───────────────────────────────────────────────────────
+    function statusPill(status) {
+        const map = {
+            'Pending':    'pill-pending',
+            'Assigned':   'pill-assigned',
+            'Processing': 'pill-processing',
+            'Completed':  'pill-done',
+            'Cancelled':  'pill-cancelled',
+        };
+        return `<span class="pill ${map[status]||'pill-pending'}">${status}</span>`;
+    }
+
+    // ── RENDER TABLE ──────────────────────────────────────────────────────
+    function renderTable() {
+        const search   = document.getElementById('searchInput').value.toLowerCase();
+        const catF     = document.getElementById('categoryFilter').value;
+        const colF     = document.getElementById('collectorFilter').value;
+
+        let filtered = items.filter(item => {
+            const matchStatus    = activeStatusFilter === 'all' || item.status === activeStatusFilter;
+            const matchSearch    = !search || item.name.toLowerCase().includes(search)
+                                           || item.provider.toLowerCase().includes(search)
+                                           || item.id.toLowerCase().includes(search)
+                                           || item.collector.toLowerCase().includes(search);
+            const matchCat       = !catF || item.cat === catF;
+            const matchCollector = !colF || (colF === 'Unassigned' ? !item.collector : item.collector === colF);
+            return matchStatus && matchSearch && matchCat && matchCollector;
+        });
+
+        const tbody = document.getElementById('itemsBody');
+        const empty = document.getElementById('emptyState');
+
+        if (!filtered.length) {
+            tbody.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+        empty.style.display = 'none';
+
+        tbody.innerHTML = filtered.map((item, idx) => {
+            const colour = ITEM_COLOURS[idx % ITEM_COLOURS.length];
+            const avColour = AVATAR_COLOURS[item.provider] || 'linear-gradient(135deg,hsl(220,60%,35%),hsl(220,70%,55%))';
+            const isCompleted = item.status === 'Completed';
+
+            return `
+            <tr>
+                <td style="padding-left:1.2rem">
+                    <span class="item-id">${item.id}</span>
+                </td>
+                <td>
+                    <div class="item-name-cell">
+                        <div class="item-dot" style="background:${colour}"></div>
+                        <div>
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-cat">${item.cat}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div style="display:flex;align-items:center">
+                        <div class="u-av" style="background:${avColour}">${initials(item.provider)}</div>
+                        <span style="font-size:0.8rem">${item.provider}</span>
+                    </div>
+                </td>
+                <td>
+                    ${item.collector
+                        ? `<div style="display:flex;align-items:center">
+                               <div class="u-av" style="background:${AVATAR_COLOURS[item.collector]||'#888'}">${initials(item.collector)}</div>
+                               <span style="font-size:0.8rem">${item.collector}</span>
+                           </div>`
+                        : `<span style="font-size:0.75rem;color:var(--Gray);font-style:italic">Unassigned</span>`
+                    }
+                </td>
+                <td style="font-weight:600">${item.qty}</td>
+                <td style="min-width:130px">${stagePipeline(item.stage)}</td>
+                <td>${statusPill(item.status)}</td>
+                <td class="td-muted">${item.date}</td>
+                <td style="padding-right:1.2rem">
+                    <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+                        <button class="action-btn action-btn-blue" onclick="toggleDetail('${item.id}')">
+                            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            Manage
+                        </button>
+                        ${!isCompleted ? `
+                        <button class="action-btn action-btn-green" onclick="openCompleteModal('${item.id}')">
+                            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            Complete
+                        </button>` : ''}
+                    </div>
+                </td>
+            </tr>
+            <tr class="detail-row" id="detail-${item.id}">
+                <td colspan="9" style="padding:0">
+                    <div class="detail-panel">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="d-label">Item ID</div>
+                                <div class="d-val">${item.id}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="d-label">Submitted Date</div>
+                                <div class="d-val">${item.date}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="d-label">Category</div>
+                                <div class="d-val">${item.cat}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="d-label">Quantity</div>
+                                <div class="d-val">${item.qty} unit${item.qty>1?'s':''}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="d-label">Notes</div>
+                                <div class="d-val" style="font-weight:400;font-size:0.81rem">${item.notes || '—'}</div>
+                            </div>
+                        </div>
+
+                        <!-- Stage selector -->
+                        <div class="stage-selector">
+                            <span class="stage-selector-label">Update Stage:</span>
+                            ${STAGES.map((s, i) => `
+                                <button class="stage-btn ${i < item.stage ? 'passed' : (i === item.stage ? 'current' : '')}"
+                                    onclick="updateStage('${item.id}', ${i})">
+                                    ${s}
+                                </button>`).join('')}
+                        </div>
+
+                        <!-- Assign collector -->
+                        <div class="assign-row">
+                            <span style="font-size:0.75rem;font-weight:700;color:var(--Gray);text-transform:uppercase;letter-spacing:.05em">Assign Collector:</span>
+                            <select class="assign-select" id="assignSel-${item.id}">
+                                <option value="">— Unassigned —</option>
+                                ${COLLECTORS.map(c => `<option ${item.collector===c?'selected':''}>${c}</option>`).join('')}
+                            </select>
+                            <button class="action-btn action-btn-blue" onclick="assignCollector('${item.id}')">
+                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── TOGGLE DETAIL ROW ─────────────────────────────────────────────────
+    function toggleDetail(id) {
+        const row = document.getElementById('detail-' + id);
+        if (!row) return;
+        row.classList.toggle('open');
+    }
+
+    // ── UPDATE STAGE ──────────────────────────────────────────────────────
+    function updateStage(id, stageIdx) {
+        const item = items.find(i => i.id === id);
+        if (!item) return;
+        item.stage = stageIdx;
+
+        // Auto-update status based on stage
+        if (stageIdx === 0)                          item.status = item.collector ? 'Assigned' : 'Pending';
+        else if (stageIdx >= 1 && stageIdx <= 4)     item.status = 'Processing';
+        else if (stageIdx === 5)                     item.status = 'Completed';
+
+        updateStats();
+        renderTable();
+        // Re-open the detail row after re-render
+        setTimeout(() => {
+            const row = document.getElementById('detail-' + id);
+            if (row) row.classList.add('open');
+        }, 10);
+        showToast(`Stage updated to "${STAGES[stageIdx]}"`, 'success');
+    }
+
+    // ── ASSIGN COLLECTOR ─────────────────────────────────────────────────
+    function assignCollector(id) {
+        const item = items.find(i => i.id === id);
+        const sel  = document.getElementById('assignSel-' + id);
+        if (!item || !sel) return;
+        const prev = item.collector;
+        item.collector = sel.value;
+        if (item.collector && item.status === 'Pending') item.status = 'Assigned';
+        if (!item.collector && item.status === 'Assigned') item.status = 'Pending';
+        updateStats();
+        renderTable();
+        setTimeout(() => {
+            const row = document.getElementById('detail-' + id);
+            if (row) row.classList.add('open');
+        }, 10);
+        showToast(item.collector ? `Assigned to ${item.collector}` : 'Collector removed', 'success');
+    }
+
+    // ── ADD ITEM MODAL ────────────────────────────────────────────────────
+    function openAddModal() { document.getElementById('addModal').classList.add('open'); }
+    function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+
+    function addItem() {
+        const name = document.getElementById('newItemName').value.trim();
+        if (!name) { showToast('Please enter an item name.', 'error'); return; }
+        const collector = document.getElementById('newItemCollector').value;
+        const newItem = {
+            id:        'ITM-' + String(idCounter++).padStart(3, '0'),
+            name,
+            cat:       document.getElementById('newItemCat').value,
+            provider:  document.getElementById('newItemProvider').value,
+            collector,
+            qty:       parseInt(document.getElementById('newItemQty').value) || 1,
+            stage:     0,
+            status:    collector ? 'Assigned' : 'Pending',
+            date:      new Date().toISOString().slice(0,10),
+            notes:     document.getElementById('newItemNotes').value.trim(),
+        };
+        items.unshift(newItem);
+        closeAddModal();
+        document.getElementById('newItemName').value  = '';
+        document.getElementById('newItemNotes').value = '';
+        document.getElementById('newItemQty').value   = '1';
+        updateStats();
+        renderTable();
+        showToast(`Item "${newItem.name}" added successfully.`, 'success');
+    }
+
+    // ── COMPLETE MODAL ────────────────────────────────────────────────────
+    function openCompleteModal(id) {
+        completeTargetId = id;
+        const item = items.find(i => i.id === id);
+        document.getElementById('completeItemName').textContent = item ? `"${item.name}" (${id})` : id;
+        document.getElementById('completeModal').classList.add('open');
+    }
+    function closeCompleteModal() {
+        document.getElementById('completeModal').classList.remove('open');
+        completeTargetId = null;
+    }
+    function confirmComplete() {
+        const item = items.find(i => i.id === completeTargetId);
+        if (item) {
+            item.status = 'Completed';
+            item.stage  = 5;
+        }
+        closeCompleteModal();
+        updateStats();
+        renderTable();
+        showToast(`Item marked as completed.`, 'success');
+    }
+
+    // ── TOAST ─────────────────────────────────────────────────────────────
+    function showToast(message, type = 'success') {
+        document.querySelector('.av-toast')?.remove();
+        const colors = { success: 'hsl(145,50%,40%)', error: 'hsl(0,65%,52%)', info: 'hsl(225,100%,42%)' };
+        const icons  = { success: '✓', error: '✕', info: 'ℹ' };
+        const t = document.createElement('div');
+        t.className = 'av-toast';
+        t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${colors[type]};color:#fff;padding:10px 18px;border-radius:24px;font-size:0.82rem;font-family:'Inter',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;animation:toastIn .25s ease;`;
+        t.innerHTML = `<span style="font-weight:700">${icons[type]}</span> ${message}`;
+        document.body.appendChild(t);
+        setTimeout(() => {
+            t.style.animation = 'toastOut .25s ease forwards';
+            setTimeout(() => t.remove(), 250);
+        }, 3000);
+    }
+
+    // ── INIT ──────────�
+    updateStats();
+    renderTable();
+    </script>
+    </body>
+    </html>
