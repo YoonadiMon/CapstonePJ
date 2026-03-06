@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Learn More | AfterVolt</title>
-    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+    <link rel="icon" type="image/png" href="main/assets/images/bolt-lightning-icon.svg">
 
-    <link rel="stylesheet" href="/main/style/style.css">
+    <link rel="stylesheet" href="main/style/style.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -394,7 +394,7 @@
         <!-- Logo + Name -->
         <section class="c-logo-section">
             <a href="index.html" class="c-logo-link">
-                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <img src="main/assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
         </section>
@@ -402,14 +402,14 @@
         <!-- Dark Mode Only (Desktop/Tablet) - exactly like template position -->
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
-                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+                <img src="main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
         </section>
 
         <!-- Dark Mode Only (Mobile) -->
         <section class="c-navbar-more-mobile">
             <button id="themeToggleMobile">
-                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+                <img src="main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
         </section>
         
@@ -527,8 +527,8 @@
                 document.body.classList.toggle('dark-mode');
                 const isDarkMode = document.body.classList.contains('dark-mode');
                 const iconSrc = isDarkMode ? 
-                    '/main/assets/images/dark-mode-icon.svg' : 
-                    '/main/assets/images/light-mode-icon.svg';
+                    'main/assets/images/dark-mode-icon.svg' : 
+                    'main/assets/images/light-mode-icon.svg';
                 
                 if (themeToggleDesktop) {
                     const img = themeToggleDesktop.querySelector('img');
