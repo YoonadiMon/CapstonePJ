@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Edit Profile</title>
-    <link rel="icon" type="image/png" href="/main/assets/images/bolt-lightning-icon.svg">
+    <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
 
-    <link rel="stylesheet" href="/main/style/style.css">
+    <link rel="stylesheet" href="../../style/style.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -288,23 +288,23 @@
     <header>
         <section class="c-logo-section">
             <a href="#" id="navLogoLink" class="c-logo-link">
-                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
         </section>
 
         <!-- Mobile Nav -->
         <nav class="c-navbar-side">
-            <img src="/main/assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <img src="../../assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
             <div id="sidebarNav" class="c-navbar-side-menu">
-                <img src="/main/assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
+                <img src="../../assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
                 <div class="c-navbar-side-items">
                     <section class="c-navbar-side-more">
                         <button id="themeToggleMobile">
-                            <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+                            <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                         </button>
-                        <a href="/main/html/common/Setting.html">
-                            <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        <a href="../../html/common/Setting.html">
+                            <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
                     <div id="mobileNavLinks"></div>
@@ -317,10 +317,10 @@
 
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
-                <img src="/main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+                <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
-            <a href="/main/html/common/Setting.html">
-                <img src="/main/assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            <a href="../../html/common/Setting.html">
+                <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
             </a>
         </section>
     </header>
@@ -384,7 +384,7 @@
     <footer>
         <section class="c-footer-info-section">
             <a href="#" id="footerLogoLink">
-                <img src="/main/assets/images/logo.png" alt="Logo" class="c-logo">
+                <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
             <div class="c-text c-text-center">
@@ -396,7 +396,11 @@
         <section class="c-footer-links-section" id="footerLinks"></section>
     </footer>
 
+<<<<<<< HEAD
     <script src="/main/javascript/mainScript.js"></script>
+=======
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="../../javascript/mainScript.js"></script>
+>>>>>>> 7a54a451d6224979b82a899102130787de8e052a
     <script>
         // ── USER DATA ──────────────────────────────────────────────────────
         const USERS = [
@@ -429,88 +433,88 @@
                 label: 'Admin',
                 badgeClass: 'role-admin',
                 subtitle: 'Manage your administrator profile',
-                homeUrl: '/main/html/admin/aHome.html',
+                homeUrl: '../../html/admin/aHome.html',
                 icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
                 navLinks: [
-                    { label: 'Home',       href: '/main/html/admin/aHome.html' },
-                    { label: 'Requests',   href: '/main/html/admin/aRequests.html' },
-                    { label: 'Jobs',       href: '/main/html/admin/aJobs.html' },
-                    { label: 'Issue',      href: '/main/html/admin/aIssue.html' },
-                    { label: 'Operations', href: '/main/html/admin/aOperations.html' },
-                    { label: 'Report',     href: '/main/html/admin/aReport.html' }
+                    { label: 'Home',       href: '../../html/admin/aHome.html' },
+                    { label: 'Requests',   href: '../../html/admin/aRequests.html' },
+                    { label: 'Jobs',       href: '../../html/admin/aJobs.html' },
+                    { label: 'Issue',      href: '../../html/admin/aIssue.html' },
+                    { label: 'Operations', href: '../../html/admin/aOperations.html' },
+                    { label: 'Report',     href: '../../html/admin/aReport.html' }
                 ],
                 footerLinks: `
                     <div><b>Management</b><br>
-                        <a href="/main/html/admin/aRequests.html">Collection Requests</a><br>
-                        <a href="/main/html/admin/aJobs.html">Collection Jobs</a><br>
-                        <a href="/main/html/admin/aIssue.html">Issue</a>
+                        <a href="../../html/admin/aRequests.html">Collection Requests</a><br>
+                        <a href="../../html/admin/aJobs.html">Collection Jobs</a><br>
+                        <a href="../../html/admin/aIssue.html">Issue</a>
                     </div>
                     <div><b>System Operation</b><br>
-                        <a href="/main/html/admin/aProviders.html">Providers</a><br>
-                        <a href="/main/html/admin/aCollectors.html">Collectors</a><br>
-                        <a href="/main/html/admin/aVehicles.html">Vehicles</a><br>
-                        <a href="/main/html/admin/aCentres.html">Collection Centres</a><br>
-                        <a href="/main/html/admin/aItemProcessing.html">Item Processing</a>
+                        <a href="../../html/admin/aProviders.html">Providers</a><br>
+                        <a href="../../html/admin/aCollectors.html">Collectors</a><br>
+                        <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
+                        <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
+                        <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
                     </div>
                     <div><b>Proxy</b><br>
-                        <a href="/main/html/common/Profile.html">Edit Profile</a><br>
-                        <a href="/main/html/common/Setting.html">Setting</a>
+                        <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                        <a href="../../html/common/Setting.html">Setting</a>
                     </div>`
             },
             collector: {
                 label: 'Collector',
                 badgeClass: 'role-collector',
                 subtitle: 'Manage your collector profile',
-                homeUrl: '/main/html/collector/cHome.html',
+                homeUrl: '../../html/collector/cHome.html',
                 icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
                 navLinks: [
-                    { label: 'Home',         href: '/main/html/collector/cHome.html' },
-                    { label: 'My Jobs',      href: '/main/html/collector/cMyJobs.html' },
-                    { label: 'Ongoing Jobs', href: '/main/html/collector/cInProgress.html' },
-                    { label: 'History',      href: '/main/html/collector/cCompletedJobs.html' },
-                    { label: 'About',        href: '/main/html/common/About.html' }
+                    { label: 'Home',         href: '../../html/collector/cHome.html' },
+                    { label: 'My Jobs',      href: '../../html/collector/cMyJobs.html' },
+                    { label: 'Ongoing Jobs', href: '../../html/collector/cInProgress.html' },
+                    { label: 'History',      href: '../../html/collector/cCompletedJobs.html' },
+                    { label: 'About',        href: '../../html/common/About.html' }
                 ],
                 footerLinks: `
                     <div><b>My Jobs</b><br>
-                        <a href="/main/html/collector/cMyJobs.html">My Jobs</a><br>
-                        <a href="/main/html/collector/cInProgress.html">In Progress</a><br>
-                        <a href="/main/html/collector/cCompletedJobs.html">Completed Jobs</a>
+                        <a href="../../html/collector/cMyJobs.html">My Jobs</a><br>
+                        <a href="../../html/collector/cInProgress.html">In Progress</a><br>
+                        <a href="../../html/collector/cCompletedJobs.html">Completed Jobs</a>
                     </div>
                     <div><b>Support</b><br>
-                        <a href="/main/html/collector/cReportIssues.html">Report Issue</a>
+                        <a href="../../html/collector/cReportIssues.html">Report Issue</a>
                     </div>
                     <div><b>Proxy</b><br>
-                        <a href="/main/html/common/About.html">About</a><br>
-                        <a href="/main/html/common/Profile.html">Edit Profile</a><br>
-                        <a href="/main/html/common/Setting.html">Setting</a>
+                        <a href="../../html/common/About.html">About</a><br>
+                        <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                        <a href="../../html/common/Setting.html">Setting</a>
                     </div>`
             },
             provider: {
                 label: 'Provider',
                 badgeClass: 'role-provider',
                 subtitle: 'Manage your provider profile',
-                homeUrl: '/main/html/provider/pHome.html',
+                homeUrl: '../../html/provider/pHome.html',
                 icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
                 navLinks: [
-                    { label: 'Home',             href: '/main/html/provider/pHome.html' },
-                    { label: 'Schedule Pickup',  href: '/main/html/provider/pSchedulePickup.html' },
-                    { label: 'My Pickup',        href: '/main/html/provider/pMainPickup.html' },
-                    { label: 'E-waste Guide',    href: '/main/html/provider/pEwasteGuide.html' },
-                    { label: 'About',            href: '/main/html/common/About.html' }
+                    { label: 'Home',             href: '../../html/provider/pHome.html' },
+                    { label: 'Schedule Pickup',  href: '../../html/provider/pSchedulePickup.html' },
+                    { label: 'My Pickup',        href: '../../html/provider/pMainPickup.html' },
+                    { label: 'E-waste Guide',    href: '../../html/provider/pEwasteGuide.html' },
+                    { label: 'About',            href: '../../html/common/About.html' }
                 ],
                 footerLinks: `
                     <div><b>Recycling</b><br>
-                        <a href="/main/html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
-                        <a href="/main/html/provider/pWasteType.html">E-Waste Types</a>
+                        <a href="../../html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
+                        <a href="../../html/provider/pWasteType.html">E-Waste Types</a>
                     </div>
                     <div><b>My Activity</b><br>
-                        <a href="/main/html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
-                        <a href="/main/html/provider/pMainPickup.html">My Pickup</a>
+                        <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
+                        <a href="../../html/provider/pMainPickup.html">My Pickup</a>
                     </div>
                     <div><b>Proxy</b><br>
-                        <a href="/main/html/common/About.html">About</a><br>
-                        <a href="/main/html/common/Profile.html">Edit Profile</a><br>
-                        <a href="/main/html/common/Setting.html">Setting</a>
+                        <a href="../../html/common/About.html">About</a><br>
+                        <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                        <a href="../../html/common/Setting.html">Setting</a>
                     </div>`
             }
         };

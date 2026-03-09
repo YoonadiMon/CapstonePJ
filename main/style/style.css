@@ -501,3 +501,398 @@ Desktop (e.g., ~1150px - 1200px) */
     color: var(--MainBlue);
     font-weight: 600;
 }
+/* Accepted Items Styles with Icons */
+.accepted-items-container {
+    padding: 1rem 0;
+}
+
+.accepted-items-container h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.accepted-items-container h3 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--MainBlue);
+    margin: 2rem 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.intro-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    margin-bottom: 2rem;
+    max-width: 800px;
+}
+
+.category-section {
+    background-color: var(--sec-bg-color);
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.item-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--bg-color);
+    border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+}
+
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px var(--shadow-color);
+}
+
+.item-card i {
+    font-size: 2.5rem;
+    color: var(--MainBlue);
+    margin-bottom: 0.5rem;
+}
+
+.item-card span {
+    font-size: 0.95rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .items-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .item-card i {
+        font-size: 2rem;
+    }
+}
+/* Preparation Guide Styles */
+.preparation-container {
+    padding: 1rem 0;
+}
+
+.preparation-container h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.preparation-intro {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-bottom: 3rem;
+    max-width: 800px;
+}
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.step-card {
+    background-color: var(--sec-bg-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transition: transform 0.2s;
+}
+
+.step-card:hover {
+    transform: translateY(-5px);
+}
+
+.step-image {
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.step-card:hover .step-image img {
+    transform: scale(1.05);
+}
+
+/* Fallback for missing images */
+.step-image img[src=""] {
+    display: none;
+}
+
+.step-image .placeholder-icon {
+    font-size: 4rem;
+    color: var(--MainBlue);
+    opacity: 0.5;
+}
+
+.step-content-wrapper {
+    flex: 1;
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.step-number {
+    background-color: var(--MainBlue);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.step-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.step-content {
+    color: var(--text-color);
+    line-height: 1.6;
+    padding-left: 3.5rem;
+}
+
+.step-icon {
+    font-size: 1.2rem;
+    color: var(--MainBlue);
+    margin-right: 0.5rem;
+}
+
+/* Different card styles for visual variety */
+.step-card:nth-child(odd) {
+    border-left: 4px solid var(--MainBlue);
+}
+
+.step-card:nth-child(even) {
+    border-right: 4px solid var(--DarkerMainBlue);
+}
+
+/* Tablet & Desktop Layout */
+@media (min-width: 760px) {
+    .steps-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Make cards span different columns for alternating effect */
+    .step-card:nth-child(1) { grid-column: 1 / 2; }  /* Step 1 - left */
+    .step-card:nth-child(2) { grid-column: 2 / 3; }  /* Step 5 - right */
+    .step-card:nth-child(3) { grid-column: 1 / 2; }  /* Step 2 - left */
+    .step-card:nth-child(4) { grid-column: 2 / 3; }  /* Step 4 - right */
+    .step-card:nth-child(5) { 
+        grid-column: 1 / 3; 
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+    }  /* Step 3 - two columns at bottom */
+    
+    .step-card:nth-child(5) .step-image {
+        grid-column: 1 / 2;
+        height: 250px;
+    }
+    
+    .step-card:nth-child(5) .step-content-wrapper {
+        grid-column: 2 / 3;
+        padding-left: 1.5rem;
+    }
+    
+    /* For other cards, image on top, content below */
+    .step-card:not(:nth-child(5)) {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+/* Optional: Add colors for each step's icon */
+.step-card[data-step="1"] .step-icon { color: #4CAF50; }
+.step-card[data-step="2"] .step-icon { color: #2196F3; }
+.step-card[data-step="3"] .step-icon { color: #FF9800; }
+.step-card[data-step="4"] .step-icon { color: #9C27B0; }
+.step-card[data-step="5"] .step-icon { color: #f44336; }
+
+/* The Journey Styles */
+.journey-container {
+    padding: 1rem 0;
+}
+
+.journey-container h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.journey-intro {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.journey-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    margin: 2rem 0;
+}
+
+.journey-step {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    background-color: var(--sec-bg-color);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transition: transform 0.2s;
+}
+
+.journey-step:hover {
+    transform: translateY(-5px);
+}
+
+.journey-step-image {
+    width: 100%;
+    height: 200px;
+    border-radius: 16px;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.journey-step-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.journey-step:hover .journey-step-image img {
+    transform: scale(1.05);
+}
+
+/* Fallback for missing images */
+.journey-step-image img[src=""] {
+    display: none;
+}
+
+.journey-step-image .placeholder-icon {
+    font-size: 4rem;
+    color: var(--MainBlue);
+    opacity: 0.5;
+}
+
+.journey-step-content {
+    flex: 1;
+}
+
+.journey-step h3 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--MainBlue);
+    margin-bottom: 1rem;
+}
+
+.journey-step p {
+    font-size: 1.1rem;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.journey-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.journey-list li {
+    padding: 0.5rem 0 0.5rem 1.5rem;
+    color: var(--text-color);
+    position: relative;
+    line-height: 1.5;
+}
+
+.journey-list li:before {
+    content: "•";
+    color: var(--MainBlue);
+    font-weight: bold;
+    font-size: 1.5rem;
+    position: absolute;
+    left: 0;
+    top: 0.2rem;
+}
+
+/* Tablet & Desktop Layout */
+@media (min-width: 760px) {
+    .journey-step {
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+    }
+    
+    /* Alternate layout: image on right for even steps, left for odd */
+    .journey-step:nth-child(even) {
+        flex-direction: row-reverse;
+    }
+    
+    .journey-step-image {
+        flex: 1;
+        max-width: 300px;
+        height: 220px;
+    }
+    
+    .journey-step-content {
+        flex: 2;
+    }
+}
+
+@media (min-width: 1150px) {
+    .journey-step-image {
+        max-width: 350px;
+        height: 250px;
+    }
+}

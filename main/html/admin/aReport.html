@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Reports | AfterVolt Admin</title>
+    <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
+
+    <link rel="stylesheet" href="../../style/style.css">
+
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Reports Page Specific Styles */
+        .reports-container {
+            padding: 1rem 0;
+        }
+
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .reports-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .date-range {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background-color: var(--sec-bg-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .date-range input {
+            padding: 0.5rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .export-btn {
+            background-color: var(--MainBlue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .export-btn:hover {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--sec-bg-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background-color: var(--MainBlue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .stat-info h3 {
+            font-size: 0.9rem;
+            color: var(--Gray);
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-info .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .stat-info .stat-change {
+            font-size: 0.8rem;
+            color: #4CAF50;
+            margin-top: 0.2rem;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background-color: var(--sec-bg-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Tabs for different report types */
+        .report-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--BlueGray);
+            padding-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .report-tab {
+            padding: 0.5rem 1.5rem;
+            background-color: var(--sec-bg-color);
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: var(--text-color);
+            border: 1px solid transparent;
+        }
+
+        .report-tab:hover {
+            background-color: var(--LowMainBlue);
+        }
+
+        .report-tab.active {
+            background-color: var(--MainBlue);
+            color: white;
+        }
+
+        .report-panel {
+            display: none;
+        }
+
+        .report-panel.active {
+            display: block;
+        }
+
+        /* Audit Trail Table */
+        .audit-table-container {
+            overflow-x: auto;
+            background-color: var(--sec-bg-color);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .audit-table th {
+            text-align: left;
+            padding: 1rem 0.5rem;
+            color: var(--Gray);
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 2px solid var(--BlueGray);
+        }
+
+        .audit-table td {
+            padding: 0.8rem 0.5rem;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--BlueGray);
+        }
+
+        .audit-table tr:hover {
+            background-color: var(--LowMainBlue);
+        }
+
+        .badge {
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .badge-info {
+            background-color: var(--MainBlue);
+            color: white;
+        }
+
+        /* Tickets Section */
+        .tickets-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .ticket-category {
+            background-color: var(--sec-bg-color);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .ticket-category .count {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--MainBlue);
+        }
+
+        .ticket-category .label {
+            color: var(--Gray);
+            font-size: 0.9rem;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar input, .filter-bar select {
+            padding: 0.5rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .filter-bar input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        @media (min-width: 760px) {
+            .chart-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="cover" class="" onclick="hideMenu()"></div>
+    
+    <!-- Logo + Name & Navbar -->
+    <header>
+        <!-- Logo + Name -->
+        <section class="c-logo-section">
+            <a href="../../html/admin/aHome.html" class="c-logo-link">
+                <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
+                <div class="c-text">AfterVolt</div>
+            </a>
+        </section>
+
+        <!-- Menu Links Mobile -->
+        <nav class="c-navbar-side">
+            <img src="../../assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+            <div id="sidebarNav" class="c-navbar-side-menu">
+                
+                <img src="../../assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn"  id="closeBtn">
+                <div class="c-navbar-side-items">
+                    <section class="c-navbar-side-more">
+                        <button id="themeToggleMobile">
+                            <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+                        </button>
+                        <a href="../../html/common/Setting.html">
+                            <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                        </a>
+                    </section>
+
+                    <a href="../../html/admin/aHome.html">Home</a>
+                    <a href="../../html/admin/aRequests.html">Requests</a>
+                    <a href="../../html/admin/aJobs.html">Jobs</a>
+                    <a href="../../html/admin/aIssue.html">Issue</a>
+                    <a href="../../html/admin/aOperations.html">Operations</a>
+                    <a href="../../html/admin/aReport.html">Report</a>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Menu Links Desktop + Tablet -->
+        <nav class="c-navbar-desktop">
+            <a href="../../html/admin/aHome.html">Home</a>
+            <a href="../../html/admin/aRequests.html">Requests</a>
+            <a href="../../html/admin/aJobs.html">Jobs</a>
+            <a href="../../html/admin/aIssue.html">Issue</a>
+            <a href="../../html/admin/aOperations.html">Operations</a>
+            <a href="../../html/admin/aReport.html">Report</a>
+        </nav>          
+        <section class="c-navbar-more">
+            <button id="themeToggleDesktop">
+                <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
+            </button>
+            <a href="../../html/common/Setting.html">
+                <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
+            </a>
+        </section>
+        
+    </header>
+    <hr>
+
+    <!-- Main Content -->
+    <main>
+        <div class="reports-container">
+            <!-- Header with date range and export -->
+            <div class="reports-header">
+                <h1>Reports & Analytics</h1>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="date-range">
+                        <span>📅</span>
+                        <input type="date" id="startDate" value="2026-02-01">
+                        <span>to</span>
+                        <input type="date" id="endDate" value="2026-02-28">
+                    </div>
+                    <button class="export-btn" onclick="exportData()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-recycle"></i></div>
+                    <div class="stat-info">
+                        <h3>Total E-Waste</h3>
+                        <div class="stat-number">2,345 kg</div>
+                        <div class="stat-change">↑ 12% from last month</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calendar"></i></div>
+                    <div class="stat-info">
+                        <h3>This Month</h3>
+                        <div class="stat-number">456 kg</div>
+                        <div class="stat-change">On track for 500 kg</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <h3>Active Users</h3>
+                        <div class="stat-number">1,234</div>
+                        <div class="stat-change">↑ 8% from last month</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info">
+                        <h3>Pending Requests</h3>
+                        <div class="stat-number">23</div>
+                        <div class="stat-change">↓ 5 from yesterday</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Tabs -->
+            <div class="report-tabs">
+                <div class="report-tab active" onclick="switchReportTab(event, 'overview')">📊 Overview</div>
+                <div class="report-tab" onclick="switchReportTab(event, 'audit')">📋 Audit Trail</div>
+                <div class="report-tab" onclick="switchReportTab(event, 'tickets')">🎫 Issue Tickets</div>
+            </div>
+
+            <!-- Overview Panel -->
+            <div id="overview" class="report-panel active">
+                <!-- Charts -->
+                <div class="chart-section">
+                    <!-- Collection Trend Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h2>Collection Trend (Last 7 Days)</h2>
+                            <select id="trendPeriod" onchange="updateTrendChart()">
+                                <option value="week">Weekly</option>
+                                <option value="month">Monthly</option>
+                                <option value="year">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Waste Type Distribution -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h2>E-Waste by Type</h2>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="typeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Table -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h2>Collection Summary by Centre</h2>
+                    </div>
+                    <div class="audit-table-container">
+                        <table class="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>Collection Centre</th>
+                                    <th>Total Requests</th>
+                                    <th>Total Weight (kg)</th>
+                                    <th>Completed</th>
+                                    <th>Pending</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Bukit Jalil</td>
+                                    <td>156</td>
+                                    <td>789</td>
+                                    <td>142</td>
+                                    <td>14</td>
+                                </tr>
+                                <tr>
+                                    <td>Puchong</td>
+                                    <td>98</td>
+                                    <td>456</td>
+                                    <td>92</td>
+                                    <td>6</td>
+                                </tr>
+                                <tr>
+                                    <td>Cheras</td>
+                                    <td>87</td>
+                                    <td>345</td>
+                                    <td>82</td>
+                                    <td>5</td>
+                                </tr>
+                                <tr>
+                                    <td>Putrajaya</td>
+                                    <td>65</td>
+                                    <td>289</td>
+                                    <td>60</td>
+                                    <td>5</td>
+                                </tr>
+                                <tr>
+                                    <td>Bangsar</td>
+                                    <td>54</td>
+                                    <td>234</td>
+                                    <td>52</td>
+                                    <td>2</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Trail Panel -->
+            <div id="audit" class="report-panel">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h2>Compliance & Audit Trail</h2>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" placeholder="Search logs..." id="auditSearch">
+                            <select id="auditFilter">
+                                <option value="all">All Actions</option>
+                                <option value="create">Create</option>
+                                <option value="update">Update</option>
+                                <option value="assign">Assign</option>
+                                <option value="complete">Complete</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="audit-table-container">
+                        <table class="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Action</th>
+                                    <th>Item ID</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2026-02-28 09:23:15</td>
+                                    <td>john.doe@example.com</td>
+                                    <td><span class="badge badge-info">Provider</span></td>
+                                    <td><span class="badge badge-success">Create Request</span></td>
+                                    <td>REQ-2026-00234</td>
+                                    <td>Laptop, Smartphone</td>
+                                </tr>
+                                <tr>
+                                    <td>2026-02-28 10:15:22</td>
+                                    <td>admin@aftervolt.com</td>
+                                    <td><span class="badge badge-warning">Admin</span></td>
+                                    <td><span class="badge badge-info">Assign</span></td>
+                                    <td>REQ-2026-00234</td>
+                                    <td>Assigned to Collector: Ahmad</td>
+                                </tr>
+                                <tr>
+                                    <td>2026-02-28 11:30:45</td>
+                                    <td>ahmad@aftervolt.com</td>
+                                    <td><span class="badge">Collector</span></td>
+                                    <td><span class="badge badge-success">Update Status</span></td>
+                                    <td>REQ-2026-00234</td>
+                                    <td>Status: Collected</td>
+                                </tr>
+                                <tr>
+                                    <td>2026-02-27 14:20:10</td>
+                                    <td>jane.smith@example.com</td>
+                                    <td><span class="badge badge-info">Provider</span></td>
+                                    <td><span class="badge badge-success">Create Request</span></td>
+                                    <td>REQ-2026-00233</td>
+                                    <td>Monitor, Keyboard</td>
+                                </tr>
+                                <tr>
+                                    <td>2026-02-27 15:45:30</td>
+                                    <td>admin@aftervolt.com</td>
+                                    <td><span class="badge badge-warning">Admin</span></td>
+                                    <td><span class="badge badge-info">Assign</span></td>
+                                    <td>REQ-2026-00233</td>
+                                    <td>Assigned to Collector: Sarah</td>
+                                </tr>
+                                <tr>
+                                    <td>2026-02-27 16:20:15</td>
+                                    <td>sarah@aftervolt.com</td>
+                                    <td><span class="badge">Collector</span></td>
+                                    <td><span class="badge badge-success">Update Status</span></td>
+                                    <td>REQ-2026-00233</td>
+                                    <td>Status: En Route</td>
+                                </tr>
+                                <tr>
+                                    <td>2026-02-26 09:05:40</td>
+                                    <td>mike.wilson@example.com</td>
+                                    <td><span class="badge badge-info">Provider</span></td>
+                                    <td><span class="badge badge-success">Create Request</span></td>
+                                    <td>REQ-2026-00232</td>
+                                    <td>Printer, Scanner</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button class="export-btn" style="display: inline-flex;">Load More</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Issue Tickets Panel -->
+            <div id="tickets" class="report-panel">
+                <!-- Tickets Summary -->
+                <div class="tickets-summary">
+                    <div class="ticket-category">
+                        <div class="count">12</div>
+                        <div class="label">Open Tickets</div>
+                    </div>
+                    <div class="ticket-category">
+                        <div class="count">8</div>
+                        <div class="label">In Progress</div>
+                    </div>
+                    <div class="ticket-category">
+                        <div class="count">34</div>
+                        <div class="label">Resolved</div>
+                    </div>
+                    <div class="ticket-category">
+                        <div class="count">5</div>
+                        <div class="label">High Priority</div>
+                    </div>
+                </div>
+
+                <!-- Tickets List -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h2>Recent Issue Tickets</h2>
+                        <div class="filter-bar">
+                            <input type="text" placeholder="Search tickets...">
+                            <select>
+                                <option value="all">All Status</option>
+                                <option value="open">Open</option>
+                                <option value="progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                            </select>
+                            <select>
+                                <option value="all">All Priority</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="audit-table-container">
+                        <table class="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>Ticket ID</th>
+                                    <th>Reported By</th>
+                                    <th>Issue Type</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Created</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>TCK-001</td>
+                                    <td>john.doe@example.com</td>
+                                    <td>Pickup Issue</td>
+                                    <td>Collector didn't show up</td>
+                                    <td><span class="badge badge-warning">Open</span></td>
+                                    <td><span style="color: #f44336;">High</span></td>
+                                    <td>2026-02-28</td>
+                                    <td><button class="export-btn" style="padding: 0.2rem 0.5rem;">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>TCK-002</td>
+                                    <td>jane.smith@example.com</td>
+                                    <td>App Issue</td>
+                                    <td>Can't schedule pickup</td>
+                                    <td><span class="badge badge-info">In Progress</span></td>
+                                    <td><span style="color: #FF9800;">Medium</span></td>
+                                    <td>2026-02-27</td>
+                                    <td><button class="export-btn" style="padding: 0.2rem 0.5rem;">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>TCK-003</td>
+                                    <td>mike.wilson@example.com</td>
+                                    <td>Payment</td>
+                                    <td>Points not credited</td>
+                                    <td><span class="badge badge-success">Resolved</span></td>
+                                    <td><span style="color: #4CAF50;">Low</span></td>
+                                    <td>2026-02-26</td>
+                                    <td><button class="export-btn" style="padding: 0.2rem 0.5rem;">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>TCK-004</td>
+                                    <td>sarah.lee@example.com</td>
+                                    <td>Collection Centre</td>
+                                    <td>Wrong address on map</td>
+                                    <td><span class="badge badge-warning">Open</span></td>
+                                    <td><span style="color: #f44336;">High</span></td>
+                                    <td>2026-02-26</td>
+                                    <td><button class="export-btn" style="padding: 0.2rem 0.5rem;">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>TCK-005</td>
+                                    <td>alex.wong@example.com</td>
+                                    <td>Account</td>
+                                    <td>Can't login</td>
+                                    <td><span class="badge badge-info">In Progress</span></td>
+                                    <td><span style="color: #FF9800;">Medium</span></td>
+                                    <td>2026-02-25</td>
+                                    <td><button class="export-btn" style="padding: 0.2rem 0.5rem;">View</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <!-- Column 1 -->
+        <section class="c-footer-info-section">
+            <a href="../../html/admin/aHome.html">
+                <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
+            </a>
+            <div class="c-text">AfterVolt</div>
+            
+
+            <div class="c-text c-text-center">
+                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+            </div>
+            <div class="c-text c-text-label">
+                +60 12 345 6789
+            </div>
+            <div class="c-text">
+                abc@gmail.com
+            </div>
+        </section>
+        
+        <!-- Column 2 -->
+        <section class="c-footer-links-section">
+            <div>
+                <b>Management</b><br>
+                <a href="../../html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="../../html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="../../html/admin/aIssue.html">Issue</a><br>
+            </div>
+            <div>
+                <b>System Operation</b><br>
+                <a href="../../html/admin/aProviders.html">Providers</a><br>
+                <a href="../../html/admin/aCollectors.html">Collectors</a><br>
+                <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
+            </div>
+            <div>
+                <b>Proxy</b><br>
+                <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                <a href="../../html/common/Setting.html">Setting</a>
+            </div>
+        </section>
+    </footer>
+
+    <script src="../../javascript/mainScript.js"></script>
+    <script>
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initTrendChart();
+            initTypeChart();
+        });
+
+        // Switch between report tabs
+        function switchReportTab(event, tabId) {
+            // Remove active class from all tabs and panels
+            document.querySelectorAll('.report-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.report-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // Add active class to clicked tab and corresponding panel
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Initialize Trend Chart
+        function initTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'E-Waste Collected (kg)',
+                        data: [65, 72, 58, 84, 96, 78, 82],
+                        borderColor: 'hsl(225, 94%, 67%)',
+                        backgroundColor: 'rgba(98, 133, 244, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize Type Distribution Chart
+        function initTypeChart() {
+            const ctx = document.getElementById('typeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Computers', 'Smartphones', 'Appliances', 'Batteries', 'Others'],
+                    datasets: [{
+                        data: [35, 28, 20, 12, 5],
+                        backgroundColor: [
+                            'hsl(225, 94%, 67%)',
+                            'hsl(237, 52%, 36%)',
+                            'hsl(240, 60%, 20%)',
+                            'hsl(220, 100%, 90%)',
+                            'hsl(226, 28%, 73%)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update trend chart based on period selection
+        function updateTrendChart() {
+            // This would normally fetch new data from server
+            // For demo, we'll just show an alert
+            alert('Chart updated with new period');
+        }
+
+        // Export data function
+        function exportData() {
+            const activeTab = document.querySelector('.report-tab.active').innerText.trim();
+            const format = confirm('Export as CSV? Click OK for CSV, Cancel for PDF');
+            alert(`Exporting ${activeTab} data as ${format ? 'CSV' : 'PDF'}...`);
+        }
+    </script>
+</body>
+</html>
