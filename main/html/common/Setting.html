@@ -33,32 +33,39 @@
             color: var(--Gray);
         }
 
-        /* SETTINGS LAYOUT */
+        /* ── SETTINGS LAYOUT ── */
         .settings-layout {
             display: grid;
-            grid-template-columns: 190px 1fr;
+            grid-template-columns: 200px 1fr;
             gap: 1.5rem;
             align-items: start;
         }
 
-        /* SIDEBAR */
+        /* ── SIDEBAR ── */
         .settings-sidebar {
             background: var(--bg-color);
             border: 1px solid var(--LowMainBlue);
-            border-radius: 12px;
+            border-radius: 14px;
             overflow: hidden;
             box-shadow: 0 2px 10px var(--shadow-color);
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
+
         .sidebar-item {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 11px 16px;
-            font-size: 0.85rem;
+            padding: 10px 14px;
+            font-size: 0.84rem;
+            font-weight: 500;
             color: var(--Gray);
             cursor: pointer;
-            border-left: 3px solid transparent;
-            transition: all .15s;
+            border-radius: 9px;
+            border-left: none;
+            transition: background 0.15s, color 0.15s;
             text-decoration: none;
         }
         .sidebar-item:hover {
@@ -68,17 +75,60 @@
         .sidebar-item.active {
             background: var(--LightBlue);
             color: var(--DarkerMainBlue);
-            border-left-color: var(--MainBlue);
             font-weight: 600;
         }
         .dark-mode .sidebar-item.active {
             background: var(--DarkerBlue);
             color: var(--LightBlue);
         }
-        .sidebar-item svg { flex-shrink: 0; opacity: .7; }
-        .sidebar-item.active svg { opacity: 1; }
+        .sidebar-item svg {
+            flex-shrink: 0;
+            opacity: 0.6;
+        }
+        .sidebar-item.active svg {
+            opacity: 1;
+        }
+        .sidebar-item .sidebar-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--MainBlue);
+            margin-left: auto;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .sidebar-item.active .sidebar-dot {
+            opacity: 1;
+        }
 
-        /* CARDS */
+        /* ── SIDEBAR DIVIDER ── */
+        .sidebar-divider {
+            height: 1px;
+            background: var(--LowMainBlue);
+            margin: 4px 2px;
+        }
+
+        /* ── SIDEBAR ACTION BUTTONS ── */
+        .sidebar-item.edit-profile {
+            color: var(--text-color);
+        }
+        .sidebar-item.edit-profile:hover {
+            background: var(--sec-bg-color);
+            color: var(--MainBlue);
+        }
+        .sidebar-item.logout {
+            color: hsl(0, 60%, 52%);
+        }
+        .sidebar-item.logout:hover {
+            background: hsl(0, 80%, 96%);
+            color: hsl(0, 65%, 44%);
+        }
+        .dark-mode .sidebar-item.logout:hover {
+            background: hsl(0, 40%, 18%);
+            color: hsl(0, 65%, 65%);
+        }
+
+        /* ── CARDS ── */
         .tab-panel {
             display: none;
             flex-direction: column;
@@ -91,25 +141,27 @@
         .c-card {
             background: var(--bg-color);
             border: 1px solid var(--LowMainBlue);
-            border-radius: 12px;
+            border-radius: 14px;
             overflow: hidden;
             box-shadow: 0 2px 10px var(--shadow-color);
         }
         .c-card-header {
-            padding: 14px 20px 12px;
+            padding: 16px 20px 14px;
             border-bottom: 1px solid var(--LowMainBlue);
         }
         .c-card-title {
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             font-weight: 700;
             color: var(--text-color);
         }
         .c-card-desc {
             font-size: 0.75rem;
             color: var(--Gray);
-            margin-top: 2px;
+            margin-top: 3px;
         }
-        .c-card-body { padding: 16px 20px; }
+        .c-card-body {
+            padding: 18px 20px;
+        }
         .c-card-footer {
             padding: 12px 20px;
             border-top: 1px solid var(--LowMainBlue);
@@ -119,7 +171,7 @@
             gap: 8px;
         }
 
-        /* FORM */
+        /* ── FORM ── */
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -127,27 +179,28 @@
             margin-bottom: 14px;
         }
         .form-row:last-child { margin-bottom: 0; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
-        .form-group.full { grid-column: 1/-1; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group.full { grid-column: 1 / -1; }
+
         label {
             font-size: 0.7rem;
             font-weight: 700;
             color: var(--Gray);
             text-transform: uppercase;
-            letter-spacing: .05em;
+            letter-spacing: 0.06em;
         }
         input[type="text"],
         input[type="email"],
         input[type="password"],
         select {
-            padding: 0.5rem 0.7rem;
+            padding: 0.5rem 0.75rem;
             border: 1.5px solid var(--LowMainBlue);
             border-radius: 8px;
             font-size: 0.88rem;
             font-family: 'Inter', sans-serif;
             color: var(--text-color);
             background: var(--bg-color);
-            transition: border-color .2s, box-shadow .2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
             width: 100%;
         }
@@ -156,38 +209,42 @@
             box-shadow: 0 0 0 3px var(--LowMainBlue);
         }
 
-        /* TOGGLE */
+        /* ── TOGGLE ROWS ── */
         .toggle-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 11px 0;
+            padding: 13px 0;
             border-bottom: 1px solid var(--LowMainBlue);
         }
         .toggle-row:first-child { padding-top: 0; }
         .toggle-row:last-child  { border-bottom: none; padding-bottom: 0; }
-        .toggle-label { font-size: 0.88rem; color: var(--text-color); }
-        .toggle-sub   { font-size: 0.72rem; color: var(--Gray); margin-top: 2px; }
+        .toggle-label { font-size: 0.88rem; font-weight: 500; color: var(--text-color); }
+        .toggle-sub   { font-size: 0.73rem; color: var(--Gray); margin-top: 2px; }
 
-        .c-toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+        .c-toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
         .c-toggle input { opacity: 0; width: 0; height: 0; }
         .c-toggle-track {
             position: absolute; inset: 0;
             background: var(--BlueGray);
-            border-radius: 20px; cursor: pointer; transition: background .2s;
+            border-radius: 22px;
+            cursor: pointer;
+            transition: background 0.2s;
         }
         .c-toggle-track::after {
-            content: ''; position: absolute;
+            content: '';
+            position: absolute;
             left: 3px; top: 3px;
-            width: 14px; height: 14px;
-            border-radius: 50%; background: white;
-            transition: transform .2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,.2);
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
         }
         .c-toggle input:checked + .c-toggle-track { background: var(--MainBlue); }
         .c-toggle input:checked + .c-toggle-track::after { transform: translateX(16px); }
 
-        /* SELECT ROW */
+        /* ── SELECT ROWS ── */
         .select-row {
             display: flex;
             align-items: center;
@@ -200,46 +257,47 @@
         .select-row:last-child  { border-bottom: none; padding-bottom: 0; }
         .select-row select { max-width: 160px; }
 
-        /* BUTTONS */
+        /* ── BUTTONS ── */
         .c-btn-primary {
             background: var(--MainBlue);
             color: var(--White);
             border-radius: 24px;
-            padding: 0.35em 1.1em;
+            padding: 0.38em 1.2em;
             font-size: 0.82rem;
             font-weight: 600;
             border: none;
             cursor: pointer;
-            transition: background .2s;
+            transition: background 0.2s;
         }
         .c-btn-primary:hover { background: var(--DarkerMainBlue); }
+
         .c-btn-cancel {
             background: none;
             color: var(--Gray);
             border: 1.5px solid var(--LowMainBlue);
             border-radius: 24px;
-            padding: 0.35em 1.1em;
+            padding: 0.38em 1.2em;
             font-size: 0.82rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background .2s;
+            transition: background 0.2s;
         }
         .c-btn-cancel:hover { background: var(--sec-bg-color); }
 
-        /* PASSWORD STRENGTH */
-        .strength-bar { display: flex; gap: 4px; margin-top: 6px; }
+        /* ── PASSWORD STRENGTH ── */
+        .strength-bar { display: flex; gap: 4px; margin-top: 7px; }
         .strength-seg {
             height: 4px; flex: 1; border-radius: 4px;
-            background: var(--LowMainBlue); transition: background .3s;
+            background: var(--LowMainBlue); transition: background 0.3s;
         }
         .strength-seg.weak   { background: hsl(0,65%,55%); }
         .strength-seg.medium { background: hsl(40,90%,52%); }
         .strength-seg.strong { background: hsl(145,50%,45%); }
         .strength-text { font-size: 0.7rem; color: var(--Gray); margin-top: 4px; }
 
-        /* STATIC INFO */
+        /* ── STATIC INFO ── */
         .static-info {
-            padding: 0.5rem 0.7rem;
+            padding: 0.5rem 0.75rem;
             border: 1.5px solid var(--LowMainBlue);
             border-radius: 8px;
             font-size: 0.88rem;
@@ -250,6 +308,17 @@
         @media (max-width: 768px) {
             .settings-layout { grid-template-columns: 1fr; }
             .form-row { grid-template-columns: 1fr; }
+            .settings-sidebar {
+                flex-direction: row;
+                padding: 5px;
+                gap: 4px;
+            }
+            .sidebar-item {
+                flex: 1;
+                justify-content: center;
+                padding: 9px 10px;
+            }
+            .sidebar-item .sidebar-dot { display: none; }
         }
     </style>
 </head>
@@ -324,17 +393,41 @@
             <!-- SIDEBAR -->
             <aside class="settings-sidebar">
                 <div class="sidebar-item active" data-tab="security">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
                     Security
+                    <span class="sidebar-dot"></span>
                 </div>
                 <div class="sidebar-item" data-tab="appearance">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 010 20"/><path d="M12 6v6l4 2"/></svg>
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
                     Appearance
+                    <span class="sidebar-dot"></span>
                 </div>
-                <div class="sidebar-item" data-tab="language">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
-                    Language & Region
+
+                <div class="sidebar-divider"></div>
+
+                <a href="/main/html/common/Profile.html" class="sidebar-item edit-profile">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                    </svg>
+                    Edit Profile
+                </a>
+
+                <div class="sidebar-item logout" onclick="handleLogout()">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Log Out
                 </div>
+
             </aside>
 
             <!-- PANELS -->
@@ -342,7 +435,6 @@
 
                 <!-- SECURITY -->
                 <div id="tab-security" class="tab-panel active">
-
                     <div class="c-card">
                         <div class="c-card-header">
                             <div class="c-card-title">Change Password</div>
@@ -378,7 +470,6 @@
                             <button class="c-btn-primary" onclick="savePassword()">Update Password</button>
                         </div>
                     </div>
-
                 </div>
 
                 <!-- APPEARANCE -->
@@ -399,70 +490,6 @@
                                     <span class="c-toggle-track"></span>
                                 </label>
                             </div>
-                            <div class="select-row">
-                                <div>
-                                    <div class="toggle-label">Font Size</div>
-                                    <div class="toggle-sub">Adjust text size across the app</div>
-                                </div>
-                                <select id="fontSize" onchange="savePref('fontSize', this.value)">
-                                    <option value="small">Small</option>
-                                    <option value="medium" selected>Medium</option>
-                                    <option value="large">Large</option>
-                                </select>
-                            </div>
-                            <div class="select-row">
-                                <div>
-                                    <div class="toggle-label">Density</div>
-                                    <div class="toggle-sub">Control spacing between elements</div>
-                                </div>
-                                <select id="density" onchange="savePref('density', this.value)">
-                                    <option value="compact">Compact</option>
-                                    <option value="comfortable" selected>Comfortable</option>
-                                    <option value="spacious">Spacious</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- LANGUAGE & REGION -->
-                <div id="tab-language" class="tab-panel">
-                    <div class="c-card">
-                        <div class="c-card-header">
-                            <div class="c-card-title">Language & Region</div>
-                            <div class="c-card-desc">Set your preferred date and time format</div>
-                        </div>
-                        <div class="c-card-body">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Language</label>
-                                    <div class="static-info">English</div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Timezone</label>
-                                    <div class="static-info">Asia/Kuala Lumpur (GMT+8)</div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Date Format</label>
-                                    <select id="dateFormat" onchange="savePref('dateFormat', this.value)">
-                                        <option value="dd_mm_yyyy" selected>DD/MM/YYYY</option>
-                                        <option value="mm_dd_yyyy">MM/DD/YYYY</option>
-                                        <option value="yyyy_mm_dd">YYYY-MM-DD</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Time Format</label>
-                                    <select id="timeFormat" onchange="savePref('timeFormat', this.value)">
-                                        <option value="12h">12-hour (AM/PM)</option>
-                                        <option value="24h" selected>24-hour</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="c-card-footer">
-                            <button class="c-btn-primary" onclick="saveLanguagePrefs()">Save Preferences</button>
                         </div>
                     </div>
                 </div>
@@ -470,8 +497,6 @@
             </div>
         </div>
     </main>
-
-    <hr>
 
     <!-- Footer -->
     <footer>
@@ -530,13 +555,11 @@
             localStorage.setItem('pref_' + key, value);
         }
         function loadSettings() {
-            // Selects
             ['fontSize','density','dateFormat','timeFormat'].forEach(key => {
                 const saved = localStorage.getItem('pref_' + key);
                 const el = document.getElementById(key);
                 if (el && saved) el.value = saved;
             });
-            // Dark mode
             const dark = localStorage.getItem('pref_darkMode') === 'true';
             if (dark) {
                 document.body.classList.add('dark-mode');
@@ -584,14 +607,6 @@
             localStorage.setItem('pref_darkMode', enabled);
         }
 
-        // ── LANGUAGE SAVE ────────────────────────────────────────────────
-        function saveLanguagePrefs() {
-            ['dateFormat','timeFormat'].forEach(key => {
-                savePref(key, document.getElementById(key).value);
-            });
-            showToast('Language & region preferences saved!');
-        }
-
         // ── TOAST ────────────────────────────────────────────────────────
         function showToast(message, type = 'success') {
             document.querySelector('.c-toast')?.remove();
@@ -603,6 +618,14 @@
             t.innerHTML = `<span style="font-weight:700">${icons[type]}</span> ${message}`;
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
+        }
+
+        // ── LOGOUT ───────────────────────────────────────────────────────
+        function handleLogout() {
+            if (confirm('Are you sure you want to log out?')) {
+                // Add your logout/redirect logic here
+                window.location.href = '/main/html/common/Login.html';
+            }
         }
 
         // ── INIT ─────────────────────────────────────────────────────────
