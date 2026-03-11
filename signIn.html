@@ -184,22 +184,6 @@
             margin-bottom: 1.2rem;
         }
 
-        .register-link {
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-color);
-        }
-
-        .register-link a {
-            color: var(--MainBlue);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .register-link a:hover {
-            text-decoration: underline;
-        }
-
         .email-input, .password-input {
             width: 100%;
             padding: 0.8rem 1rem;
@@ -208,6 +192,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-size: 1rem;
+            transition: border-color 0.2s;
         }
 
         .email-input::placeholder, .password-input::placeholder {
@@ -219,24 +204,27 @@
             border-color: var(--MainBlue);
         }
 
+        /* Error state for inputs */
+        .input-error {
+            border-color: #ff4444 !important;
+            background-color: rgba(255, 68, 68, 0.05);
+        }
+
         .password-section {
-            margin-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        .forgot-password {
-            text-align: right;
-            margin: 0.5rem 0 2rem;
-        }
-
-        .forgot-password a {
-            color: var(--Gray);
-            text-decoration: none;
+        /* Error message */
+        .error-message {
+            color: #ff4444;
             font-size: 0.9rem;
+            margin: 0.5rem 0 1.5rem;
+            text-align: center;
+            display: none;
         }
 
-        .forgot-password a:hover {
-            color: var(--MainBlue);
-            text-decoration: underline;
+        .error-message.show {
+            display: block;
         }
 
         .button-container {
@@ -346,26 +334,26 @@
 
                 <h2>Provider Sign In</h2>
 
-                <!-- Email section with Register link -->
+                <!-- Email input only -->
                 <div class="email-section">
-                    <div class="register-link">
-                        <a href="main/html/Register.html">New here? Register Now</a>
-                    </div>
-                    <input type="email" class="email-input" placeholder="Email Address">
+                    <input type="email" class="email-input" id="email" placeholder="Email Address">
                 </div>
 
-                <!-- Password section -->
+                <!-- Password section (no hint) -->
                 <div class="password-section">
-                    <input type="password" class="password-input" placeholder="Password">
+                    <input type="password" class="password-input" id="password" placeholder="Password">
                 </div>
 
-                <div class="forgot-password">
-                    <a href="main/html/ForgotPassword.html">Forgot Password?</a>
-                </div>
+                <!-- Error message display -->
+                <div class="error-message" id="errorMessage"></div>
 
                 <div class="button-container">
                     <a href="index.html" class="back-btn">BACK</a>
-                    <a href="main/html/provider/pHome.html" class="login-btn">SIGN IN</a>
+                    <button class="login-btn" id="signInBtn">
+                        <span class="btn-text">SIGN IN</span>
+                        <span class="loading-spinner" style="display: none;">⏳</span>
+                    </button>
+
                 </div>
             </div>
         </div>
@@ -396,8 +384,8 @@
                 document.body.classList.toggle('dark-mode');
                 const isDarkMode = document.body.classList.contains('dark-mode');
                 const iconSrc = isDarkMode ? 
-                    '/main/assets/images/dark-mode-icon.svg' : 
-                    '/main/assets/images/light-mode-icon.svg';
+                    'main/assets/images/dark-mode-icon.svg' : 
+                    'main/assets/images/light-mode-icon.svg';
                 
                 if (themeToggleDesktop) {
                     const img = themeToggleDesktop.querySelector('img');
@@ -415,6 +403,94 @@
             if (themeToggleMobile) {
                 themeToggleMobile.addEventListener('click', toggleTheme);
             }
+
+            // Sign In validation
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const signInBtn = document.getElementById('signInBtn');
+            const errorMessage = document.getElementById('errorMessage');
+
+            // Remove error class when user starts typing
+            emailInput.addEventListener('input', function() {
+                this.classList.remove('input-error');
+                errorMessage.classList.remove('show');
+            });
+            
+            passwordInput.addEventListener('input', function() {
+                this.classList.remove('input-error');
+                errorMessage.classList.remove('show');
+            });
+
+            // Sign In button click handler
+            signInBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                
+                // Reset error states
+                emailInput.classList.remove('input-error');
+                passwordInput.classList.remove('input-error');
+                errorMessage.classList.remove('show');
+                
+                // Validate email
+                if (!email) {
+                    showError('Please enter your email address', emailInput);
+                    return;
+                }
+                
+                // Validate email format
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailPattern.test(email)) {
+                    showError('Please enter a valid email address', emailInput);
+                    return;
+                }
+                
+                // Validate password
+                if (!password) {
+                    showError('Please enter your password', passwordInput);
+                    return;
+                }
+                
+                // Validate password requirements (without showing hints)
+                if (password.length < 8) {
+                    showError('Password must be at least 8 characters long', passwordInput);
+                    return;
+                }
+                
+                if (!/[a-z]/.test(password)) {
+                    showError('Password must contain at least one lowercase letter', passwordInput);
+                    return;
+                }
+                
+                if (!/[A-Z]/.test(password)) {
+                    showError('Password must contain at least one uppercase letter', passwordInput);
+                    return;
+                }
+                
+                if (!/[0-9]/.test(password)) {
+                    showError('Password must contain at least one number', passwordInput);
+                    return;
+                }
+                
+                // If all validations pass, redirect to home page
+                window.location.href = 'main/html/provider/pHome.html';
+            });
+            
+            function showError(message, inputElement) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('show');
+                inputElement.classList.add('input-error');
+                
+                // Scroll to error message
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('signInBtn').click();
+                }
+            });
         });
     </script>
 
