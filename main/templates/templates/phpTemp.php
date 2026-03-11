@@ -1,6 +1,6 @@
 <!-- FOR COMMON PAGES ONLY -->
 <?php
-// include("../../php/dbConn.php");
+include("../../php/dbConn.php");
 
 // // determine user type 
 // include("../../php/sessionCheck.php");
