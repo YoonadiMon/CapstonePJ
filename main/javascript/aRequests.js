@@ -1,84 +1,10 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('DOM Content Loaded - Initializing Requests Page');
-    
-    // Sample data
-    const sampleRequests = [
-        {
-            id: 'REQ001',
-            title: 'Laptop & monitor',
-            status: 'pending',
-            user: 'Tan Wei Ming',
-            date: '26 Feb 2026',
-            weight: '8.2',
-            statusText: 'pending',
-            description: 'Laptop doesn\'t power on, screen flickers. Monitor works but has scratch.',
-            brand: 'Dell XPS 13 9360 · LG 24MP58',
-            address: 'No 12, Jalan SS2/72, Petaling Jaya, Selangor, 47300',
-            items: 'Laptop (Dell XPS 13) · 19" monitor (LG) · keyboard',
-            contact: '+60 12-345 6789',
-            sentDate: '24 Feb 2026, 09:23'
-        },
-        {
-            id: 'REQ009',
-            title: 'Office Electronics',
-            status: 'pending',
-            user: 'Tech Solutions',
-            date: '03 Mar 2026',
-            weight: '18.5',
-            statusText: 'pending',
-            description: 'Bulk office electronics from company renovation. All items are 3-5 years old.',
-            brand: 'Dell, Logitech, HP',
-            address: 'Level 15, Menara Standard Chartered, Kuala Lumpur',
-            items: 'Monitors (5 pcs) · Keyboards (10 pcs) · Mice (8 pcs)',
-            contact: '+60 12-987 6543',
-            sentDate: '03 Mar 2026, 10:15'
-        },
-        {
-            id: 'REQ010',
-            title: 'Home Entertainment',
-            status: 'pending',
-            user: 'Kevin Tan',
-            date: '02 Mar 2026',
-            weight: '22.3',
-            statusText: 'pending',
-            description: 'Complete home entertainment setup. TV has minor scratch on screen.',
-            brand: 'Sony Bravia, Bose, PlayStation 4',
-            address: 'No 15, Jalan Setia, Bangsar, 59100',
-            items: 'LCD TV · Home Theater System · Gaming Console',
-            contact: '+60 16-234 5678',
-            sentDate: '02 Mar 2026, 14:30'
-        },
-        {
-            id: 'REQ011',
-            title: 'Network Equipment',
-            status: 'pending',
-            user: 'Network Solutions',
-            date: '01 Mar 2026',
-            weight: '9.8',
-            statusText: 'pending',
-            description: 'Used network equipment from office upgrade. Some units may need repair.',
-            brand: 'Cisco, MikroTik, Ubiquiti',
-            address: 'No 89, Jalan Technology, Cyberjaya, 63000',
-            items: 'Routers (3 pcs) · Switches (2 pcs) · Firewall',
-            contact: '+60 13-456 7890',
-            sentDate: '01 Mar 2026, 09:45'
-        },
-        {
-            id: 'REQ012',
-            title: 'Printer Bundle',
-            status: 'pending',
-            user: 'PrintHub',
-            date: '29 Feb 2026',
-            weight: '32.0',
-            statusText: 'pending',
-            description: 'Multiple printers from closing office. Some need toner replacement.',
-            brand: 'HP, Canon, Epson',
-            address: 'No 34, Jalan Industri, Shah Alam, 40200',
-            items: 'Laser Printers (2 pcs) · Inkjet Printer · Scanner',
-            contact: '+60 14-567 8901',
-            sentDate: '29 Feb 2026, 11:20'
-        }
-    ];
+
+    // Data from PHP
+    const requests = window.requestsData || [];
+    const successMsg = window.successMsg || '';
+    const errorMsg = window.errorMsg || '';
 
     // DOM Elements
     const listView = document.getElementById('requestListView');
@@ -106,28 +32,60 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailSentDate = document.getElementById('detailSentDate');
 
     // State
-    let currentFilter = 'pending'; 
     let currentSearch = '';
     let currentSort = 'date-desc';
-    let filteredRequests = [...sampleRequests];
+    let filteredRequests = [...requests];
     let currentRequest = null;
 
-    // Request count
+    // Toast
+    function showToast(msg, type) {
+        const t = document.getElementById('toast');
+        if (!t) return;
+
+        t.className = 'toast ' + type;
+        t.textContent = msg;
+        t.classList.add('show');
+
+        setTimeout(() => {
+            t.classList.remove('show');
+        }, 3000);
+    }
+
+    if (successMsg) showToast(successMsg, 'success');
+    if (errorMsg) showToast(errorMsg, 'error');
+
     function updateRequestCount() {
         if (requestCount) {
             requestCount.textContent = `${filteredRequests.length} pending ${filteredRequests.length === 1 ? 'request' : 'requests'}`;
         }
     }
 
+    function parseDisplayDate(dateStr) {
+        if (!dateStr) return new Date(0);
+
+        const parts = dateStr.trim().split(' ');
+        if (parts.length !== 3) return new Date(dateStr);
+
+        const [day, monthStr, year] = parts;
+        const months = {
+            Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+            Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+        };
+
+        return new Date(parseInt(year, 10), months[monthStr] ?? 0, parseInt(day, 10));
+    }
+
     function filterRequests() {
-        filteredRequests = sampleRequests.filter(request => {
+        filteredRequests = requests.filter(request => {
             const searchTerm = currentSearch.toLowerCase();
-            const matchesSearch = currentSearch === '' || 
-                request.id.toLowerCase().includes(searchTerm) ||
-                request.user.toLowerCase().includes(searchTerm) ||
-                request.title.toLowerCase().includes(searchTerm);
-            
-            return matchesSearch;
+
+            return (
+                currentSearch === '' ||
+                (request.id && request.id.toLowerCase().includes(searchTerm)) ||
+                (request.user && request.user.toLowerCase().includes(searchTerm)) ||
+                (request.title && request.title.toLowerCase().includes(searchTerm)) ||
+                (request.items && request.items.toLowerCase().includes(searchTerm))
+            );
         });
 
         sortRequests();
@@ -135,46 +93,44 @@ document.addEventListener('DOMContentLoaded', function() {
         updateRequestCount();
     }
 
-    // Sort function
     function sortRequests() {
         filteredRequests.sort((a, b) => {
-            switch(currentSort) {
+            switch (currentSort) {
                 case 'date-desc':
-                    return new Date(b.date) - new Date(a.date);
+                    return parseDisplayDate(b.date) - parseDisplayDate(a.date);
                 case 'date-asc':
-                    return new Date(a.date) - new Date(b.date);
+                    return parseDisplayDate(a.date) - parseDisplayDate(b.date);
                 case 'name-asc':
-                    return a.user.localeCompare(b.user);
+                    return (a.user || '').localeCompare(b.user || '');
                 case 'name-desc':
-                    return b.user.localeCompare(a.user);
+                    return (b.user || '').localeCompare(a.user || '');
                 case 'weight-desc':
-                    return parseFloat(b.weight) - parseFloat(a.weight);
+                    return parseFloat(b.weight || 0) - parseFloat(a.weight || 0);
                 case 'weight-asc':
-                    return parseFloat(a.weight) - parseFloat(b.weight);
+                    return parseFloat(a.weight || 0) - parseFloat(b.weight || 0);
                 default:
                     return 0;
             }
         });
     }
 
-    // Render cards
     function renderRequestCards() {
-        console.log('Rendering pending request cards');
         if (!requestsContainer) return;
-        
+
         if (filteredRequests.length === 0) {
             requestsContainer.innerHTML = '<div class="no-results">No pending requests found</div>';
             return;
         }
-        
+
         let html = '';
+
         filteredRequests.forEach(req => {
             html += `
                 <div class="req-card" data-req="${req.id}">
                     <div class="req-info">
                         <div class="req-id-status">
                             <span class="req-id">#${req.id} · ${req.title}</span>
-                            <span class="status ${req.status}">${req.status}</span>
+                            <span class="status ${req.status}">${req.statusText}</span>
                         </div>
                         <div class="req-meta">
                             <span><i class="fas fa-user"></i> ${req.user}</span>
@@ -186,18 +142,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         });
-        requestsContainer.innerHTML = html;
 
+        requestsContainer.innerHTML = html;
         attachCardEventListeners();
     }
 
     function attachCardEventListeners() {
         const cards = document.querySelectorAll('.req-card');
+
         cards.forEach(card => {
-            card.addEventListener('click', function(e) {
+            card.addEventListener('click', function (e) {
                 e.preventDefault();
+
                 const reqId = this.getAttribute('data-req');
-                const request = sampleRequests.find(r => r.id === reqId);
+                const request = requests.find(r => r.id === reqId);
+
                 if (request) {
                     updateDetailView(request);
                     showDetail();
@@ -206,10 +165,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Detail view
     function updateDetailView(request) {
         currentRequest = request;
-        
+
         detailReqId.textContent = `#${request.id}`;
         detailStatus.className = `big-status ${request.status}`;
         detailStatus.textContent = request.statusText;
@@ -224,55 +182,65 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showList() {
-        listView.classList.remove('hidden');
-        detailView.classList.add('hidden');
+        if (listView) listView.classList.remove('hidden');
+        if (detailView) detailView.classList.add('hidden');
     }
 
     function showDetail() {
-        listView.classList.add('hidden');
-        detailView.classList.remove('hidden');
+        if (listView) listView.classList.add('hidden');
+        if (detailView) detailView.classList.remove('hidden');
     }
 
     if (sortDropdownBtn) {
-        sortDropdownBtn.addEventListener('click', function(e) {
+        sortDropdownBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            sortDropdownContent.classList.toggle('show');
-            if (filterDropdownContent) filterDropdownContent.classList.remove('show');
+            if (sortDropdownContent) {
+                sortDropdownContent.classList.toggle('show');
+            }
         });
     }
 
-    document.addEventListener('click', function(e) {
-    if (sortDropdownContent && !sortDropdownBtn?.contains(e.target) && !sortDropdownContent.contains(e.target)) {
-        sortDropdownContent.classList.remove('show');
-    }
+    document.addEventListener('click', function (e) {
+        if (
+            sortDropdownContent &&
+            !sortDropdownBtn?.contains(e.target) &&
+            !sortDropdownContent.contains(e.target)
+        ) {
+            sortDropdownContent.classList.remove('show');
+        }
     });
 
     sortLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', function (e) {
             e.preventDefault();
-            
+
             sortLinks.forEach(l => l.classList.remove('active-sort'));
             this.classList.add('active-sort');
-            
+
             currentSort = this.getAttribute('data-sort');
-            
+
             if (sortDropdownBtn) {
                 const sortText = this.textContent.trim();
                 sortDropdownBtn.innerHTML = `<i class="fas fa-sort-amount-down"></i> ${sortText} <i class="fas fa-chevron-down"></i>`;
             }
-            
-            filterRequests(); 
-            sortDropdownContent.classList.remove('show');
+
+            filterRequests();
+
+            if (sortDropdownContent) {
+                sortDropdownContent.classList.remove('show');
+            }
         });
     });
 
     if (searchInput) {
         let searchTimeout;
-        searchInput.addEventListener('input', function(e) {
+
+        searchInput.addEventListener('input', function () {
             clearTimeout(searchTimeout);
+
             searchTimeout = setTimeout(() => {
-                currentSearch = this.value;
+                currentSearch = this.value.trim();
                 filterRequests();
             }, 300);
         });
@@ -282,87 +250,35 @@ document.addEventListener('DOMContentLoaded', function() {
         backToListBtn.addEventListener('click', showList);
     }
 
-    // Approve button
-if (approveBtn) {
-    approveBtn.addEventListener('click', function() {
-        if (currentRequest) {
-            const modalOverlay = document.createElement('div');
-            modalOverlay.className = 'approve-modal-overlay';
+    if (approveBtn) {
+        approveBtn.addEventListener('click', function () {
+            if (!currentRequest) return;
 
-            const modalContent = document.createElement('div');
-            modalContent.className = 'approve-modal-content';
-            modalContent.innerHTML = `
-                <div class="approve-modal-header">
-                    <i class="fas fa-check-circle"></i>
-                    <h3>Request Approved!</h3>
-                    <button class="approve-modal-close" id="closeApproveModal">&times;</button>
-                </div>
-                <div class="approve-modal-body">
-                    <p>Request <strong>#${currentRequest.id}</strong> has been approved.</p>
-                    <div class="request-summary">
-                        <div><i class="fas fa-user"></i> ${currentRequest.user}</div>
-                        <div><i class="fas fa-box"></i> ${currentRequest.items}</div>
-                        <div><i class="fas fa-weight-hanging"></i> ${currentRequest.weight} kg</div>
-                    </div>
-                </div>
-                <div class="approve-modal-footer">
-                    <button class="btn btn-primary" id="goToOperationsBtn">
-                        <i class="fas fa-truck"></i> Assign Collector
-                    </button>
-                </div>
-            `;
-            
-            modalOverlay.appendChild(modalContent);
-            document.body.appendChild(modalOverlay);
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '';
 
-const approvedRequest = {
-    id: currentRequest.id,
-    provider: currentRequest.user,
-    items: currentRequest.items.split(' · '), 
-    address: currentRequest.address,
-    preferredDate: currentRequest.date,
-    weight: currentRequest.weight,
-    description: currentRequest.description,
-    contact: currentRequest.contact,
-    status: 'approved'
-};
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'approve';
 
-let approvedRequests = JSON.parse(sessionStorage.getItem('approvedRequests')) || [];
-approvedRequests.push(approvedRequest);
-sessionStorage.setItem('approvedRequests', JSON.stringify(approvedRequests));
+            const requestIdInput = document.createElement('input');
+            requestIdInput.type = 'hidden';
+            requestIdInput.name = 'requestID';
+            requestIdInput.value = currentRequest.dbID;
 
-console.log('Stored approved requests:', approvedRequests);
-       
-            const index = sampleRequests.findIndex(r => r.id === currentRequest.id);
-            if (index !== -1) {
-                sampleRequests.splice(index, 1);
-                filterRequests();
-            }
-            
-            // Assign Collector 
-            document.getElementById('goToOperationsBtn').addEventListener('click', function() {
-                window.location.href = '/main/html/admin/aOperations.html';
-            });
-         
-            document.getElementById('closeApproveModal').addEventListener('click', function() {
-                document.body.removeChild(modalOverlay);
-                showList(); // Go back to list view
-            });
-      
-            modalOverlay.addEventListener('click', function(e) {
-                if (e.target === modalOverlay) {
-                    document.body.removeChild(modalOverlay);
-                    showList();
-                }
-            });
-        }
-    });
-}
+            form.appendChild(actionInput);
+            form.appendChild(requestIdInput);
 
-    // Reject button
-if (rejectBtn) {
-    rejectBtn.addEventListener('click', function() {
-        if (currentRequest) {
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+
+    if (rejectBtn) {
+        rejectBtn.addEventListener('click', function () {
+            if (!currentRequest) return;
 
             const modalOverlay = document.createElement('div');
             modalOverlay.className = 'modal-overlay';
@@ -378,49 +294,71 @@ if (rejectBtn) {
                     <button class="modal-btn confirm" id="confirmReject">Confirm Rejection</button>
                 </div>
             `;
-            
+
             modalOverlay.appendChild(modalContent);
             document.body.appendChild(modalOverlay);
 
-            document.getElementById('confirmReject').addEventListener('click', function() {
-                const reason = document.getElementById('rejectionReason').value.trim();
-                if (!reason) {
-                    alert('Please enter a rejection reason');
-                    return;
-                }
-                
-                alert(`Request #${currentRequest.id} has been rejected. Reason: ${reason}`);
-         
-                const index = sampleRequests.findIndex(r => r.id === currentRequest.id);
-                if (index !== -1) {
-                    sampleRequests.splice(index, 1);
-                    filterRequests();
-                    showList();
-                }
-                
-                document.body.removeChild(modalOverlay);
-            });
-        
-            document.getElementById('cancelReject').addEventListener('click', function() {
-                document.body.removeChild(modalOverlay);
-            });
-     
-            modalOverlay.addEventListener('click', function(e) {
+            const cancelBtn = document.getElementById('cancelReject');
+            const confirmBtn = document.getElementById('confirmReject');
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function () {
+                    document.body.removeChild(modalOverlay);
+                });
+            }
+
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function () {
+                    const reason = document.getElementById('rejectionReason').value.trim();
+
+                    if (!reason) {
+                        alert('Please enter a rejection reason');
+                        return;
+                    }
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '';
+
+                    const actionInput = document.createElement('input');
+                    actionInput.type = 'hidden';
+                    actionInput.name = 'action';
+                    actionInput.value = 'reject';
+
+                    const requestIdInput = document.createElement('input');
+                    requestIdInput.type = 'hidden';
+                    requestIdInput.name = 'requestID';
+                    requestIdInput.value = currentRequest.dbID;
+
+                    const reasonInput = document.createElement('input');
+                    reasonInput.type = 'hidden';
+                    reasonInput.name = 'reason';
+                    reasonInput.value = reason;
+
+                    form.appendChild(actionInput);
+                    form.appendChild(requestIdInput);
+                    form.appendChild(reasonInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            }
+
+            modalOverlay.addEventListener('click', function (e) {
                 if (e.target === modalOverlay) {
                     document.body.removeChild(modalOverlay);
                 }
             });
-        }
-    });
-}
+        });
+    }
 
-    filterRequests(); 
+    filterRequests();
 
     sortLinks.forEach(link => {
         if (link.getAttribute('data-sort') === 'date-desc') {
             link.classList.add('active-sort');
         }
     });
-    
+
     console.log('Initialization complete');
 });
