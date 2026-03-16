@@ -221,6 +221,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (empty($errors)) {
+                // Block status change to Inactive if centre has active items
+                if ($status === 'Inactive') {
+                    $activeItemStmt = $conn->prepare("
+                        SELECT COUNT(*) AS cnt FROM tblitem i
+                        JOIN tblcollection_request r ON i.requestID = r.requestID
+                        WHERE i.centreID = ?
+                        AND i.status IN ('Pending', 'Collected', 'Received', 'Processed')
+                    ");
+                    $activeItemStmt->bind_param('i', $centreID);
+                    $activeItemStmt->execute();
+                    $activeItemRow = $activeItemStmt->get_result()->fetch_assoc();
+
+                    if ($activeItemRow['cnt'] > 0) {
+                        $_SESSION['errorMsg'] = 'Cannot set centre to Inactive — it has ' . $activeItemRow['cnt'] . ' active item(s) currently assigned to it.';
+                        header('Location: ' . $_SERVER['PHP_SELF']);
+                        exit;
+                    }
+
+                    // Block if an Ongoing job is dropping off to this centre
+                    $ongoingJobStmt = $conn->prepare("
+                        SELECT COUNT(*) AS cnt FROM tblitem i
+                        JOIN tblcollection_request r ON i.requestID = r.requestID
+                        JOIN tbljob j ON j.requestID = r.requestID
+                        WHERE i.centreID = ?
+                        AND j.status = 'Ongoing'
+                    ");
+                    $ongoingJobStmt->bind_param('i', $centreID);
+                    $ongoingJobStmt->execute();
+                    $ongoingJobRow = $ongoingJobStmt->get_result()->fetch_assoc();
+
+                    if ($ongoingJobRow['cnt'] > 0) {
+                        $_SESSION['errorMsg'] = 'Cannot set centre to Inactive — a collector is currently en route to drop off items at this centre.';
+                        header('Location: ' . $_SERVER['PHP_SELF']);
+                        exit;
+                    }
+                }
+
                 // Start transaction
                 $conn->begin_transaction();
                 try {
@@ -271,6 +308,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: ' . $_SERVER['PHP_SELF']);
                 exit;
             } else {
+                // Block deletion if items are assigned to this centre
+                $itemCheckStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM tblitem WHERE centreID = ?");
+                $itemCheckStmt->bind_param('i', $centreID);
+                $itemCheckStmt->execute();
+                $itemCheckRow = $itemCheckStmt->get_result()->fetch_assoc();
+                if ($itemCheckRow['cnt'] > 0) {
+                    $_SESSION['errorMsg'] = 'Cannot delete this centre — it has ' . $itemCheckRow['cnt'] . ' item record(s) linked to it.';
+                    header('Location: ' . $_SERVER['PHP_SELF']);
+                    exit;
+                }
+
                 // Start transaction
                 $conn->begin_transaction();
                 try {
@@ -311,7 +359,13 @@ $search = trim($_GET['search'] ?? '');
 $searchParam = '%' . $search . '%';
 
 $sql = "SELECT c.*, GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR '||') AS acceptedItems,
-        GROUP_CONCAT(t.itemTypeID ORDER BY t.name SEPARATOR '||') AS acceptedItemIDs
+        GROUP_CONCAT(t.itemTypeID ORDER BY t.name SEPARATOR '||') AS acceptedItemIDs,
+        (SELECT COUNT(*) FROM tblitem i WHERE i.centreID = c.centreID) AS itemCount,
+        (SELECT COUNT(*) FROM tblitem i WHERE i.centreID = c.centreID
+            AND i.status IN ('Pending','Collected','Received','Processed')) AS activeItemCount,
+        (SELECT COUNT(*) FROM tblitem i
+            JOIN tbljob j ON j.requestID = i.requestID
+            WHERE i.centreID = c.centreID AND j.status = 'Ongoing') AS ongoingJobCount
         FROM tblcentre c
         LEFT JOIN tblcentre_accepted_type cat ON c.centreID = cat.centreID
         LEFT JOIN tblitem_type t ON cat.itemTypeID = t.itemTypeID AND t.name != 'Other Electronics'
@@ -489,6 +543,10 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             border-radius: 16px;
             box-shadow: 0 4px 12px var(--shadow-color);
             overflow: hidden;
+        }
+
+        .dark-mode .centres-table-container {
+            box-shadow: 0 4px 8px var(--BlueGray);
         }
 
         .centres-table {
@@ -882,6 +940,13 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             font-weight: 600; 
         }
 
+        .delete-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none; 
+            box-shadow: none;
+        }
+
         .modal-buttons {
             display: flex;
             gap: 0.75rem;
@@ -1026,6 +1091,10 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 text-align: center;
             }
             
+            .clear-btn {
+                display: block;
+            }
+
             .add-btn {
                 width: 100%;
             }
@@ -1185,9 +1254,16 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                                             <button class="action-btn" onclick="openEditModal(<?php echo $i ?>)" title="Edit">
                                                 <img src="../../assets/images/edit-icon-white.svg" alt="Edit">
                                             </button>
-                                            <button class="action-btn delete-btn" onclick="openDeleteModal(<?php echo $i ?>)" title="Delete">
-                                                <img src="../../assets/images/delete-icon-white.svg" alt="Delete">
-                                            </button>
+                                            <?php if ((int)$c['itemCount'] > 0): ?>
+                                                <button class="action-btn delete-btn delete-disabled" disabled
+                                                    title="Cannot delete — this centre has <?php echo (int)$c['itemCount'] ?> linked item(s)">
+                                                    <img src="../../assets/images/delete-icon-white.svg" alt="Delete">
+                                                </button>
+                                            <?php else: ?>
+                                                <button class="action-btn delete-btn" onclick="openDeleteModal(<?php echo $i ?>)" title="Delete">
+                                                    <img src="../../assets/images/delete-icon-white.svg" alt="Delete">
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -1232,7 +1308,7 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             <div>
                 <b>System Operation</b><br>
                 <a href="../../html/admin/aProviders.html">Providers</a><br>
-                <a href="../../html/admin/aCollectors.html">Collectors</a><br>
+                <a href="../../html/admin/aCollectors.php">Collectors</a><br>
                 <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
                 <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
@@ -1280,6 +1356,14 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                     <div class="view-field">
                         <label>Status</label>
                         <span id="view-status">—</span>
+                    </div>
+                    <div class="view-field">
+                        <label>Collected Items</label>
+                        <span id="view-item-count">—</span>
+                    </div>
+                    <div class="view-field">
+                        <label>Current Accepted Item Types</label>
+                        <span id="view-accepted-count">—</span>
                     </div>
                     <div class="view-field full">
                         <label>Accepted Item Types</label>
@@ -1506,6 +1590,8 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             document.getElementById('view-postcode').textContent = c.postcode;
             document.getElementById('view-contact').textContent = c.contact;
             document.getElementById('view-status').textContent = c.status;
+            document.getElementById('view-accepted-count').textContent = c.items.length + ' type(s)';
+            document.getElementById('view-item-count').textContent = parseInt(c.itemCount) + ' item(s)';
 
             // Render item tags
             const tagsContainer = document.getElementById('view-items');
@@ -1526,6 +1612,20 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             document.getElementById('edit-postcode').value = c.postcode;
             document.getElementById('edit-contact').value = c.contact;
             document.getElementById('edit-status').value = c.status;
+
+            // Disable Inactive option if centre has active items or an ongoing job
+            const inactiveOption = document.querySelector('#edit-status option[value="Inactive"]');
+            const isLocked = parseInt(c.activeItemCount) > 0 || parseInt(c.ongoingJobCount) > 0;
+            inactiveOption.disabled = isLocked;
+            if (isLocked) {
+                inactiveOption.text = 'Inactive (unavailable — active items assigned)';
+                // If somehow it's already set to Inactive (edge case), force back to Active
+                if (document.getElementById('edit-status').value === 'Inactive') {
+                    document.getElementById('edit-status').value = 'Active';
+                }
+            } else {
+                inactiveOption.text = 'Inactive';
+            }
 
             // Get the accepted item IDs directly from the data
             const acceptedItemIds = c.itemIDs ? c.itemIDs.map(id => parseInt(id)) : [];
@@ -1670,15 +1770,6 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
 
         document.getElementById('editForm').addEventListener('submit', function (e) {
             if (!validateForm('edit')) e.preventDefault();
-        });
-
-        // Close modal when clicking outside
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal(this.id);
-                }
-            });
         });
 
         // Select all functionality for item checkboxes
