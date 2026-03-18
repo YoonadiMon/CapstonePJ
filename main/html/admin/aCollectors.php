@@ -514,12 +514,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
  
         // Block deletion if jobs are linked to this collector
-        $jobCheckStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM tbljob WHERE collectorID = ?");
+        $jobCheckStmt = $conn->prepare("SELECT COUNT(*) AS count FROM tbljob WHERE collectorID = ?");
         $jobCheckStmt->bind_param('i', $collectorID);
         $jobCheckStmt->execute();
         $jobCheckRow = $jobCheckStmt->get_result()->fetch_assoc();
-        if ($jobCheckRow['cnt'] > 0) {
-            $_SESSION['errorMsg'] = 'Cannot delete this collector — they have ' . $jobCheckRow['cnt'] . ' job record(s) linked to them.';
+        if ($jobCheckRow['count'] > 0) {
+            $_SESSION['errorMsg'] = 'Cannot delete this collector with ' . $jobCheckRow['count'] . ' job record(s) linked to them.';
             header('Location: ' . $_SERVER['PHP_SELF']);
             exit;
         }
@@ -562,9 +562,7 @@ $sql = "SELECT c.collectorID, c.licenseNum, c.status,
                u.username, u.fullname, u.email, u.phone,
                DATE_FORMAT(u.createdAt, '%d/%m/%Y') AS createdAt,
                DATE_FORMAT(u.lastLogin,  '%d/%m/%Y') AS lastLogin,
-               (SELECT COUNT(*) FROM tbljob j WHERE j.collectorID = c.collectorID AND j.status = 'Ongoing') AS ongoingJobCount,
-               (SELECT COUNT(*) FROM tbljob j WHERE j.collectorID = c.collectorID AND j.status = 'Pending') AS pendingJobCount,
-               (SELECT COUNT(*) FROM tbljob j WHERE j.collectorID = c.collectorID AND j.status = 'Scheduled') AS scheduledJobCount
+               (SELECT COUNT(*) FROM tbljob j WHERE j.collectorID = c.collectorID) AS jobCount
         FROM tblcollector c
         JOIN tblusers u ON c.collectorID = u.userID
         WHERE u.fullname LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR u.phone LIKE ?
@@ -858,6 +856,40 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
 
         .action-btn.delete-btn {
             background: red;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--DarkBlue);
+            color: var(--White);
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            z-index: 3000;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: none;
+        }
+
+        .toast.success {
+            background: #28a745;
+            color: var(--White);
+        }
+
+        .toast.error {
+            background: #dc3545;
+            color: var(--White);
         }
 
         .empty-state {
@@ -1414,6 +1446,7 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 <table class="users-table">
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th class="left">Name</th>
                             <th>Email</th>
                             <th>Phone</th>
@@ -1425,7 +1458,7 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                     <tbody>
                         <?php if (empty($collectors)): ?>
                             <tr>
-                                <td colspan="6">
+                                <td colspan="7">
                                     <div class="empty-state">
                                         <h3>No Collectors Found</h3>
                                         <p><?php echo $search ? 'Try a different search term.' : 'Add a new collector to get started.'; ?></p>
@@ -1441,6 +1474,7 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                                         };
                                     ?>
                                 <tr>
+                                    <td>#<?php echo sanitize($c['collectorID']); ?></td>
                                     <td class="left">
                                         <div class="user-info">
                                             <div class="user-details">
@@ -1466,11 +1500,12 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                                                 <img src="../../assets/images/edit-icon-white.svg" alt="Edit">
                                             </button>
                                             <?php 
-                                                $totalJobs = (int)$c['ongoingJobCount'] + (int)$c['pendingJobCount'] + (int)$c['scheduledJobCount'];
+                                                $totalJobs = (int)$c['jobCount'];
                                             ?>
                                             <?php if ($totalJobs > 0): ?>
                                                 <button class="action-btn delete-btn delete-disabled" disabled
-                                                    title="Cannot delete — this collector has <?php echo $totalJobs ?> linked job(s)">
+                                                    title="Cannot delete: this collector has <?php echo $totalJobs ?> linked job(s)">
+                                                    <img src="../../assets/images/delete-icon-white.svg" alt="Delete">
                                                 </button>
                                             <?php else: ?>
                                                 <button class="action-btn delete-btn" onclick="openDeleteModal(<?php echo $i ?>)" title="Delete">
@@ -1520,7 +1555,7 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             </div>
             <div>
                 <b>System Operation</b><br>
-                <a href="../../html/admin/aProviders.html">Providers</a><br>
+                <a href="../../html/admin/aProviders.php">Providers</a><br>
                 <a href="../../html/admin/aCollectors.php">Collectors</a><br>
                 <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
@@ -2146,7 +2181,10 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
         document.getElementById('addForm').addEventListener('submit', function (e) {
             if (!validateForm('add')) e.preventDefault();
         });
- 
+
+        document.getElementById('editForm').addEventListener('submit', function (e) {
+            if (!validateForm('edit')) e.preventDefault();
+        });
     </script>
 </body>
 </html>

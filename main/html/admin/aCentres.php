@@ -314,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $itemCheckStmt->execute();
                 $itemCheckRow = $itemCheckStmt->get_result()->fetch_assoc();
                 if ($itemCheckRow['cnt'] > 0) {
-                    $_SESSION['errorMsg'] = 'Cannot delete this centre — it has ' . $itemCheckRow['cnt'] . ' item record(s) linked to it.';
+                    $_SESSION['errorMsg'] = 'Cannot delete this centre with ' . $itemCheckRow['cnt'] . ' item record(s) linked to it.';
                     header('Location: ' . $_SERVER['PHP_SELF']);
                     exit;
                 }
@@ -1218,6 +1218,7 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 <table class="centres-table">
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th class="left">Name</th>
                             <th>Contact</th>
                             <th>State</th>
@@ -1228,7 +1229,7 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                     <tbody>
                          <?php if (empty($centres)): ?>
                             <tr>
-                                <td colspan="5">
+                                <td colspan="6">
                                     <div class="empty-state">
                                         <h3>No Centres Found</h3>
                                         <p><?php echo $search ? 'Try a different search term.' : 'Add a new centre to get started.'; ?></p>
@@ -1238,6 +1239,7 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                         <?php else: ?>
                             <?php foreach ($centres as $i => $c): ?>
                                 <tr>
+                                    <td>#<?php echo sanitize($c['centreID']); ?></td>
                                     <td class="left"><?php echo sanitize($c['name']) ?></td>
                                     <td><?php echo sanitize($c['contact']) ?></td>
                                     <td><?php echo sanitize($c['state']) ?></td>
@@ -1256,7 +1258,7 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                                             </button>
                                             <?php if ((int)$c['itemCount'] > 0): ?>
                                                 <button class="action-btn delete-btn delete-disabled" disabled
-                                                    title="Cannot delete — this centre has <?php echo (int)$c['itemCount'] ?> linked item(s)">
+                                                    title="Cannot delete: this centre has <?php echo (int)$c['itemCount'] ?> linked item(s)">
                                                     <img src="../../assets/images/delete-icon-white.svg" alt="Delete">
                                                 </button>
                                             <?php else: ?>
@@ -1307,7 +1309,7 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             </div>
             <div>
                 <b>System Operation</b><br>
-                <a href="../../html/admin/aProviders.html">Providers</a><br>
+                <a href="../../html/admin/aProviders.php">Providers</a><br>
                 <a href="../../html/admin/aCollectors.php">Collectors</a><br>
                 <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
