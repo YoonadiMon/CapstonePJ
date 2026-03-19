@@ -36,7 +36,6 @@
             $stats['state'] = $row['state'] ?? 'N/A';
             $stats['postcode'] = $row['postcode'] ?? 'N/A';
             $stats['point'] = $row['point'] ?? 0;
-            echo "<script>console.log('DB Success - Provider stats fetched successfully');</script>";
         } else {
             error_log("DB Error - No provider found with ID: $provider_id");
         }
@@ -211,7 +210,7 @@
             height: 18px;
         }
         
-        /* ── Stats Bar (matching history page) ── */
+        /* ── Stats Bar ── */
         .pmp-stats-bar {
             display: flex;
             flex-wrap: wrap;
@@ -839,7 +838,7 @@
                     </a>
                 </section>
                 <a href="../../html/provider/pHome.php">Home</a>
-                <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
+                <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                 <a href="../../html/provider/pMainPickup.html">My Pickup</a>
                 <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
                 <a href="../../html/common/About.html">About</a>
@@ -850,7 +849,7 @@
     <!-- Menu Links Desktop + Tablet -->
     <nav class="c-navbar-desktop">
         <a href="../../html/provider/pHome.php">Home</a>
-        <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
+        <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
         <a href="../../html/provider/pMainPickup.html">My Pickup</a>
         <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
         <a href="../../html/common/About.html">About</a>
@@ -885,7 +884,7 @@
             <h1>My Pickups</h1>
             <p>Track and manage your e-waste collection requests</p>
         </div>
-        <a href="pSchedulePickup.html" class="pmp-schedule-btn">
+        <a href="pSchedulePickup.php" class="pmp-schedule-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1136,7 +1135,7 @@
         </div>
         <div>
             <b>My Activity</b><br>
-            <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
+            <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br>
             <a href="../../html/provider/pMainPickup.html">My Pickup</a>
         </div>
         <div>
@@ -1224,7 +1223,7 @@ function updateStats() {
     document.getElementById('statCompleted').textContent = providerPoints;
     
     // You can add more stats display if needed
-    console.log(`Stats - Total: ${total}, Pending: ${pending}, Approved: ${approved}, Rejected: ${rejected}, Completed: ${completed}, Cancelled: ${cancelled}`);
+    // console.log(`Stats - Total: ${total}, Pending: ${pending}, Approved: ${approved}, Rejected: ${rejected}, Completed: ${completed}, Cancelled: ${cancelled}`);
 }
 
 function filterPickups(status) {

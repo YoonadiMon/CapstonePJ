@@ -72,7 +72,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                     <?php elseif ($userType === 'provider'): ?>
                         <!-- Provider Mobile Menu -->
                         <a href="../../html/provider/pHome.php">Home</a>
-                        <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
+                        <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                         <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                         <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
                         <a href="../../html/common/About.html">About</a>
@@ -103,7 +103,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
             <?php elseif ($userType === 'provider'): ?>
                 <!-- Provider Desktop Menu -->
                 <a href="../../html/provider/pHome.php">Home</a>
-                <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
+                <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                 <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                 <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
                 <a href="../../html/common/About.html">About</a>
@@ -200,7 +200,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 </div>
                 <div>
                     <b>My Activity</b><br>
-                    <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
+                    <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br>
                     <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                 </div>
                 <div>

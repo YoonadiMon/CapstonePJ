@@ -850,7 +850,7 @@
                         </a>
                     </section>
                     <a href="../../html/provider/pHome.php">Home</a>
-                    <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
+                    <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                     <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                     <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
                     <a href="../../html/common/About.html">About</a>
@@ -861,7 +861,7 @@
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
             <a href="../../html/provider/pHome.php">Home</a>
-            <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
+            <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
             <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
             <a href="../../html/common/About.html">About</a>
@@ -921,7 +921,7 @@
                 <h1>Not Welcome back, <span id="providerName"><?php echo $provider_name; ?></span> 👋</h1>
                 <p id="currentDateTime">Thursday, 19 Feb 2026 · Kuala Lumpur, MY</p>
             </div>
-            <a href="pSchedulePickup.html" class="ph-submit-btn">
+            <a href="pSchedulePickup.php" class="ph-submit-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1158,7 +1158,7 @@
             </div>
             <div>
                 <b>My Activity</b><br>
-                <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
+                <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br>
                 <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             </div>
             <div>
