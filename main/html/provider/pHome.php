@@ -1,3 +1,61 @@
+<?php
+    include("../../php/dbConn.php");
+    if(!isset($_SESSION)) {
+        session_start();
+    }
+    include("../../php/sessionCheck.php");
+
+    // Check if user is provide; only providers can access this page
+    if ($_SESSION['userType'] !== 'provider') {
+        header("Location: ../../index.html");
+        exit();
+    }
+
+    // get active user info of curent session
+    $_SESSION['provider_id'] = $_SESSION['userID'];
+    $provider_id = $_SESSION['provider_id'];
+    $provider_name = $_SESSION['fullname'];
+    $provider_email = $_SESSION['email'];
+    $createdAt = $_SESSION['createdAt'];
+    $lastlogin = $_SESSION['lastLogin'];
+
+    $initials = '';
+    function getInitials($name) {
+        $words = explode(' ', trim($name));
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+        }
+        return strtoupper(substr($words[0], 0, 2));
+    }
+    $initials = getInitials($provider_name);
+
+    // Fetch provider statistics
+    $stats = [
+        'address' => 'N/A',
+        'state' => 0,
+        'postcode' => 0,
+        'point' => 0
+    ];
+
+    $sql = "SELECT * FROM tblusers INNER JOIN tblprovider ON tblusers.userID = tblprovider.providerID WHERE tblusers.userID = '$provider_id'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        if ($row) {
+            $stats['address'] = $row['address'] ?? 'N/A';
+            $stats['state'] = $row['state'] ?? 'N/A';
+            $stats['postcode'] = $row['postcode'] ?? 'N/A';
+            $stats['point'] = $row['point'] ?? 0;
+            echo "<script>console.log('DB Success - Provider stats fetched successfully');</script>";
+        } else {
+            error_log("DB Error - No provider found with ID: $provider_id");
+        }
+    } else {
+        error_log("DB Error - Active users query: " . mysqli_error($connection));
+    }
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +73,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
     <style>
-        /* ═══ pHome – styled to match cCompletedJobs aesthetic ═══ */
         
         main {
             display: flex;
@@ -30,7 +87,6 @@
             }
         }
         
-        /* ── Back button (to match history page) ── */
         .ph-back-row {
             margin-bottom: 0.5rem;
         }
@@ -55,7 +111,6 @@
             border-color: var(--MainBlue);
         }
         
-        /* ── Stats bar (matching history page) ── */
         .ph-stats-bar {
             display: flex;
             flex-wrap: wrap;
@@ -174,7 +229,7 @@
                 flex-direction: row;
             }
             .ph-profile-col {
-                flex: 0 0 320px;
+                flex: 0.05 0 330px;
             }
             .ph-content-col {
                 flex: 1;
@@ -394,7 +449,6 @@
             color: var(--Gray);
         }
         
-        /* ── History section (matching history page style) ── */
         .ph-history-section {
             background: var(--bg-color);
             border: 1px solid var(--BlueGray);
@@ -508,7 +562,6 @@
             white-space: nowrap;
         }
         
-        /* Status badges (matching history page) */
         .ph-badge {
             display: inline-flex;
             align-items: center;
@@ -697,7 +750,6 @@
 
     <!-- Main Content -->
     <main>
-        <!-- Back button (matching history page) -->
         <!-- <div class="ph-back-row">
             <button class="ph-back-btn" onclick="window.location.href='../../html/common/Dashboard.html'">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -707,7 +759,6 @@
             </button>
         </div> -->
 
-        <!-- Stats Overview Bar (matching history page) -->
         <section class="ph-stats-bar">
             <div class="ph-stats-card">
                 <div class="ph-stats-label">Total Submissions</div>
@@ -728,7 +779,7 @@
         <!-- Greeting -->
         <div class="ph-greeting">
             <div>
-                <h1>Welcome back, <span id="providerName">Ahmad Farid</span> 👋</h1>
+                <h1>Not Welcome back, <span id="providerName"><?php echo $provider_name; ?></span> 👋</h1>
                 <p id="currentDateTime">Thursday, 19 Feb 2026 · Kuala Lumpur, MY</p>
             </div>
             <a href="pSchedulePickup.html" class="ph-submit-btn">
@@ -745,8 +796,8 @@
             <!-- LEFT: Profile Column -->
             <aside class="ph-profile-col">
                 <div class="ph-avatar-section">
-                    <div class="ph-avatar" id="avatarInitials">AF</div>
-                    <div class="ph-profile-name" id="displayName">Ahmad Farid bin Razali</div>
+                    <div class="ph-avatar" id="avatarInitials"><?php echo $initials; ?></div>
+                    <div class="ph-profile-name" id="displayName"><?php echo $provider_name; ?></div>
                     <div class="ph-profile-id" id="providerId">PRV-2024-00182</div>
                 </div>
 
@@ -755,7 +806,7 @@
                 <div class="ph-profile-meta">
                     <div class="ph-meta-row">
                         <span>Email</span>
-                        <span id="profileEmail">farid@email.com</span>
+                        <span id="profileEmail"><?php echo $provider_email; ?></span>
                     </div>
                     <div class="ph-meta-row">
                         <span>Phone</span>
@@ -763,19 +814,19 @@
                     </div>
                     <div class="ph-meta-row">
                         <span>Member since</span>
-                        <span id="memberSince">Jan 2024</span>
+                        <span id="memberSince"><?php echo $createdAt;?></span>
                     </div>
                     <div class="ph-meta-row">
                         <span>Address</span>
-                        <span id="profileLocation">Petaling Jaya, MY</span>
+                        <span id="profileLocation"><?php echo $stats['address']; ?></span>
                     </div>
                     <div class="ph-meta-row">
                         <span>State</span>
-                        <span id="profileLocation">Petaling Jaya, MY</span>
+                        <span id="profileLocation"><?php echo $stats['state']; ?></span>
                     </div>
                     <div class="ph-meta-row">
                         <span>Postcode</span>
-                        <span id="profileLocation">Petaling Jaya, MY</span>
+                        <span id="profileLocation"><?php echo $stats['postcode']; ?></span>
                     </div>
                 </div>
 
@@ -824,7 +875,6 @@
                     </div>
                 </div>
 
-                <!-- Recent Submissions (matching history page style) -->
                 <div class="ph-history-section">
                     <div class="ph-section-header">
                         <h2>📋 Recent Submissions</h2>
@@ -942,8 +992,8 @@
             // In production, this would fetch from localStorage or API
             
             const userData = {
-                name: 'Ahmad Farid bin Razali',
-                initials: 'AF',
+                name: $provider_name,
+                initials: $initials,
                 id: 'PRV-2024-00182',
                 email: 'farid@email.com',
                 phone: '+60 11-2345 6789',
@@ -951,7 +1001,7 @@
                 location: 'Petaling Jaya, MY'
             };
             
-            document.getElementById('providerName').textContent = 'Ahmad Farid';
+            document.getElementById('providerName').textContent = userData.name;
             document.getElementById('avatarInitials').textContent = userData.initials;
             document.getElementById('displayName').textContent = userData.name;
             document.getElementById('providerId').textContent = userData.id;

@@ -179,6 +179,14 @@ if (!isset($_SESSION['userID'])) {
 $userType = isset($_SESSION['userType']) ? $_SESSION['userType'] : 'provider';
 $username = isset($_SESSION['username']) ? $_SESSION['username'] : '';
 
+// Get other user info from session
+$userID = $_SESSION['userID'];
+$fullName = $_SESSION['fullname'] ?? '';
+$email = $_SESSION['email'] ?? '';
+$phone = $_SESSION['phone'] ?? '';
+$createdAt = $_SESSION['createdAt'] ?? '';
+$lastlogin = $_SESSION['lastLogin'] ?? '';
+
 // Set home page based on user type
 switch ($userType) {
     case 'admin':

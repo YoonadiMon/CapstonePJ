@@ -24,6 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['userID'] = $user['userID'];
             $_SESSION['userType'] = $user['userType'];
             
+            // Also set other useful user data
+            $_SESSION['fullname'] = $user['fullname'] ?? $user['name'] ?? '';
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['phone'] = $user['phone'] ?? '';
+            $_SESSION['createdAt'] = $user['createdAt'] ?? '';
+            $_SESSION['lastLogin'] = date("Y-m-d H:i:s");
+            
             if ($user['userType'] == 'provider') {
                 header("Location: main/html/provider/pHome.php");
             } else if ($user['userType'] == 'collector') {
