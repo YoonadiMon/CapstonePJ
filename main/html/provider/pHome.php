@@ -54,6 +54,136 @@
         error_log("DB Error - Active users query: " . mysqli_error($connection));
     }
 
+    // Fetch provided item statistics
+    $allItemStats = [];
+    $approvedItemStats = [];
+    $pendingItemStats = [];
+
+    $sql = "SELECT * FROM tblprovider p JOIN tblcollection_request cr ON p.providerID = cr.providerID
+                                        JOIN tblitem i ON cr.requestID = i.requestID
+                                        JOIN tblitem_type it ON i.itemTypeID = it.itemTypeID 
+                                        WHERE p.providerID = '$provider_id'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<script>console.log('DB Success - Item stats row: " . json_encode($row) . "');</script>";
+                $allItemsStats[] = [
+                    'requestID' => $row['requestID'] ?? 'N/A',
+                    'pickupAddress' => $row['pickupAddress'] ?? 'N/A',
+                    'pickupState' => $row['pickupState'] ?? 'N/A',
+                    'pickupPostcode' => $row['pickupPostcode'] ?? 'N/A',
+                    'preferredDateTime' => $row['preferredDateTime'] ?? 'N/A',
+                    'status' => $row['status'] ?? 'N/A',
+                    'createdAt' => $row['createdAt'] ?? 'N/A',
+                    'rejectionReason' => $row['rejectionReason'] ?? 'N/A',
+
+                    'itemID' => $row['itemID'] ?? 'N/A',
+                    'centreID' => $row['centreID'] ?? 'N/A',
+                    'itemTypeID' => $row['itemTypeID'] ?? 'N/A',
+                    'description' => $row['description'] ?? 'N/A',
+                    'model' => $row['model'] ?? 'N/A',
+                    'brand' => $row['brand'] ?? 'N/A',
+                    'weight' => $row['weight'] ?? 'N/A',
+                    'length' => $row['length'] ?? 'N/A',
+                    'width' => $row['width'] ?? 0,
+                    'height' => $row['height'] ?? 0,
+                    'image' => $row['image'] ?? 'N/A',
+                    'itemStatus' => $row['status'] ?? 'N/A',
+                    'itemName' => $row['name'] ?? 'N/A',
+                    'itemRecyclePoints' => $row['recycle_points'] ?? 0
+                ];
+            }
+        } else {
+            error_log("DB Notice - No records found for provider ID: $provider_id");
+        }
+    } else {
+        error_log("DB Error - Query failed: " . mysqli_error($conn));
+    }
+
+    $sql = "SELECT * FROM tblprovider p JOIN tblcollection_request cr ON p.providerID = cr.providerID
+                                        JOIN tblitem i ON cr.requestID = i.requestID
+                                        JOIN tblitem_type it ON i.itemTypeID = it.itemTypeID 
+                                        WHERE p.providerID = '$provider_id' and cr.status = 'Approved'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+
+                $approvedItemStats[] = [
+                    'requestID' => $row['requestID'] ?? 'N/A',
+                    'pickupAddress' => $row['pickupAddress'] ?? 'N/A',
+                    'pickupState' => $row['pickupState'] ?? 'N/A',
+                    'pickupPostcode' => $row['pickupPostcode'] ?? 'N/A',
+                    'preferredDateTime' => $row['preferredDateTime'] ?? 'N/A',
+                    'status' => $row['status'] ?? 'N/A',
+                    'createdAt' => $row['createdAt'] ?? 'N/A',
+                    'rejectionReason' => $row['rejectionReason'] ?? 'N/A',
+
+                    'itemID' => $row['itemID'] ?? 'N/A',
+                    'centreID' => $row['centreID'] ?? 'N/A',
+                    'itemTypeID' => $row['itemTypeID'] ?? 'N/A',
+                    'description' => $row['description'] ?? 'N/A',
+                    'model' => $row['model'] ?? 'N/A',
+                    'brand' => $row['brand'] ?? 'N/A',
+                    'weight' => $row['weight'] ?? 'N/A',
+                    'length' => $row['length'] ?? 'N/A',
+                    'width' => $row['width'] ?? 0,
+                    'height' => $row['height'] ?? 0,
+                    'image' => $row['image'] ?? 'N/A',
+                    'itemStatus' => $row['status'] ?? 'N/A',
+                    'itemName' => $row['name'] ?? 'N/A',
+                    'itemRecyclePoints' => $row['recycle_points'] ?? 0
+                ];
+            }
+        } else {
+            error_log("DB Notice - No records found for provider ID: $provider_id");
+        }
+    } else {
+        error_log("DB Error - Query failed: " . mysqli_error($conn));
+    }
+
+    $sql = "SELECT * FROM tblprovider p JOIN tblcollection_request cr ON p.providerID = cr.providerID
+                                        JOIN tblitem i ON cr.requestID = i.requestID
+                                        JOIN tblitem_type it ON i.itemTypeID = it.itemTypeID 
+                                        WHERE p.providerID = '$provider_id' and cr.status = 'Pending'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+
+                $pendingItemStats[] = [
+                    'requestID' => $row['requestID'] ?? 'N/A',
+                    'pickupAddress' => $row['pickupAddress'] ?? 'N/A',
+                    'pickupState' => $row['pickupState'] ?? 'N/A',
+                    'pickupPostcode' => $row['pickupPostcode'] ?? 'N/A',
+                    'preferredDateTime' => $row['preferredDateTime'] ?? 'N/A',
+                    'status' => $row['status'] ?? 'N/A',
+                    'createdAt' => $row['createdAt'] ?? 'N/A',
+                    'rejectionReason' => $row['rejectionReason'] ?? 'N/A',
+
+                    'itemID' => $row['itemID'] ?? 'N/A',
+                    'centreID' => $row['centreID'] ?? 'N/A',
+                    'itemTypeID' => $row['itemTypeID'] ?? 'N/A',
+                    'description' => $row['description'] ?? 'N/A',
+                    'model' => $row['model'] ?? 'N/A',
+                    'brand' => $row['brand'] ?? 'N/A',
+                    'weight' => $row['weight'] ?? 'N/A',
+                    'length' => $row['length'] ?? 'N/A',
+                    'width' => $row['width'] ?? 0,
+                    'height' => $row['height'] ?? 0,
+                    'image' => $row['image'] ?? 'N/A',
+                    'itemStatus' => $row['status'] ?? 'N/A',
+                    'itemName' => $row['name'] ?? 'N/A',
+                    'itemRecyclePoints' => $row['recycle_points'] ?? 0
+                ];
+            }
+        } else {
+            error_log("DB Notice - No records found for provider ID: $provider_id");
+        }
+    } else {
+        error_log("DB Error - Query failed: " . mysqli_error($conn));
+    }
 ?>
 
 <!DOCTYPE html>
@@ -699,7 +829,7 @@
     <header>
         <!-- Logo + Name -->
         <section class="c-logo-section">
-            <a href="../../html/provider/pHome.html" class="c-logo-link">
+            <a href="../../html/provider/pHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -719,9 +849,9 @@
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <a href="../../html/provider/pHome.html">Home</a>
+                    <a href="../../html/provider/pHome.php">Home</a>
                     <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
-                    <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+                    <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                     <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
                     <a href="../../html/common/About.html">About</a>
                 </div>
@@ -730,9 +860,9 @@
 
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
-            <a href="../../html/provider/pHome.html">Home</a>
+            <a href="../../html/provider/pHome.php">Home</a>
             <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
-            <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+            <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
             <a href="../../html/common/About.html">About</a>
         </nav>
@@ -762,17 +892,26 @@
         <section class="ph-stats-bar">
             <div class="ph-stats-card">
                 <div class="ph-stats-label">Total Submissions</div>
-                <div class="ph-stats-value" id="statSubmissions">18</div>
+                <div class="ph-stats-value" id="statSubmissions"><?php echo count($allItemsStats)?></div>
             </div>
             <div class="ph-stats-divider"></div>
             <div class="ph-stats-card">
                 <div class="ph-stats-label">Total Weight</div>
-                <div class="ph-stats-value" id="statWeight">47 kg</div>
+                <div class="ph-stats-value" id="statWeight">
+                    <?php
+                $totalWeight = 0;
+
+                foreach ($approvedItemStats as $item) {
+                    $totalWeight += (float) $item['weight'];
+                }
+
+                echo $totalWeight;
+                ?> kg</div>
             </div>
             <div class="ph-stats-divider"></div>
             <div class="ph-stats-card">
                 <div class="ph-stats-label">Green Points</div>
-                <div class="ph-stats-value" id="statPoints">3,420</div>
+                <div class="ph-stats-value" id="statPoints"><?php echo $stats['point']; ?></div>
             </div>
         </section>
 
@@ -835,50 +974,106 @@
 
             <!-- RIGHT: Content Column -->
             <div class="ph-content-col">
-                <!-- Points Card -->
-                <div class="ph-points-card">
-                    <div class="ph-points-left">
-                        <h2 id="totalPoints">3,420</h2>
-                        <p>Total Green Points Earned</p>
-                        <div class="ph-progress-wrap">
-                            <div class="ph-progress-label">
-                                <span id="currentTier">Silver → Gold</span>
-                                <span id="pointsProgress">3,420 / 5,000</span>
-                            </div>
-                            <div class="ph-progress-bar">
-                                <div class="ph-progress-fill" id="progressFill" style="width: 68%"></div>
-                            </div>
+            <!-- Points Card --> 
+            <div class="ph-points-card">
+                <div class="ph-points-left">
+                    <h2 id="totalPoints"><?php echo number_format($stats['point']); ?></h2>
+                    <p>Total Green Points Earned</p>
+                    <div class="ph-progress-wrap">
+                        <?php
+                        $currentPoints = $stats['point'] ?? 0;
+
+                        // Define Tier Boundaries
+                        $tiers = [
+                            ['name' => 'Bronze',   'min' => 0,    'max' => 100,  'emoji' => '🥉'],
+                            ['name' => 'Silver',   'min' => 100,  'max' => 300,  'emoji' => '🥈'],
+                            ['name' => 'Gold',     'min' => 300,  'max' => 600,  'emoji' => '🥇'],
+                            ['name' => 'Platinum', 'min' => 600,  'max' => 1000, 'emoji' => '💎']
+                        ];
+
+                        // Determine Current Tier
+                        $userTier = $tiers[0];
+                        $nextTier = null;
+
+                        foreach ($tiers as $index => $tier) {
+                            if ($currentPoints >= $tier['min']) {
+                                $userTier = $tier;
+                                $nextTier = $tiers[$index + 1] ?? null; 
+                            }
+                        }
+
+                        // Calculate Progress Percentage
+                        if ($nextTier) {
+                            $range = $userTier['max'] - $userTier['min'];
+                            $progressInRange = $currentPoints - $userTier['min'];
+                            $percent = ($progressInRange / $range) * 100;
+                            $percent = max(0, min(100, $percent));
+                            $ptsToNext = $userTier['max'] - $currentPoints;
+                        } else {
+                            // Max tier reached
+                            $percent = 100;
+                            $ptsToNext = 0;
+                        }
+                        ?>
+
+                        <div class="ph-progress-label">
+                            <span id="currentTier">
+                                <?php echo $nextTier ? $userTier['name'] . " → " . $nextTier['name'] : "Max Tier Reached"; ?>
+                            </span>
+                            <span id="pointsProgress">
+                                <?php echo $currentPoints; ?> / <?php echo $userTier['max']; ?>
+                            </span>
+                        </div>
+                        
+                        <div class="ph-progress-bar">
+                            <div class="ph-progress-fill" id="progressFill" style="width: <?php echo $percent; ?>%"></div>
                         </div>
                     </div>
-                    <div>
-                        <div class="ph-tier" id="tierBadge">🥈 Silver</div>
-                        <div class="ph-next" id="nextTierInfo">1,580 pts to Gold</div>
-                    </div>
                 </div>
+            <div>
+                <div class="ph-tier" id="tierBadge">
+                    <?php echo $userTier['emoji'] . " " . $userTier['name']; ?>
+                </div>
+                <div class="ph-next" id="nextTierInfo">
+                    <?php if ($nextTier): ?>
+                        <?php echo number_format($ptsToNext); ?> pts to <?php echo $nextTier['name']; ?>
+                    <?php else: ?>
+                        Ultimate Rank Achieved!
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
                 <!-- Mini Stats -->
                 <div class="ph-mini-stats">
                     <div class="ph-stat-card">
                         <div class="ph-stat-icon">📦</div>
-                        <h3 id="totalSubmissions">18</h3>
+                        <h3 id="totalSubmissions"><?php echo count($allItemsStats); ?></h3>
                         <p>Total Submissions</p>
                     </div>
                     <div class="ph-stat-card">
                         <div class="ph-stat-icon">⚖️</div>
-                        <h3 id="totalWeight">47 <small>kg</small></h3>
+                        <h3 id="totalWeight"><?php
+                        $totalWeight = 0;
+
+                        foreach ($approvedItemStats as $item) {
+                            $totalWeight += (float) $item['weight'];
+                        }
+
+                        echo $totalWeight;
+                        ?> <small>kg</small></h3>
                         <p>Total Weight</p>
                     </div>
                     <div class="ph-stat-card">
                         <div class="ph-stat-icon">⏳</div>
-                        <h3 id="pendingPickups">2</h3>
+                        <h3 id="pendingPickups"><?php echo count($pendingItemStats); ?></h3>
                         <p>Pending Pickup</p>
                     </div>
                 </div>
 
                 <div class="ph-history-section">
                     <div class="ph-section-header">
-                        <h2>📋 Recent Submissions</h2>
-                        <a href="pMainPickup.html" class="ph-view-all">View all →</a>
+                        <h2>📋 Recent Submission</h2> <a href="pMainPickup.php" class="ph-view-all">View all →</a>
                     </div>
 
                     <div class="ph-table-wrap">
@@ -893,10 +1088,28 @@
                                 </tr>
                             </thead>
                             <tbody id="recentSubmissionsTable">
-                                <!-- Populated by JavaScript -->
-                                <tr>
-                                    <td colspan="5" class="ph-loading">Loading submissions...</td>
-                                </tr>
+                                <?php if (!empty($allItemsStats)): ?>
+                                    <?php 
+                                        // We only take the first item from the array
+                                        $latest = $allItemsStats[0]; 
+                                        echo "<script>console.log('Latest submission data: " . json_encode($latest) . "');</script>";
+                                    ?>
+                                    <tr>
+                                        <td><strong><?php echo htmlspecialchars($latest['itemName']); ?></strong></td>
+                                        <td><?php echo date('d M Y', strtotime($latest['createdAt'])); ?></td>
+                                        <td><?php echo htmlspecialchars($latest['weight']); ?> kg</td>
+                                        <td>
+                                            <span class="status-badge <?php echo strtolower($latest['status']); ?>">
+                                                <?php echo htmlspecialchars($latest['status']); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($latest['itemRecyclePoints'] ?? '0'); ?></td>
+                                    </tr>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="5" style="text-align:center;">No recent submissions found.</td>
+                                    </tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -920,7 +1133,7 @@
     <footer>
         <!-- Column 1 -->
         <section class="c-footer-info-section">
-            <a href="../../html/provider/pHome.html">
+            <a href="../../html/provider/pHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -946,7 +1159,7 @@
             <div>
                 <b>My Activity</b><br>
                 <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
-                <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+                <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             </div>
             <div>
                 <b>Proxy</b><br>

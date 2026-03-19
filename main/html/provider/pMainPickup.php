@@ -709,7 +709,7 @@
     <header>
         <!-- Logo + Name -->
         <section class="c-logo-section">
-            <a href="../../html/provider/pHome.html" class="c-logo-link">
+            <a href="../../html/provider/pHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -729,9 +729,9 @@
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <a href="../../html/provider/pHome.html">Home</a>
+                    <a href="../../html/provider/pHome.php">Home</a>
                     <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
-                    <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+                    <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                     <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
                     <a href="../../html/common/About.html">About</a>
                 </div>
@@ -740,9 +740,9 @@
 
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
-            <a href="../../html/provider/pHome.html">Home</a>
+            <a href="../../html/provider/pHome.php">Home</a>
             <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
-            <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+            <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
             <a href="../../html/common/About.html">About</a>
         </nav>
@@ -762,7 +762,7 @@
     <main>
         <!-- Back button -->
         <div class="pmp-back-row">
-            <a href="pHome.html" class="pmp-back-btn">
+            <a href="pHome.php" class="pmp-back-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
@@ -1016,7 +1016,7 @@
     <footer>
         <!-- Column 1 -->
         <section class="c-footer-info-section">
-            <a href="../../html/provider/pHome.html">
+            <a href="../../html/provider/pHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -1042,7 +1042,7 @@
             <div>
                 <b>My Activity</b><br>
                 <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
-                <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+                <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             </div>
             <div>
                 <b>Proxy</b><br>
