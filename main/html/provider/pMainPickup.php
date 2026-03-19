@@ -974,7 +974,7 @@
                 <!-- Header -->
                 <div class="pmp-detail-header">
                     <div class="pmp-detail-title">
-                        <h2 id="detailRequestId">REQ001</h2>
+                        <span style="font-size: 1.2rem; font-weight: bold;">Request ID: </span><span id="detailRequestId" style="font-size: 1.2rem; font-weight: bold;"></span></h2>
                         <div class="pmp-detail-meta">
                             <span id="detailCreatedAt">Created on </span>
                             <span>·</span>
@@ -1275,7 +1275,7 @@ function renderPickupList() {
         html += `
             <div class="pmp-list-item ${selectedPickupId === pickup.requestID ? 'selected' : ''}" onclick="selectPickup('${pickup.requestID}')">
                 <div class="pmp-item-header">
-                    <span class="pmp-item-id">${pickup.requestID}</span>
+                    <span class="pmp-item-id">Request ID: ${pickup.requestID}</span>
                     <span class="pmp-item-status ${statusClass}">${pickup.status}</span>
                 </div>
                 <div class="pmp-item-details">
@@ -1368,7 +1368,7 @@ function showPickupDetails(pickup) {
     actionsContainer.innerHTML = '';
     
     // Only show actions for pending pickups
-    if (pickup.status.toLowerCase() === 'pending') {
+    if (pickup.status.toLowerCase() == 'pending' || pickup.status.toLowerCase() === 'approved') {
         actionsContainer.innerHTML = `
             <button class="pmp-action-btn" onclick="openRescheduleModal('${pickup.requestID}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
