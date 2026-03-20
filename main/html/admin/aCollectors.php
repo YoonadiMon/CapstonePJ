@@ -4,12 +4,36 @@ include("../../php/dbConn.php");
  
 // // check if user is logged in
 // include("../../php/sessionCheck.php");
+
+// Auto-update: set 'on duty' if collector has an Ongoing job
+$conn->query("
+    UPDATE tblcollector c
+    SET c.status = 'on duty'
+    WHERE EXISTS (
+        SELECT 1 FROM tbljob j
+        WHERE j.collectorID = c.collectorID
+          AND j.status = 'Ongoing'
+    )
+    AND c.status != 'on duty'
+");
+ 
+// Auto-update: revert 'on duty' back to 'active' when no more Ongoing jobs
+$conn->query("
+    UPDATE tblcollector c
+    SET c.status = 'active'
+    WHERE c.status = 'on duty'
+      AND NOT EXISTS (
+          SELECT 1 FROM tbljob j
+          WHERE j.collectorID = c.collectorID
+            AND j.status = 'Ongoing'
+      )
+");
  
 function sanitize($val) {
     return htmlspecialchars(trim($val), ENT_QUOTES, 'UTF-8');
 }
  
-$validStatuses = ['active', 'inactive'];
+$validStatuses = ['active', 'on duty', 'inactive', 'suspended'];
  
 $successMsg = $_SESSION['successMsg'] ?? '';
 $errorMsg   = $_SESSION['errorMsg']   ?? '';
@@ -91,7 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        if (!in_array($status, $validStatuses)) {
+        // Only active/inactive allowed on add; on duty and suspended are not selectable
+        if (!in_array($status, ['active', 'inactive'])) {
             $errors[] = 'Please select a valid status.';
         }
  
@@ -217,6 +242,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'IC / License must be in the format 121212-12-1234.';
         }
  
+        // Block manually setting 'on duty' or 'suspended' via the edit form
+        if (in_array($status, ['on duty', 'suspended'])) {
+            // Fetch current status to preserve it
+            $curStmtCheck = $conn->query("SELECT status FROM tblcollector WHERE collectorID=$collectorID");
+            $curRowCheck  = $curStmtCheck->fetch_assoc();
+            $status = $curRowCheck['status'] ?? 'active';
+        }
+
         if (!in_array($status, $validStatuses)) {
             $errors[] = 'Please select a valid status.';
         }
@@ -257,24 +290,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
-            // Block status change if collector has Ongoing jobs
-            $curStatusStmt = $conn->prepare("SELECT status FROM tblcollector WHERE collectorID = ?");
-            $curStatusStmt->bind_param('i', $collectorID);
-            $curStatusStmt->execute();
-            $curStatusRow = $curStatusStmt->get_result()->fetch_assoc();
-
-            if ($curStatusRow && $curStatusRow['status'] !== $status) {
-                $blockCheckStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM tbljob WHERE collectorID = ? AND status IN ('Ongoing', 'Scheduled')");
-                $blockCheckStmt->bind_param('i', $collectorID);
-                $blockCheckStmt->execute();
-                $blockCheckRow = $blockCheckStmt->get_result()->fetch_assoc();
-                if ($blockCheckRow['cnt'] > 0) {
-                    $_SESSION['errorMsg'] = 'Cannot change status — this collector has active job(s) (Ongoing or Scheduled).';
-                    header('Location: ' . $_SERVER['PHP_SELF']);
-                    exit;
-                }
+            $curStmt = $conn->prepare("SELECT status FROM tblcollector WHERE collectorID = ?");
+            $curStmt->bind_param('i', $collectorID); $curStmt->execute();
+            $curRow = $curStmt->get_result()->fetch_assoc();
+            $currentStatus = $curRow['status'] ?? '';
+ 
+            // status cannot change at all when On Duty
+            if (strtolower($currentStatus) === 'on duty' && strtolower($status) !== 'on duty') {
+                $_SESSION['errorMsg'] = 'Cannot change status: collector is currently On Duty.';
+                header('Location: ' . $_SERVER['PHP_SELF']); exit;
             }
 
+            // Block manually setting to 'suspended' — only allowed via issue interface
+            if (strtolower($status) === 'suspended' && strtolower($currentStatus) !== 'suspended') {
+                $_SESSION['errorMsg'] = 'Cannot set Suspended: suspension can only be applied through the Issue interface.';
+                header('Location: ' . $_SERVER['PHP_SELF']); exit;
+            }
+ 
+            // Block non-On Duty status changes when Ongoing or Scheduled jobs exist
+            if ($currentStatus !== $status) {
+                $blockStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM tbljob WHERE collectorID = ? AND status IN ('Ongoing','Scheduled')");
+                $blockStmt->bind_param('i', $collectorID); $blockStmt->execute();
+                $blockRow = $blockStmt->get_result()->fetch_assoc();
+                if ($blockRow['cnt'] > 0) {
+                    $_SESSION['errorMsg'] = 'Cannot change status: this collector has active job(s).';
+                    header('Location: ' . $_SERVER['PHP_SELF']); exit;
+                }
+            }
+ 
             $conn->begin_transaction();
             try {
                 // Update user table
@@ -336,13 +379,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // If not actually changing status, allow through
+        // no change
         if ($curRow['status'] === $newStatus) {
             echo json_encode(['result' => 'ok']);
             exit;
         }
 
-        // Block if Ongoing or Scheduled jobs exist
+        // block change if on duty 
+        if (strtolower($curRow['status']) === 'on duty') {
+            echo json_encode([
+                'result'  => 'blocked',
+                'message' => 'Cannot change status: collector is currently On Duty. The status will be updated automatically when the job is completed.'
+            ]); exit;
+        }
+
+        // block manual 'on duty' — auto-managed only
+        if (strtolower($newStatus) === 'on duty') {
+            echo json_encode([
+                'result'  => 'blocked',
+                'message' => '"On Duty" is managed automatically and cannot be set manually.'
+            ]); exit;
+        }
+
+        // block manual 'suspended' — only via issue interface
+        if (strtolower($newStatus) === 'suspended') {
+            echo json_encode([
+                'result'  => 'blocked',
+                'message' => 'Cannot set Suspended: suspension can only be applied through the Issue interface.'
+            ]); exit;
+        }
+
+        // block if Ongoing or Scheduled jobs exist
         $ongoingStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM tbljob WHERE collectorID = ? AND status IN ('Ongoing', 'Scheduled')");
         $ongoingStmt->bind_param('i', $collectorID);
         $ongoingStmt->execute();
@@ -350,7 +417,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ongoingRow['cnt'] > 0) {
             echo json_encode([
                 'result'  => 'blocked',
-                'message' => 'Cannot change status — this collector has ' . $ongoingRow['cnt'] . ' active job(s) (Ongoing or Scheduled).'
+                'message' => 'Cannot change status: this collector has ' . $ongoingRow['cnt'] . ' active job(s) (Ongoing or Scheduled).'
             ]);
             exit;
         }
@@ -372,26 +439,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!empty($pendingJobs)) {
-            // Fetch active collectors (excluding this one)
-            $activeStmt = $conn->prepare("
-                SELECT c.collectorID, u.fullname, u.phone
-                FROM tblcollector c
-                JOIN tblusers u ON c.collectorID = u.userID
-                WHERE c.status = 'active' AND c.collectorID != ?
-                ORDER BY u.fullname
-            ");
-            $activeStmt->bind_param('i', $collectorID);
-            $activeStmt->execute();
-            $activeResult = $activeStmt->get_result();
-            $activeCollectors = [];
-            while ($row = $activeResult->fetch_assoc()) {
-                $activeCollectors[] = $row;
+            // Build per-job available collectors:
+            // active, not this collector, and NOT already assigned a job
+            // within ±1 day of each pending job's scheduledDate
+            $availCollectorsByJob = [];
+            foreach ($pendingJobs as $job) {
+                $date = $conn->real_escape_string($job['scheduledDate']);
+                $r2 = $conn->query("
+                    SELECT c.collectorID, u.fullname, u.phone
+                    FROM tblcollector c
+                    JOIN tblusers u ON c.collectorID = u.userID
+                    WHERE c.status = 'active'
+                      AND c.collectorID != $collectorID
+                      AND c.collectorID NOT IN (
+                          SELECT collectorID FROM tbljob
+                          WHERE status IN ('Pending','Scheduled','Ongoing')
+                            AND scheduledDate BETWEEN DATE_SUB('$date', INTERVAL 1 DAY)
+                                                  AND DATE_ADD('$date', INTERVAL 1 DAY)
+                      )
+                    ORDER BY u.fullname
+                ");
+                $list = [];
+                while ($row2 = $r2->fetch_assoc()) $list[] = $row2;
+                $availCollectorsByJob[(int)$job['jobID']] = $list;
             }
 
             echo json_encode([
-                'result'           => 'needs_reassignment',
-                'pendingJobs'      => $pendingJobs,
-                'activeCollectors' => $activeCollectors
+                'result'               => 'needs_reassignment',
+                'pendingJobs'          => $pendingJobs,
+                'availCollectorsByJob' => $availCollectorsByJob
             ]);
             exit;
         }
@@ -404,12 +480,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'reassign_and_change_status') {
         $collectorID    = (int)($_POST['collectorID'] ?? 0);
         $newStatus      = trim($_POST['newStatus'] ?? '');
-        $assignments    = $_POST['assignments'] ?? []; // jobID => newCollectorID
+        $assignments    = $_POST['assignments'] ?? [];
 
         if ($collectorID <= 0 || !in_array($newStatus, $validStatuses)) {
             $_SESSION['errorMsg'] = 'Invalid request.';
             header('Location: ' . $_SERVER['PHP_SELF']);
             exit;
+        }
+
+        // Server-side On Duty re-check
+        $curStmt = $conn->prepare("SELECT status FROM tblcollector WHERE collectorID = ?");
+        $curStmt->bind_param('i', $collectorID); $curStmt->execute();
+        $curRow = $curStmt->get_result()->fetch_assoc();
+        if ($curRow && strtolower($curRow['status']) === 'on duty') {
+            $_SESSION['errorMsg'] = 'Cannot change status: collector is currently On Duty.';
+            header('Location: ' . $_SERVER['PHP_SELF']); exit;
+        }
+
+        // Block manual 'on duty' or 'suspended' server-side
+        if (in_array(strtolower($newStatus), ['on duty', 'suspended'])) {
+            $_SESSION['errorMsg'] = '"' . $newStatus . '" cannot be set manually here.';
+            header('Location: ' . $_SERVER['PHP_SELF']); exit;
         }
 
         // Re-verify no Ongoing jobs (server-side safety check)
@@ -418,34 +509,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ongoingStmt->execute();
         $ongoingRow = $ongoingStmt->get_result()->fetch_assoc();
         if ($ongoingRow['cnt'] > 0) {
-            $_SESSION['errorMsg'] = 'Cannot change status — collector has active job(s) (Ongoing or Scheduled).';
+            $_SESSION['errorMsg'] = 'Cannot change status: collector has active job(s) (Ongoing or Scheduled).';
             header('Location: ' . $_SERVER['PHP_SELF']);
             exit;
         }
 
         // Fetch all pending jobs for this collector
-        $pendingStmt = $conn->prepare("SELECT jobID FROM tbljob WHERE collectorID = ? AND status = 'Pending'");
+        $pendingStmt = $conn->prepare("SELECT jobID, scheduledDate FROM tbljob WHERE collectorID = ? AND status = 'Pending'");
         $pendingStmt->bind_param('i', $collectorID);
         $pendingStmt->execute();
         $pendingResult = $pendingStmt->get_result();
         $pendingJobIDs = [];
+        $jobDates      = [];
         while ($row = $pendingResult->fetch_assoc()) {
             $pendingJobIDs[] = (int)$row['jobID'];
+            $jobDates[(int)$row['jobID']] = $row['scheduledDate'];
         }
 
         // Validate that all pending jobs have been assigned a new collector
+        // and verify no ±1 day conflict for that collector
         $errors = [];
         foreach ($pendingJobIDs as $jobID) {
             if (empty($assignments[$jobID])) {
                 $errors[] = "Job #$jobID has no collector assigned.";
             } else {
+                $newCollectorID = (int)$assignments[$jobID];
                 // Verify the selected collector is active
                 $checkStmt = $conn->prepare("SELECT status FROM tblcollector WHERE collectorID = ?");
-                $checkStmt->bind_param('i', (int)$assignments[$jobID]);
+                $checkStmt->bind_param('i', $newCollectorID);
                 $checkStmt->execute();
                 $checkRow = $checkStmt->get_result()->fetch_assoc();
                 if (!$checkRow || $checkRow['status'] !== 'active') {
                     $errors[] = "Selected collector for Job #$jobID is not active.";
+                } elseif (isset($jobDates[$jobID])) {
+                    $date = $conn->real_escape_string($jobDates[$jobID]);
+                    $conflict = $conn->query("
+                        SELECT 1 FROM tbljob
+                        WHERE collectorID = $newCollectorID
+                          AND status IN ('Pending','Scheduled','Ongoing')
+                          AND scheduledDate BETWEEN DATE_SUB('$date', INTERVAL 1 DAY)
+                                                AND DATE_ADD('$date', INTERVAL 1 DAY)
+                        LIMIT 1
+                    ")->num_rows > 0;
+                    if ($conflict) {
+                        $errors[] = "Job #$jobID: selected collector already has a job within 1 day of " . date('d/m/Y', strtotime($date)) . ".";
+                    }
                 }
             }
         }
@@ -513,7 +621,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
  
-        // Block deletion if jobs are linked to this collector
+        // Block deletion if any job records are linked, regardless of job status
         $jobCheckStmt = $conn->prepare("SELECT COUNT(*) AS count FROM tbljob WHERE collectorID = ?");
         $jobCheckStmt->bind_param('i', $collectorID);
         $jobCheckStmt->execute();
@@ -562,7 +670,9 @@ $sql = "SELECT c.collectorID, c.licenseNum, c.status,
                u.username, u.fullname, u.email, u.phone,
                DATE_FORMAT(u.createdAt, '%d/%m/%Y') AS createdAt,
                DATE_FORMAT(u.lastLogin,  '%d/%m/%Y') AS lastLogin,
-               (SELECT COUNT(*) FROM tbljob j WHERE j.collectorID = c.collectorID) AS jobCount
+               (SELECT COUNT(*) FROM tbljob j WHERE j.collectorID = c.collectorID) AS jobCount,
+               (SELECT COUNT(*) FROM tbljob j WHERE j.collectorID = c.collectorID AND j.status = 'Ongoing')   AS ongoingJobCount,
+               (SELECT COUNT(*) FROM tbljob j WHERE j.collectorID = c.collectorID AND j.status = 'Scheduled') AS scheduledJobCount
         FROM tblcollector c
         JOIN tblusers u ON c.collectorID = u.userID
         WHERE u.fullname LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR u.phone LIKE ?
@@ -1223,6 +1333,11 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             color: hsl(145, 60%, 28%); 
         }
 
+        .status-on-duty { 
+            background: var(--LowMainBlue); 
+            color: var(--DarkerMainBlue); 
+        }
+
         .status-inactive {
             background: var(--Gray); 
             color: var(--White); 
@@ -1277,11 +1392,23 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             outline: none;
         }
 
+        .reassign-note {
+            margin-bottom: 1.25rem; 
+            color: var(--text-color);
+        }
+
         .delete-disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none; 
             box-shadow: none;
+        }
+
+        .status-hint-note {
+            color: var(--BlueGray);
+            font-size: 0.78rem;
+            margin-top: 0.2rem;
+            display: block;
         }
 
         /* Responsive Design */
@@ -1468,9 +1595,11 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                             <?php else: ?>
                                 <?php foreach ($collectors as $i => $c): ?>
                                     <?php
-                                        $statusClass = match($c['status']) {
-                                            'inactive'    => 'status-inactive',
-                                            default     => 'status-active',
+                                        $statusClass = match(strtolower($c['status'])) {
+                                            'inactive' => 'status-inactive',
+                                            'on duty'    => 'status-on-duty',
+                                            'suspended' => 'status-suspended',
+                                            default => 'status-active'
                                         };
                                     ?>
                                 <tr>
@@ -1557,7 +1686,7 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 <b>System Operation</b><br>
                 <a href="../../html/admin/aProviders.php">Providers</a><br>
                 <a href="../../html/admin/aCollectors.php">Collectors</a><br>
-                <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
                 <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
             </div>
@@ -1660,8 +1789,11 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                         <label for="edit-status">Status</label>
                         <select id="edit-status" name="status">
                             <option value="active">Active</option>
+                            <option value="on duty" disabled>On Duty (auto-managed)</option>
                             <option value="inactive">Inactive</option>
+                            <option value="suspended" disabled>Suspended (via Issue only)</option>
                         </select>
+                        <small id="edit-status-hint" class="status-hint-note"></small>
                     </div>
                     <div class="form-field full">
                         <label for="edit-password">New Password <span class="password-note">(leave blank to keep current)</span></label>
@@ -1715,7 +1847,7 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 <img src="../../assets/images/icon-menu-close-dark.png" class="dark-icon" alt="Close">
             </button>
             <h2>Reassign Pending Jobs</h2>
-            <p id="reassign-intro" style="margin-bottom:1.25rem; color: var(--text-color);">
+            <p id="reassign-intro" class="reassign-note">
                 This collector has pending jobs. Please reassign each job to an active collector before proceeding with the status change.
             </p>
             <div id="reassign-jobs-container"></div>
@@ -1842,29 +1974,53 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
         // Edit
         function openEditModal(index) {
             const c = collectors[index];
+            const isOnDuty    = c.status.toLowerCase() === 'on duty';
+            const isSuspended = c.status.toLowerCase() === 'suspended';
+            const statusSelect = document.getElementById('edit-status');
+            const hintEl       = document.getElementById('edit-status-hint');
+
             document.getElementById('edit-collectorID').value = c.collectorID;
             document.getElementById('edit-fullname').value = c.fullname;
             document.getElementById('edit-username').value = c.username;
             document.getElementById('edit-email').value = c.email;
             document.getElementById('edit-phone').value = c.phone;
             document.getElementById('edit-license').value = c.licenseNum;
-            document.getElementById('edit-status').value = c.status;
 
-            // Disable status options based on job state
-            const statusSelect = document.getElementById('edit-status');
-            ['active', 'inactive'].forEach(val => {
-                const opt = statusSelect.querySelector(`option[value="${val}"]`);
-                if (opt) { opt.disabled = false; opt.text = opt.text.replace(/ \(.*\)$/, ''); }
-            });
-            
+            // Reset all options to base disabled state first
+            for (const opt of statusSelect.options) {
+                // 'on duty' and 'suspended' are always disabled as selectable targets
+                opt.disabled = (opt.value === 'on duty' || opt.value === 'suspended');
+                // Reset labels
+                if (opt.value === 'inactive')  opt.text = 'Inactive';
+                if (opt.value === 'suspended') opt.text = 'Suspended (via Issue only)';
+            }
+
+            if (isOnDuty) {
+                // Locked: show current value, disable entire select
+                statusSelect.value    = 'on duty';
+                statusSelect.disabled = true;
+                hintEl.textContent    = '"On Duty" is managed automatically and cannot be changed manually.';
+            } else if (isSuspended) {
+                // Locked: suspended can only be changed via Issue interface
+                statusSelect.value    = 'suspended';
+                statusSelect.disabled = true;
+                hintEl.textContent    = 'This collector is Suspended. Status can only be changed via the Issue interface.';
+            } else {
+                statusSelect.value    = c.status;
+                statusSelect.disabled = false;
+                hintEl.textContent    = '';
+            }
+
+            // Also disable Inactive if collector has Ongoing or Scheduled jobs
             const scheduledJobCount = parseInt(c.scheduledJobCount) || 0;
             const isBlocked = parseInt(c.ongoingJobCount) > 0 || scheduledJobCount > 0;
-            if (isBlocked) {
+            if (isBlocked && !isOnDuty && !isSuspended) {
                 const inactiveOpt = statusSelect.querySelector('option[value="inactive"]');
                 if (inactiveOpt) {
                     inactiveOpt.disabled = true;
-                    inactiveOpt.text = 'Inactive (unavailable — active job assigned)';
+                    inactiveOpt.text = 'Inactive (unavailable: active job assigned)';
                 }
+                hintEl.textContent = 'Status cannot be changed to Inactive while active jobs (Ongoing or Scheduled) are assigned.';
             }
 
             const pwField = document.getElementById('edit-password');
@@ -1885,7 +2041,10 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
             if (!validateForm('edit')) { e.preventDefault(); return; }
 
             const collectorID = document.getElementById('edit-collectorID').value;
+            const statusSelect = document.getElementById('edit-status');
             const newStatus   = document.getElementById('edit-status').value;
+
+            if (statusSelect.disabled) return;
 
             const current = collectors.find(c => c.collectorID == collectorID);
             if (current && current.status === newStatus) return;
@@ -1914,7 +2073,7 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                         newStatus,
                         editFormData: new FormData(document.getElementById('editForm'))
                     };
-                    openReassignModal(data.pendingJobs, data.activeCollectors);
+                    openReassignModal(data.pendingJobs, data.availCollectorsByJob);
                 }
             } catch (err) {
                 showToast('An error occurred. Please try again.', 'error');
@@ -1923,7 +2082,7 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
 
         document.getElementById('editForm').addEventListener('submit', handleEditFormSubmit);
 
-        function openReassignModal(pendingJobs, activeCollectors) {
+        function openReassignModal(pendingJobs, availCollectorsByJob) {
             const container = document.getElementById('reassign-jobs-container');
 
             let html = `<table class="reassign-table">
@@ -1938,11 +2097,12 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 <tbody>`;
 
             pendingJobs.forEach(job => {
-                const options = activeCollectors.length
-                    ? activeCollectors.map(c =>
+                const avail = availCollectorsByJob[job.jobID] || [];
+                const options = avail.length
+                    ? avail.map(c =>
                         `<option value="${c.collectorID}">${sanitizeHTML(c.fullname)} — ${sanitizeHTML(c.phone)}</option>`
                       ).join('')
-                    : '<option value="" disabled>No active collectors available</option>';
+                    : '<option value="" disabled>No available collectors on this date</option>';
 
                 html += `<tr>
                     <td>#${job.jobID}</td>
@@ -2180,10 +2340,6 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
         // Form submission
         document.getElementById('addForm').addEventListener('submit', function (e) {
             if (!validateForm('add')) e.preventDefault();
-        });
-
-        document.getElementById('editForm').addEventListener('submit', function (e) {
-            if (!validateForm('edit')) e.preventDefault();
         });
     </script>
 </body>

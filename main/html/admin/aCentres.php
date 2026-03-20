@@ -1311,7 +1311,7 @@ $itemTypesJson = json_encode($allItemTypes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 <b>System Operation</b><br>
                 <a href="../../html/admin/aProviders.php">Providers</a><br>
                 <a href="../../html/admin/aCollectors.php">Collectors</a><br>
-                <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
                 <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
             </div>

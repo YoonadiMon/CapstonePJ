@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $state      = trim($_POST['state']     ?? '');
         $postcode   = trim($_POST['postcode']  ?? '');
         $address    = trim($_POST['address']   ?? '');
+        $suspended  = isset($_POST['suspended']) ? (int)(bool)$_POST['suspended'] : 0;
  
         $errors = [];
  
@@ -119,10 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateUser->execute();
  
                 // Update tblprovider
-                $updateProvider = $conn->prepare(
-                    "UPDATE tblprovider SET address=?, state=?, postcode=? WHERE providerID=?"
-                );
-                $updateProvider->bind_param('sssi', $address, $state, $postcode, $providerID);
+                $updateProvider = $conn->prepare("UPDATE tblprovider SET address=?, state=?, postcode=?, suspended=? WHERE providerID=?");
+                $updateProvider->bind_param('sssii', $address, $state, $postcode, $suspended, $providerID);
                 $updateProvider->execute();
  
                 $conn->commit();
@@ -195,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $search      = trim($_GET['search'] ?? '');
 $searchParam = '%' . $search . '%';
  
-$sql = "SELECT p.providerID, p.address, p.state, p.postcode, p.point,
+$sql = "SELECT p.providerID, p.address, p.state, p.postcode, p.point, p.suspended,
                u.username, u.fullname, u.email, u.phone,
                DATE_FORMAT(u.createdAt, '%d/%m/%Y') AS createdAt,
                DATE_FORMAT(u.lastLogin,  '%d/%m/%Y') AS lastLogin,
@@ -215,6 +214,7 @@ $result = $stmt->get_result();
 $providers = [];
 while ($row = $result->fetch_assoc()) {
     $row['id'] = (int)$row['providerID'];
+    $row['suspended'] = (int)$row['suspended']; // ensure int 0/1 for JS
     $providers[] = $row;
 }
  
@@ -412,6 +412,13 @@ $statesJson     = json_encode($validStates);
 
         .dark-mode .users-table tbody tr:hover {
             background: var(--Gray);
+        }
+
+        .users-table tbody tr.row-suspended { 
+            background: rgba(220, 53, 69, 0.3); 
+        }
+        .users-table tbody tr.row-suspended:hover { 
+            background: rgba(220, 53, 69, 0.5); 
         }
 
         .user-info {
@@ -680,6 +687,17 @@ $statesJson     = json_encode($validStates);
             padding-left: 0.5rem; 
         }
 
+        .field-error { 
+            font-size: 0.8rem; 
+            color: red; 
+            margin-top: 0.2rem; 
+            display: none; 
+        }
+
+        .field-error.show { 
+            display: block; 
+        }
+
         .delete-info-box {
             background: var(--LightBlue);
             border-radius: 12px;
@@ -796,6 +814,24 @@ $statesJson     = json_encode($validStates);
             cursor: not-allowed;
             transform: none; 
             box-shadow: none;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-active {
+            background: hsl(145, 50%, 88%); 
+            color: hsl(145, 60%, 28%); 
+        }
+
+        .status-suspended {
+            background: hsl(0,   70%, 90%); 
+            color: hsl(0,   70%, 35%); 
         }
 
         /* Responsive Design */
@@ -957,7 +993,7 @@ $statesJson     = json_encode($validStates);
                             <th>Phone</th>
                             <th>State</th>
                             <th>Points</th>
-                            <th>Last Login</th>
+                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -973,7 +1009,8 @@ $statesJson     = json_encode($validStates);
                             </tr>
                         <?php else: ?>
                             <?php foreach ($providers as $i => $p): ?>
-                                <tr>
+                                <?php $isSuspended = (int)$p['suspended'] === 1;?>
+                                <tr class="<?php echo $isSuspended ? 'row-suspended' : ''; ?>">
                                     <td>#<?php echo $p['providerID']; ?></td>
                                     <td class="left">
                                         <div class="user-info">
@@ -987,7 +1024,13 @@ $statesJson     = json_encode($validStates);
                                     <td><?php echo sanitize($p['phone']); ?></td>
                                     <td><?php echo sanitize($p['state']); ?></td>
                                     <td><span class="points-badge"><?php echo (int)$p['point']; ?> pts</span></td>
-                                    <td><?php echo $p['lastLogin'] ? sanitize($p['lastLogin']) : '—'; ?></td>
+                                    <td> 
+                                        <?php if ($isSuspended): ?>
+                                            <span class="status-badge status-suspended">Suspended</span>
+                                        <?php else: ?>
+                                            <span class="status-badge status-active">Active</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <div class="action-btns">
                                             <button class="action-btn" onclick="openViewModal(<?php echo $i ?>)" title="View">
@@ -1052,7 +1095,7 @@ $statesJson     = json_encode($validStates);
                 <b>System Operation</b><br>
                 <a href="../../html/admin/aProviders.php">Providers</a><br>
                 <a href="../../html/admin/aCollectors.php">Collectors</a><br>
-                <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
+                <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
                 <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
             </div>
@@ -1104,9 +1147,13 @@ $statesJson     = json_encode($validStates);
                     <label>Address</label>
                     <span id="view-address">—</span>
                 </div>
-                <div class="view-field full">
+                <div class="view-field full" id="view-points-field">
                     <label>Points</label>
                     <span id="view-points">—</span>
+                </div>
+                <div class="view-field" id="view-suspended-row" style="display:none">
+                    <label>Account Status</label>
+                    <span id="view-suspended" class="status-badge status-suspended">Suspended</span>
                 </div>
                 <div class="view-field">
                     <label>Created At</label>
@@ -1174,6 +1221,13 @@ $statesJson     = json_encode($validStates);
                         <label for="edit-address">Address</label>
                         <textarea id="edit-address" name="address"></textarea>
                         <span class="field-error" id="err-edit-address"></span>
+                    </div>
+                    <div class="form-field" id="edit-suspended-field">
+                        <label for="edit-suspended">Account Status</label>
+                        <select id="edit-suspended" name="suspended">
+                            <option value="0">Active</option>
+                            <option value="1">Suspended</option>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-buttons">
@@ -1253,6 +1307,18 @@ $statesJson     = json_encode($validStates);
             document.getElementById('view-points').textContent    = p.point + ' pts';
             document.getElementById('view-createdAt').textContent = p.createdAt || '—';
             document.getElementById('view-lastLogin').textContent = p.lastLogin  || '—';
+            
+            const pointsField  = document.getElementById('view-points-field');
+            const suspendedRow = document.getElementById('view-suspended-row');
+            
+            if (p.suspended) {
+                pointsField.classList.remove('full');
+                suspendedRow.style.display = '';
+            } else {
+                pointsField.classList.add('full');
+                suspendedRow.style.display = 'none';
+            }
+
             openModal('viewModal');
         }
 
@@ -1267,6 +1333,10 @@ $statesJson     = json_encode($validStates);
             document.getElementById('edit-state').value      = p.state;
             document.getElementById('edit-postcode').value   = p.postcode;
             document.getElementById('edit-address').value    = p.address;
+            document.getElementById('edit-suspended').value   = p.suspended ? '1' : '0';
+
+            document.getElementById('edit-suspended-field').style.display = p.suspended ? '' : 'none';
+            
             clearErrors('edit');
             openModal('editModal');
         }
