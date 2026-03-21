@@ -1,69 +1,81 @@
-let mockRequests = [];
 let currentPage = 1;
 let itemsPerPage = 5;
 let totalPages = 1;
 
-let mockCollectors = [
-    { id: 'collector1', name: 'John Smith', available: true, vehicle: 'Truck A' },
-    { id: 'collector2', name: 'Sarah Johnson', available: true, vehicle: 'Van B' },
-    { id: 'collector3', name: 'Mike Chen', available: false, vehicle: 'Truck C' },
-    { id: 'collector4', name: 'Lisa Wong', available: true, vehicle: 'Van D' }
-];
+function getRequests() {
+    return Array.isArray(window.requestsData) ? window.requestsData : [];
+}
 
-let mockVehicles = [
-    { id: 'vehicle1', model: 'Truck A - AV-1234', status: 'Available', capacity: '1000 kg' },
-    { id: 'vehicle2', model: 'Van B - AV-5678', status: 'Maintenance', capacity: '500 kg' },
-    { id: 'vehicle3', model: 'Truck C - AV-9012', status: 'Available', capacity: '1200 kg' },
-    { id: 'vehicle4', model: 'Van D - AV-3456', status: 'Available', capacity: '600 kg' }
-];
+function getCollectors() {
+    return Array.isArray(window.collectorsData) ? window.collectorsData : [];
+}
 
-let mockCentres = [
-    { id: 'C01', name: 'APU E-waste Hub', capacity: 85, address: 'APU Campus' },
-    { id: 'C02', name: 'Sunway Recycling Centre', capacity: 42, address: 'Sunway' },
-    { id: 'C03', name: 'Shah Alam Collection Point', capacity: 68, address: 'Shah Alam' },
-    { id: 'C04', name: 'KL Central Collection', capacity: 95, address: 'KL Central' }
-];
+function getVehicles() {
+    return Array.isArray(window.vehiclesData) ? window.vehiclesData : [];
+}
+
+function getCentres() {
+    return Array.isArray(window.centresData) ? window.centresData : [];
+}
+
+function getRecentAssignments() {
+    return Array.isArray(window.recentAssignmentsData) ? window.recentAssignmentsData : [];
+}
+
+function getRequestIdFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('requestID');
+}
 
 // ==== Helper Functions ====
 function determineEwasteType(items) {
-    const itemString = items.join(' ').toLowerCase();
-    
+    const itemString = (items || []).join(' ').toLowerCase();
+
     if (itemString.includes('battery') || itemString.includes('power bank')) {
         return 'batteries';
-    } else if (itemString.includes('tv') || itemString.includes('refrigerator') || itemString.includes('fridge') || itemString.includes('washing machine')) {
+    } else if (
+        itemString.includes('tv') ||
+        itemString.includes('television') ||
+        itemString.includes('refrigerator') ||
+        itemString.includes('fridge') ||
+        itemString.includes('washing machine') ||
+        itemString.includes('electric kitchen appliances') ||
+        itemString.includes('electric home appliances')
+    ) {
         return 'appliances';
     } else {
         return 'electronics';
     }
 }
 
-
 function initCustomDropdowns() {
-    setupCustomDropdown('collectorDropdown', 'collectorMenu', 'selectedCollectorText', mockCollectors, 'collector');
-    setupCustomDropdown('vehicleDropdown', 'vehicleMenu', 'selectedVehicleText', mockVehicles, 'vehicle');
-    setupCustomDropdown('centreDropdown', 'centreMenu', 'selectedCentreText', mockCentres, 'centre');
+    setupCustomDropdown('collectorDropdown', 'collectorMenu', 'selectedCollectorText', getCollectors(), 'collector');
+    setupCustomDropdown('vehicleDropdown', 'vehicleMenu', 'selectedVehicleText', getVehicles(), 'vehicle');
+    setupCustomDropdown('centreDropdown', 'centreMenu', 'selectedCentreText', getCentres(), 'centre');
 }
 
 function setupCustomDropdown(dropdownId, menuId, textId, items, type) {
     const dropdown = document.getElementById(dropdownId);
     const menu = document.getElementById(menuId);
     const selectedText = document.getElementById(textId);
-    
+
     if (!dropdown || !menu || !selectedText) return;
-    
+
     const selectBtn = dropdown.querySelector('.custom-dropdown-select');
-    
+    if (!selectBtn) return;
+
     menu.innerHTML = '';
+
     items.forEach(item => {
         const menuItem = document.createElement('div');
         menuItem.className = 'custom-dropdown-item';
         menuItem.dataset.value = item.id;
-        
+
         let isAvailable = true;
         let dotColor = 'green';
-        
+
         if (type === 'collector') {
-            isAvailable = item.available;
+            isAvailable = !!item.available;
             dotColor = item.available ? 'green' : 'red';
             menuItem.innerHTML = `<span class="status-dot ${dotColor}"></span> ${item.name}`;
         } else if (type === 'vehicle') {
@@ -71,112 +83,77 @@ function setupCustomDropdown(dropdownId, menuId, textId, items, type) {
             dotColor = isAvailable ? 'green' : 'red';
             menuItem.innerHTML = `<span class="status-dot ${dotColor}"></span> ${item.model}`;
         } else if (type === 'centre') {
-            menuItem.textContent = `${item.name}`;
+            menuItem.textContent = item.name;
         }
-        
+
         if (!isAvailable) {
             menuItem.style.opacity = '0.5';
             menuItem.style.pointerEvents = 'none';
             menuItem.style.cursor = 'not-allowed';
         }
-        
-        menuItem.addEventListener('click', function(e) {
+
+        menuItem.addEventListener('click', function (e) {
             e.stopPropagation();
-            
+
             if (!isAvailable) return;
-            
+
             if (type === 'collector') {
                 selectedText.innerHTML = `<span class="status-dot ${dotColor}"></span> ${item.name}`;
+                const hint = document.getElementById('collectorHint');
+                if (hint) {
+                    hint.textContent = '';
+                }
             } else if (type === 'vehicle') {
                 selectedText.innerHTML = `<span class="status-dot ${dotColor}"></span> ${item.model}`;
-                
                 const hint = document.getElementById('vehicleHint');
-                if (hint) hint.textContent = item.capacity;
+                if (hint) hint.textContent = item.capacity || '';
             } else if (type === 'centre') {
-                selectedText.textContent = `${item.name}`;
-                
-                updateCapacityCircle(item.capacity);
+                selectedText.textContent = item.name;
+                updateCapacityCircle(Number(item.capacity) || 0);
             }
-            
+
             dropdown.dataset.selectedValue = item.id;
-            
             menu.classList.remove('show');
-            
             checkRequiredFields();
         });
-        
+
         menu.appendChild(menuItem);
     });
-    
-    selectBtn.addEventListener('click', function(e) {
+
+    selectBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        
+
         document.querySelectorAll('.custom-dropdown-menu').forEach(m => {
             if (m !== menu) m.classList.remove('show');
         });
-        
+
         menu.classList.toggle('show');
     });
-    
-    document.addEventListener('click', function() {
-        menu.classList.remove('show');
-    });
-    
-    menu.addEventListener('click', function(e) {
+
+    menu.addEventListener('click', function (e) {
         e.stopPropagation();
     });
 }
+
+document.addEventListener('click', function () {
+    document.querySelectorAll('.custom-dropdown-menu').forEach(menu => {
+        menu.classList.remove('show');
+    });
+});
 
 function checkRequiredFields() {
     const collectorDropdown = document.getElementById('collectorDropdown');
     const vehicleDropdown = document.getElementById('vehicleDropdown');
     const centreDropdown = document.getElementById('centreDropdown');
     const datetime = document.getElementById('scheduledDateTime')?.value;
-    
+
     const collector = collectorDropdown?.dataset.selectedValue;
     const vehicle = vehicleDropdown?.dataset.selectedValue;
     const centre = centreDropdown?.dataset.selectedValue;
-    
-    const allFieldsFilled = collector && vehicle && centre && datetime;
-    document.getElementById('confirmAssignmentBtn').disabled = !allFieldsFilled;
-}
 
-// ===== LOAD APPROVED REQUESTS =====
-function loadApprovedRequest() {
-    const approvedRequestsJson = sessionStorage.getItem('approvedRequests');
-    if (approvedRequestsJson) {
-        const approvedRequests = JSON.parse(approvedRequestsJson);
-        console.log('Found approved requests:', approvedRequests);
-        
-        approvedRequests.forEach(approvedRequest => {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
-            
-            const newRequest = {
-                id: approvedRequest.id,
-                provider: approvedRequest.provider,
-                items: approvedRequest.items || ['Items'],
-                address: approvedRequest.address || 'Address not provided',
-                postcode: approvedRequest.address ? approvedRequest.address.split(',').pop().trim() : '50000',
-                preferredDate: formattedDate,
-                weight: approvedRequest.weight ? `${approvedRequest.weight} kg` : '0 kg',
-                status: 'approved',
-                type: determineEwasteType(approvedRequest.items || [])
-            };
-            
-            const exists = mockRequests.some(req => req.id === newRequest.id);
-            if (!exists) {
-                mockRequests.push(newRequest);
-            }
-        });
-        
-        sessionStorage.removeItem('approvedRequests');
-    }
+    const allFieldsFilled = collector && vehicle && centre && datetime;
+    const confirmBtn = document.getElementById('confirmAssignmentBtn');
+    if (confirmBtn) confirmBtn.disabled = !allFieldsFilled;
 }
 
 // ===== CORE FUNCTIONS =====
@@ -189,55 +166,65 @@ function createRequestCard(request, index) {
     card.className = 'request-card';
     card.dataset.id = request.id;
     card.dataset.index = index;
-    
+
     const preferredDate = new Date(request.preferredDate);
-    const formattedDate = preferredDate.toLocaleDateString('en-MY', { 
-        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
-    });
-    
+    const formattedDate = isNaN(preferredDate)
+        ? '-'
+        : preferredDate.toLocaleString('en-MY', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit'
+          });
+
     card.innerHTML = `
-    <div class="card-header">
-        <span class="request-id">#${request.id}</span>
-    </div>
-    <div class="card-body">
-        <div class="provider-name">${request.provider}</div>
-        <div class="e-waste-items">
-            ${request.items.map(item => `<span class="item-chip">${item}</span>`).join('')}
+        <div class="card-header">
+            <span class="request-id">#${request.id}</span>
         </div>
-        <div class="card-footer">
-            <span>${request.weight}</span>
-            <span class="preferred-date">${formattedDate}</span>
+        <div class="card-body">
+            <div class="provider-name">${request.provider}</div>
+            <div class="e-waste-items">
+                ${(request.items || []).map(item => `<span class="item-chip">${item}</span>`).join('')}
+            </div>
+            <div class="card-footer">
+                <span>${request.weight || '0 kg'}</span>
+                <span class="preferred-date">${formattedDate}</span>
+            </div>
         </div>
-    </div>
-`;
-    
+    `;
+
     card.addEventListener('click', () => {
         document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
-        
-        resetAssignmentForm();
-        
+
+        resetAssignmentForm(false);
         updateAssignmentPanel(request);
         updateSelectedRequestId(request);
     });
-    
+
     return card;
 }
 
 function updateAssignmentPanel(request) {
     if (!request) return;
-    
+
     updateSelectedRequestId(request);
-    
+
     const summaryDiv = document.getElementById('selectedRequestSummary');
     if (!summaryDiv) return;
-    
+
     const preferredDate = new Date(request.preferredDate);
-    const dateStr = preferredDate.toLocaleString('en-MY', { 
-        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-    });
-    
+    const dateStr = isNaN(preferredDate)
+        ? '-'
+        : preferredDate.toLocaleString('en-MY', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+          });
+
     summaryDiv.innerHTML = `
         <div class="summary-row">
             <span class="summary-label">Provider:</span>
@@ -245,55 +232,52 @@ function updateAssignmentPanel(request) {
         </div>
         <div class="summary-row">
             <span class="summary-label">Items:</span>
-            <span class="summary-value">${request.items.join(', ')} (${request.weight})</span>
+            <span class="summary-value">${(request.items || []).join(', ')} (${request.weight || '0 kg'})</span>
         </div>
         <div class="summary-row">
             <span class="summary-label">Preferred:</span>
             <span class="summary-value">${dateStr}</span>
         </div>
         <div class="summary-address">
-            📍 ${request.address}
+            📍 ${request.address || '-'}
         </div>
     `;
-    
-    const dateNote = document.getElementById('dateConstraintNote');
-    if (dateNote) {
-        dateNote.innerHTML = `<span>ⓘ</span> Preferred: ${dateStr}`;
-    }
-    
-    document.getElementById('confirmAssignmentBtn').disabled = true;
+
+    const confirmBtn = document.getElementById('confirmAssignmentBtn');
+    if (confirmBtn) confirmBtn.disabled = true;
 }
 
 function loadCollectors() {
-    console.log('Collectors loaded');
+    const hint = document.getElementById('collectorHint');
+    if (hint) hint.textContent = '';
 }
 
 function loadVehicles() {
-    console.log('Vehicles loaded');
+    const hint = document.getElementById('vehicleHint');
+    if (hint) hint.textContent = '';
 }
 
 function loadCentres() {
-    console.log('Centres loaded');
     updateCapacityCircle(0);
 }
 
 function updateCapacityCircle(capacity) {
     const circle = document.getElementById('capacityCircle');
     const percentageSpan = document.getElementById('capacityPercentage');
-    
+
     if (!circle || !percentageSpan) return;
-    
-    const degrees = (capacity / 100) * 360;
-    
+
+    const safeCapacity = Math.max(0, Math.min(100, Number(capacity) || 0));
+    const degrees = (safeCapacity / 100) * 360;
+
     circle.style.background = `conic-gradient(var(--MainBlue) ${degrees}deg, var(--LightBlue) 0deg)`;
-    
-    percentageSpan.textContent = `${capacity}%`;
+    percentageSpan.textContent = `${safeCapacity}%`;
 }
 
 function updateSelectedRequestId(request) {
     const badge = document.getElementById('selectedRequestId');
     if (!badge) return;
-    
+
     if (request) {
         badge.textContent = `#${request.id}`;
         badge.style.display = 'inline-block';
@@ -303,21 +287,44 @@ function updateSelectedRequestId(request) {
     }
 }
 
+function cleanTimelineEventText(text, requestId) {
+    let cleaned = String(text || 'Assignment recorded');
+
+    cleaned = cleaned.replace(/\s*\(ID:\s*\d+\)/gi, '');
+    cleaned = cleaned.replace(/,\s*centre\s+/gi, ', ');
+    cleaned = cleaned.replace(/,\s*vehicle\s+/gi, ', Vehicle ');
+    cleaned = cleaned.replace(/^<strong>#\d+<\/strong>\s*/i, '');
+    cleaned = cleaned.replace(/^#\d+\s*/i, '');
+
+    if (requestId) {
+        cleaned = `<strong>#REQ${requestId}</strong> ${cleaned}`;
+    }
+
+    return cleaned.trim();
+}
+
 function loadRecentAssignments() {
     const timeline = document.getElementById('recentTimeline');
     if (!timeline) return;
-    
-    const assignments = [
-        { time: '10:30', event: '<strong>#REQ-0035</strong> assigned to Kevin Tan', ago: '2h ago' },
-        { time: '09:15', event: '<strong>#REQ-0032</strong> assigned to Muthu Krishnan', ago: '3h ago' },
-        { time: 'Yesterday', event: '<strong>#REQ-0028</strong> assigned to Jason Wong', ago: '1d ago' }
-    ];
-    
+
+    const assignments = getRecentAssignments();
+
+    if (assignments.length === 0) {
+        timeline.innerHTML = `
+            <div class="timeline-item">
+                <span class="timeline-event">No recent assignments</span>
+            </div>
+        `;
+        return;
+    }
+
     timeline.innerHTML = assignments.map(a => `
         <div class="timeline-item">
-            <span class="timeline-time">${a.time}</span>
-            <span class="timeline-event">${a.event}</span>
-            <span style="color: var(--Gray); margin-left: auto;">${a.ago}</span>
+            <span class="timeline-time">${a.time || '-'}</span>
+            <span class="timeline-event">
+                ${cleanTimelineEventText(a.event, a.requestID)}
+            </span>
+            <span class="timeline-date">${a.date || ''}</span>
         </div>
     `).join('');
 }
@@ -325,13 +332,13 @@ function loadRecentAssignments() {
 function setMinDateTime() {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+
     const datetimeInput = document.getElementById('scheduledDateTime');
     if (datetimeInput) {
         datetimeInput.min = now.toISOString().slice(0, 16);
     }
 }
 
-// ===== EVENT LISTENERS =====
 function setupEventListeners() {
     const prevBtn = document.querySelector('.pagination-controls .c-btn-small:first-child');
     const nextBtn = document.querySelector('.pagination-controls .c-btn-small:last-child');
@@ -346,59 +353,47 @@ function setupEventListeners() {
 
     document.getElementById('requestFilter')?.addEventListener('change', filterRequests);
     document.getElementById('requestSearch')?.addEventListener('input', filterRequests);
-
     document.getElementById('scheduledDateTime')?.addEventListener('change', checkRequiredFields);
-    
     document.getElementById('confirmAssignmentBtn')?.addEventListener('click', confirmAssignment);
-    
-    document.getElementById('resetAssignmentBtn')?.addEventListener('click', resetAssignmentForm);
-    
+    document.getElementById('resetAssignmentBtn')?.addEventListener('click', () => resetAssignmentForm(true));
+
     document.getElementById('viewCollectorAvailability')?.addEventListener('click', () => {
-        alert('Collector availability calendar would open here');
+        alert('Collector availability comes from the database records loaded on this page.');
     });
-    
+
     document.getElementById('viewVehicleStatus')?.addEventListener('click', () => {
-        alert('Vehicle maintenance schedule would open here');
-    });
-    
-    document.getElementById('assignMultipleBtn')?.addEventListener('click', () => {
-        alert('Bulk assignment wizard would open');
-    });
-    
-    document.getElementById('rescheduleSelectedBtn')?.addEventListener('click', () => {
-        alert('Bulk reschedule interface would open');
-    });
-    
-    document.getElementById('exportScheduleBtn')?.addEventListener('click', () => {
-        alert('Exporting schedule as CSV...');
+        alert('Vehicle status comes from the database records loaded on this page.');
     });
 }
 
-function filterRequests() {
-    const filter = document.getElementById('requestFilter')?.value;
-    const search = document.getElementById('requestSearch')?.value.toLowerCase();
-    
-    console.log('Filtering by:', filter, 'Search:', search);
-    
-    currentPage = 1;
-    
-    let filteredRequests = mockRequests;
-    
-    if (filter && filter !== 'all') {
-        filteredRequests = mockRequests.filter(req => req.type === filter);
+function getFilteredRequests() {
+    const filter = document.getElementById('requestFilter')?.value || 'all';
+    const search = (document.getElementById('requestSearch')?.value || '').toLowerCase().trim();
+
+    let filteredRequests = [...getRequests()];
+
+    if (filter !== 'all') {
+        filteredRequests = filteredRequests.filter(req => req.type === filter);
     }
-    
+
     if (search) {
-        filteredRequests = filteredRequests.filter(req => 
-            req.provider.toLowerCase().includes(search) ||
-            req.id.toLowerCase().includes(search) ||
-            req.items.some(item => item.toLowerCase().includes(search))
+        filteredRequests = filteredRequests.filter(req =>
+            (req.provider || '').toLowerCase().includes(search) ||
+            String(req.id || '').toLowerCase().includes(search) ||
+            (req.items || []).some(item => item.toLowerCase().includes(search))
         );
     }
-    
+
+    return filteredRequests;
+}
+
+function filterRequests(resetToFirstPage = true) {
+    if (resetToFirstPage) currentPage = 1;
+
+    const filteredRequests = getFilteredRequests();
     const container = document.getElementById('requestCardsContainer');
     if (!container) return;
-    
+
     if (filteredRequests.length === 0) {
         container.innerHTML = `
             <div class="empty-requests">
@@ -406,164 +401,297 @@ function filterRequests() {
                 <h3>No approved requests</h3>
             </div>
         `;
-        updatePagination();
         updateSelectedRequestId(null);
+
+        const summaryDiv = document.getElementById('selectedRequestSummary');
+        if (summaryDiv) summaryDiv.innerHTML = '';
+
+        updatePagination(filteredRequests.length);
         return;
     }
-    
-    const totalFilteredItems = filteredRequests.length;
-    totalPages = Math.max(1, Math.ceil(totalFilteredItems / itemsPerPage));
-    
+
+    totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
+
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+    }
+
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const paginatedRequests = filteredRequests.slice(start, end);
-    
+
     container.innerHTML = '';
     paginatedRequests.forEach((req, index) => {
         const card = createRequestCard(req, start + index);
         container.appendChild(card);
     });
-    
-    if (paginatedRequests.length > 0) {
-        document.querySelectorAll('.request-card')[0]?.classList.add('selected');
-        updateAssignmentPanel(paginatedRequests[0]);
-        updateSelectedRequestId(paginatedRequests[0]);
+
+    let selectedRequest = paginatedRequests[0];
+
+    const requestIdFromURL = getRequestIdFromURL();
+    if (requestIdFromURL) {
+        const urlRequest = paginatedRequests.find(r => String(r.id) === String(requestIdFromURL));
+        if (urlRequest) {
+            selectedRequest = urlRequest;
+        }
+    }
+
+    if (selectedRequest) {
+        const selectedCard = container.querySelector(`.request-card[data-id="${selectedRequest.id}"]`);
+        if (selectedCard) selectedCard.classList.add('selected');
+        updateAssignmentPanel(selectedRequest);
+        updateSelectedRequestId(selectedRequest);
     } else {
         updateSelectedRequestId(null);
     }
-    
-    updatePagination();
+
+    updatePagination(filteredRequests.length);
 }
 
-function confirmAssignment() {
+function autoSelectRequestFromURL() {
+    const requestId = getRequestIdFromURL();
+    if (!requestId) return;
+
+    const request = getRequests().find(r => String(r.id) === String(requestId));
+    if (!request) return;
+
+    const filtered = getFilteredRequests();
+    const requestIndex = filtered.findIndex(r => String(r.id) === String(requestId));
+    if (requestIndex === -1) return;
+
+    currentPage = Math.floor(requestIndex / itemsPerPage) + 1;
+    filterRequests(false);
+
+    setTimeout(() => {
+        const card = document.querySelector(`.request-card[data-id="${requestId}"]`);
+        if (!card) return;
+
+        document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        updateAssignmentPanel(request);
+        updateSelectedRequestId(request);
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+}
+
+async function confirmAssignment() {
     const collectorDropdown = document.getElementById('collectorDropdown');
     const vehicleDropdown = document.getElementById('vehicleDropdown');
     const centreDropdown = document.getElementById('centreDropdown');
     const datetime = document.getElementById('scheduledDateTime')?.value;
-    const notes = document.getElementById('assignmentNotes')?.value;
-    
+    const notes = document.getElementById('assignmentNotes')?.value || '';
+
     const collector = collectorDropdown?.dataset.selectedValue;
     const vehicle = vehicleDropdown?.dataset.selectedValue;
     const centre = centreDropdown?.dataset.selectedValue;
-    
+
     if (!collector) {
         alert('Please select a collector');
         return;
     }
-    
+
     if (!vehicle) {
         alert('Please select a vehicle');
         return;
     }
-    
+
     if (!centre) {
         alert('Please select a collection centre');
         return;
     }
-    
+
     if (!datetime) {
         alert('Please select a scheduled date and time');
         return;
     }
-    
-    const collectorText = document.getElementById('selectedCollectorText')?.textContent || 'Collector';
-    const vehicleText = document.getElementById('selectedVehicleText')?.textContent || 'Vehicle';
-    
-    alert(`✓ Assignment confirmed!\n\nCollector: ${collectorText}\nVehicle: ${vehicleText}\nScheduled: ${new Date(datetime).toLocaleString()}`);
-    
+
     const selectedCard = document.querySelector('.request-card.selected');
-    if (selectedCard) {
-        const requestId = selectedCard.dataset.id;
-        const assignedRequest = mockRequests.find(r => r.id === requestId);
-        
-        addToTimeline(datetime, assignedRequest, collectorText, vehicleText);
-        
-        const index = mockRequests.findIndex(r => r.id === requestId);
-        if (index !== -1) {
-            mockRequests.splice(index, 1);
+    if (!selectedCard) {
+        alert('Please select a request');
+        return;
+    }
+
+    const requestId = selectedCard.dataset.id;
+    const assignedRequest = getRequests().find(r => String(r.id) === String(requestId));
+
+    if (!assignedRequest) {
+        alert('Selected request not found.');
+        return;
+    }
+
+    const confirmBtn = document.getElementById('confirmAssignmentBtn');
+    const originalBtnText = confirmBtn ? confirmBtn.innerHTML : '';
+
+    try {
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = 'Saving...';
+        }
+
+        const formData = new FormData();
+        formData.append('action', 'assign_request');
+        formData.append('requestID', requestId);
+        formData.append('collectorID', collector);
+        formData.append('vehicleID', vehicle);
+        formData.append('centreID', centre);
+        formData.append('scheduledDateTime', datetime);
+        formData.append('notes', notes);
+
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to save assignment.');
+        }
+
+        const collectorText = document.getElementById('selectedCollectorText')?.textContent || 'Collector';
+        const vehicleRawText = document.getElementById('selectedVehicleText')?.textContent || '';
+        const centreText = document.getElementById('selectedCentreText')?.textContent || '';
+        const vehicleText = vehicleRawText
+        .replace(/[🟢🔴]/g, '')
+        .trim()
+        .replace(/^Vehicle\s*/i, '');
+
+        alert(
+            `✓ Assignment saved successfully!\n\nRequest: #${requestId}\nCollector: ${collectorText}\nVehicle: ${vehicleText}\nScheduled: ${new Date(datetime).toLocaleString()}`
+        );
+
+        addToTimeline(datetime, assignedRequest, collectorText, vehicleText, centreText);
+
+        if (Array.isArray(window.requestsData)) {
+            const requestIndex = window.requestsData.findIndex(r => String(r.id) === String(requestId));
+            if (requestIndex !== -1) {
+                window.requestsData.splice(requestIndex, 1);
+            }
+        }
+
+        if (Array.isArray(window.collectorsData)) {
+            const collectorObj = window.collectorsData.find(c => String(c.id) === String(collector));
+            if (collectorObj) {
+                collectorObj.available = false;
+            }
+        }
+
+        if (Array.isArray(window.vehiclesData)) {   
+            const vehicleObj = window.vehiclesData.find(v => String(v.id) === String(vehicle));  
+            if (vehicleObj) {    
+                vehicleObj.status = 'Pending';
+            }
+        }
+
+        resetAssignmentForm(true);
+        initCustomDropdowns();
+        filterRequests(false);
+    } catch (error) {
+        alert(error.message || 'Error saving assignment.');
+    } finally {
+        if (confirmBtn) {
+            confirmBtn.innerHTML = originalBtnText || '✓ Confirm';
+            checkRequiredFields();
         }
     }
-    
-    const summaryDiv = document.getElementById('selectedRequestSummary');
-    if (summaryDiv) {
-        summaryDiv.innerHTML = ''; 
-    }
-
-    resetAssignmentForm();
-    loadPendingRequests();
 }
 
-function resetAssignmentForm() {
-    updateSelectedRequestId(null);
-    
-    const summaryDiv = document.getElementById('selectedRequestSummary');
-    if (summaryDiv) {
-        summaryDiv.innerHTML = '';
+function resetAssignmentForm(clearSelectedRequest = false) {
+    if (clearSelectedRequest) {
+        updateSelectedRequestId(null);
+
+        const summaryDiv = document.getElementById('selectedRequestSummary');
+        if (summaryDiv) {
+            summaryDiv.innerHTML = '';
+        }
+
+        document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
     }
-    
+
     const collectorText = document.getElementById('selectedCollectorText');
     const vehicleText = document.getElementById('selectedVehicleText');
     const centreText = document.getElementById('selectedCentreText');
-    
+
     if (collectorText) collectorText.textContent = 'Select a collector';
     if (vehicleText) vehicleText.textContent = 'Select a vehicle';
     if (centreText) centreText.textContent = 'Select a collection centre';
-    
+
     const collectorDropdown = document.getElementById('collectorDropdown');
     const vehicleDropdown = document.getElementById('vehicleDropdown');
     const centreDropdown = document.getElementById('centreDropdown');
-    
+
     if (collectorDropdown) delete collectorDropdown.dataset.selectedValue;
     if (vehicleDropdown) delete vehicleDropdown.dataset.selectedValue;
     if (centreDropdown) delete centreDropdown.dataset.selectedValue;
-    
-    document.getElementById('scheduledDateTime').value = '';
-    document.getElementById('assignmentNotes').value = '';
-    
+
+    const scheduledDateTime = document.getElementById('scheduledDateTime');
+    const assignmentNotes = document.getElementById('assignmentNotes');
+    if (scheduledDateTime) scheduledDateTime.value = '';
+    if (assignmentNotes) assignmentNotes.value = '';
+
+    const collectorHint = document.getElementById('collectorHint');
     const vehicleHint = document.getElementById('vehicleHint');
+    if (collectorHint) collectorHint.textContent = '';
     if (vehicleHint) vehicleHint.textContent = '';
-    
+
     updateCapacityCircle(0);
-    
-    document.getElementById('confirmAssignmentBtn').disabled = true;
+
+    const confirmBtn = document.getElementById('confirmAssignmentBtn');
+    if (confirmBtn) confirmBtn.disabled = true;
 }
 
-function addToTimeline(datetime, request, collectorName, vehicleName) {
+function addToTimeline(datetime, request, collectorName, vehicleName, centreName = '') {
     const timeline = document.getElementById('recentTimeline');
+    if (!timeline) return;
+
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    const cleanCollector = collectorName.replace(/[🟢🔴]/g, '').trim();
-    const cleanVehicle = vehicleName.replace(/[🟢🔴]/g, '').trim();
-    
+    const dateStr = now.toLocaleDateString('en-MY', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+
+    const cleanCollector = (collectorName || '').replace(/[🟢🔴]/g, '').trim();
+    const cleanVehicle = (vehicleName || '').replace(/[🟢🔴]/g, '').trim();
+    const cleanCentre = (centreName || '').trim();
+
+    const details = [
+        `assigned to ${cleanCollector}`,
+        cleanVehicle ? `Vehicle ${cleanVehicle}` : '',
+        cleanCentre || ''
+    ].filter(Boolean).join(', ');
+
     const newItem = document.createElement('div');
     newItem.className = 'timeline-item';
     newItem.innerHTML = `
         <span class="timeline-time">${timeStr}</span>
-        <span class="timeline-event"><strong>#${request?.id || 'REQ'}</strong> assigned to ${cleanCollector} (${cleanVehicle})</span>
-        <span style="color: var(--Gray); margin-left: auto;">Just now</span>
+        <span class="timeline-event">
+            <strong>#REQ${request?.id || ''}</strong> ${details}
+        </span>
+        <span class="timeline-date">${dateStr}</span>
     `;
-    
+
     timeline.insertBefore(newItem, timeline.firstChild);
-    
-    if (timeline.children.length > 5) {
+
+    while (timeline.children.length > 5) {
         timeline.removeChild(timeline.lastChild);
     }
 }
 
-function updatePagination() {
-    const totalItems = mockRequests.length;
-    const itemsPerPage = 5;
+function updatePagination(totalItemsOverride = null) {
+    const totalItems = totalItemsOverride !== null ? totalItemsOverride : getFilteredRequests().length;
     totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-    
+
     if (currentPage > totalPages) {
         currentPage = totalPages;
     }
-    
+
     const prevBtn = document.querySelector('.pagination-controls .c-btn-small:first-child');
     const nextBtn = document.querySelector('.pagination-controls .c-btn-small:last-child');
     const pageIndicator = document.querySelector('.page-indicator');
-    
+
     if (prevBtn && nextBtn && pageIndicator) {
         prevBtn.disabled = currentPage === 1;
         nextBtn.disabled = currentPage === totalPages || totalItems === 0;
@@ -577,21 +705,18 @@ function changePage(direction) {
     } else if (direction === 'next' && currentPage < totalPages) {
         currentPage++;
     }
-    loadPendingRequests();
-    updatePagination();
+
+    filterRequests(false);
 }
 
-// ===== DOM CONTENT LOADED =====
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     currentPage = 1;
     itemsPerPage = 5;
     totalPages = 1;
-    
-    loadApprovedRequest();
-    
+
     initCustomDropdowns();
-    
     loadPendingRequests();
+    autoSelectRequestFromURL();
     loadCollectors();
     loadVehicles();
     loadCentres();
