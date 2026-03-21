@@ -1,3 +1,16 @@
+<?php
+session_start();
+include("../../php/dbConn.php");
+ 
+// ── TEMP: hardcoded session for testing (remove once login is done) ──
+$_SESSION['userID']   = 10;
+$_SESSION['userType'] = 'collector';
+
+
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
