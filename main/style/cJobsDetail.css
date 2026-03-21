@@ -583,3 +583,157 @@ main { flex: 1; }
         padding: 0.6rem 1rem;
     }
 }
+
+
+/* ─── TOAST NOTIFICATION ─────────────────────────────────────── */
+.toast-msg {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+}
+
+.toast-msg.toast-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast-msg.toast-success {
+    background: var(--StatusGreenLight);
+    color: var(--StatusGreen);
+    border: 1.5px solid var(--StatusGreen);
+}
+
+.toast-msg.toast-error {
+    background: hsl(0, 70%, 94%);
+    color: hsl(0, 65%, 40%);
+    border: 1.5px solid hsl(0, 65%, 40%);
+}
+
+.dark-mode .toast-msg.toast-success {
+    background: hsl(142, 40%, 15%);
+    color: hsl(142, 60%, 55%);
+    border-color: hsl(142, 55%, 35%);
+}
+
+.dark-mode .toast-msg.toast-error {
+    background: hsl(0, 40%, 18%);
+    color: hsl(0, 70%, 65%);
+    border-color: hsl(0, 55%, 45%);
+}
+
+
+/* ─── ACTION MODALS (Accept / Reject) ───────────────────────── */
+/* Reuses .img-modal-overlay + .img-modal-box from existing CSS  */
+
+.action-modal-box {
+    min-width: 320px;
+    max-width: 420px;
+    width: 90vw;
+    text-align: center;
+    padding: 2rem 1.75rem 1.75rem;
+    gap: 0.75rem;
+}
+
+.action-modal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 auto 0.25rem;
+}
+
+.action-modal-icon.accept-icon {
+    background: var(--StatusGreenLight);
+    color: var(--StatusGreen);
+}
+
+.action-modal-icon.reject-icon {
+    background: hsl(0, 70%, 94%);
+    color: hsl(0, 65%, 40%);
+}
+
+.dark-mode .action-modal-icon.accept-icon {
+    background: hsl(142, 40%, 15%);
+    color: hsl(142, 60%, 55%);
+}
+
+.dark-mode .action-modal-icon.reject-icon {
+    background: hsl(0, 40%, 18%);
+    color: hsl(0, 70%, 65%);
+}
+
+.action-modal-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.action-modal-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.reject-reason-input {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.625rem 0.75rem;
+    border-radius: 6px;
+    border: 1.5px solid var(--border-color);
+    background: var(--stats-bg);
+    color: var(--text-color);
+    font-size: 0.85rem;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.reject-reason-input:focus {
+    border-color: var(--MainBlue);
+}
+
+.action-modal-btns {
+    display: flex;
+    gap: 0.625rem;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.action-modal-btns button {
+    flex: 1;
+    padding: 0.55rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* Distinct red style for the confirm-reject button */
+.btn-reject-confirm {
+    background: hsl(0, 65%, 40%) !important;
+    color: #fff !important;
+    border-color: hsl(0, 65%, 40%) !important;
+}
+
+.btn-reject-confirm:hover {
+    background: hsl(0, 65%, 33%) !important;
+    border-color: hsl(0, 65%, 33%) !important;
+    color: #fff !important;
+}

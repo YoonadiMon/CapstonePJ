@@ -1,5 +1,4 @@
 
-
 // SAMPLE DATA (Replace with PHP API later)
 const jobDetailsData = {
     JOB001: {
