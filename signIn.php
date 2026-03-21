@@ -1,16 +1,22 @@
 <?php
 session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include("main/php/dbConn.php");
 
 if (!isset($conn) || $conn->connect_error) {
     die("Database connection failed: " . ($conn->connect_error ?? 'Unknown error'));
 }
 
-$error = "";
+$login_error = "";
+$register_error = "";
+$register_success = "";
+$submitted_email = "";
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
     $email = $_POST['email'];
     $password = $_POST['password'];
+    $submitted_email = $email;
     
     $stmt = $conn->prepare("SELECT * FROM tblusers WHERE email = ?");
     $stmt->bind_param("s", $email);
@@ -23,12 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($password == $user['password']) {
             $_SESSION['userID'] = $user['userID'];
             $_SESSION['userType'] = $user['userType'];
-            
-            // Also set other useful user data
-            $_SESSION['fullname'] = $user['fullname'] ?? $user['name'] ?? '';
+            $_SESSION['fullname'] = $user['fullname'];
             $_SESSION['email'] = $user['email'];
             $_SESSION['phone'] = $user['phone'] ?? '';
-            $_SESSION['createdAt'] = $user['createdAt'] ?? '';
             $_SESSION['lastLogin'] = date("Y-m-d H:i:s");
             
             if ($user['userType'] == 'provider') {
@@ -40,12 +43,69 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
             exit();
         } else {
-            $error = "Invalid email or password";
+            $login_error = "Incorrect email or password. Please try again.";
         }
     } else {
-        $error = "Invalid email or password";
+        $login_error = "Account '" . htmlspecialchars($email) . "' does not exist.";
     }
     $stmt->close();
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
+    $fullname = trim($_POST['fullname']);
+    $email = trim($_POST['reg_email']);
+    $password = $_POST['reg_password'];
+    $confirm_password = $_POST['confirm_password'];
+    $phone = trim($_POST['phone']);
+    
+    $username = 'provider_' . time();
+    
+    if (empty($fullname) || empty($email) || empty($password)) {
+        $register_error = "Please fill in all required fields.";
+    } elseif ($password !== $confirm_password) {
+        $register_error = "Passwords do not match.";
+    } elseif (strlen($password) < 8) {
+        $register_error = "Password must be at least 8 characters long.";
+    } elseif (!preg_match('/[a-z]/', $password)) {
+        $register_error = "Password must contain at least one lowercase letter.";
+    } elseif (!preg_match('/[A-Z]/', $password)) {
+        $register_error = "Password must contain at least one uppercase letter.";
+    } elseif (!preg_match('/[0-9]/', $password)) {
+        $register_error = "Password must contain at least one number.";
+    } else {
+        $check_stmt = $conn->prepare("SELECT userID FROM tblusers WHERE email = ?");
+        $check_stmt->bind_param("s", $email);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows > 0) {
+            $register_error = "Email address already registered. Please use a different email or sign in.";
+        } else {
+            $userType = 'provider';
+            $createdAt = date("Y-m-d H:i:s");
+            
+            $insert_stmt = $conn->prepare("INSERT INTO tblusers (username, fullname, email, password, phone, userType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $insert_stmt->bind_param("sssssss", $username, $fullname, $email, $password, $phone, $userType, $createdAt);
+            
+            if ($insert_stmt->execute()) {
+                $userID = $insert_stmt->insert_id;
+                
+                $empty_address = '';
+                $empty_state = '';
+                $empty_postcode = '';
+                $provider_stmt = $conn->prepare("INSERT INTO tblprovider (providerID, address, state, postcode, point) VALUES (?, ?, ?, ?, 0)");
+                $provider_stmt->bind_param("isss", $userID, $empty_address, $empty_state, $empty_postcode);
+                $provider_stmt->execute();
+                $provider_stmt->close();
+                
+                $register_success = "Registration successful! You can now sign in.";
+            } else {
+                $register_error = "Registration failed. Please try again.";
+            }
+            $insert_stmt->close();
+        }
+        $check_stmt->close();
+    }
 }
 ?>
 
@@ -54,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - AfterVolt</title>
+    <title>Sign In / Sign Up - AfterVolt</title>
     <link rel="icon" type="image/png" href="main/assets/images/bolt-lightning-icon.svg">
     <link rel="stylesheet" href="main/style/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -171,24 +231,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             padding: 2rem 1rem;
         }
 
-        .login-container {
+        .auth-container {
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
             margin: 0 auto;
         }
 
-        .login-box {
+        .auth-box {
             background-color: var(--sec-bg-color);
-            padding: 2.5rem 2rem;
-            border-radius: 25px;
-            box-shadow: 0 8px 20px var(--shadow-color);
+            padding: 2rem 2rem;
+            border-radius: 28px;
+            box-shadow: 0 12px 28px var(--shadow-color);
             width: 100%;
             position: relative;
             margin-top: 2rem;
+            transition: all 0.3s ease;
         }
 
-        .login-box::before {
-            content: "Welcome to AfterVolt Portal!";
+        .auth-box::before {
+            content: "Welcome to AfterVolt!";
             position: absolute;
             top: -60px;
             left: 50%;
@@ -197,9 +258,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-weight: 600;
             color: var(--MainBlue);
             white-space: nowrap;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .login-logo {
+        .auth-logo {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -207,47 +269,102 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin-bottom: 1rem;
         }
 
-        .login-logo img {
+        .auth-logo img {
             width: 3rem;
             height: auto;
         }
 
-        .login-logo span {
+        .auth-logo span {
             font-size: 1.5rem;
             font-weight: 600;
             color: var(--text-color);
         }
 
-        .login-box h2 {
-            font-size: 1.2rem;
-            font-weight: 500;
-            color: var(--text-color);
+        .tab-container {
+            display: flex;
             margin-bottom: 2rem;
-            text-align: center;
+            background-color: var(--bg-color);
+            border-radius: 50px;
+            padding: 0.25rem;
+            box-shadow: inset 0 1px 2px var(--shadow-color);
         }
 
-        .email-section {
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 0.7rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--Gray);
+            transition: all 0.3s ease;
+            border-radius: 50px;
+        }
+
+        .tab-btn.active {
+            background-color: var(--MainBlue);
+            color: white;
+            box-shadow: 0 2px 8px rgba(100, 108, 255, 0.3);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--MainBlue);
+            background-color: rgba(100, 108, 255, 0.1);
+        }
+
+        .form-container {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
             margin-bottom: 1.2rem;
         }
 
-        .email-input, .password-input {
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-group input {
             width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1px solid var(--BlueGray);
-            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            border: 1.5px solid var(--BlueGray);
+            border-radius: 12px;
             background-color: var(--bg-color);
             color: var(--text-color);
             font-size: 1rem;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
 
-        .email-input::placeholder, .password-input::placeholder {
-            color: var(--Gray);
-        }
-
-        .email-input:focus, .password-input:focus {
+        .form-group input:focus {
             outline: none;
             border-color: var(--MainBlue);
+            box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.2);
+        }
+
+        .form-group input::placeholder {
+            color: var(--Gray);
+            opacity: 0.7;
         }
 
         .input-error {
@@ -255,59 +372,59 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: rgba(255, 68, 68, 0.05);
         }
 
-        .password-section {
-            margin-bottom: 1.5rem;
+        .input-error:focus {
+            box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.2) !important;
+        }
+
+        .password-hint {
+            font-size: 0.7rem;
+            color: var(--Gray);
+            margin-top: 0.4rem;
+            padding-left: 0.2rem;
         }
 
         .error-message {
             color: #ff4444;
-            font-size: 0.9rem;
-            margin: 0.5rem 0 1.5rem;
+            font-size: 0.85rem;
+            margin: 0.8rem 0 1rem;
             text-align: center;
-            display: none;
+            padding: 0.6rem;
+            background-color: rgba(255, 68, 68, 0.1);
+            border-radius: 10px;
         }
 
-        .error-message.show {
-            display: block;
+        .success-message {
+            color: #4CAF50;
+            font-size: 0.85rem;
+            margin: 0.8rem 0 1rem;
+            text-align: center;
+            padding: 0.6rem;
+            background-color: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
         }
 
-        .button-container {
-            display: flex;
-            gap: 1rem;
+        .submit-btn {
             width: 100%;
-        }
-
-        .login-btn, .back-btn {
-            flex: 1;
-            padding: 0.8rem;
+            padding: 0.85rem;
+            background: linear-gradient(135deg, var(--MainBlue), var(--DarkerMainBlue));
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
+            border-radius: 12px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
-            display: inline-block;
-            text-align: center;
-            text-decoration: none;
+            margin-top: 0.5rem;
+            box-shadow: 0 4px 12px rgba(100, 108, 255, 0.3);
         }
 
-        .login-btn {
-            background-color: var(--MainBlue);
-            color: white;
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(100, 108, 255, 0.4);
         }
 
-        .login-btn:hover {
-            background-color: var(--DarkerMainBlue);
-        }
-
-        .back-btn {
-            background-color: transparent;
-            color: var(--MainBlue);
-            border: 2px solid var(--MainBlue);
-        }
-
-        .back-btn:hover {
-            background-color: var(--LightBlue);
+        .submit-btn:active {
+            transform: translateY(0);
         }
 
         footer {
@@ -334,6 +451,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-size: 0.8rem;
             margin-top: 1rem;
             opacity: 0.7;
+        }
+
+        @media (max-width: 600px) {
+            .auth-box::before {
+                font-size: 1.3rem;
+                white-space: normal;
+                text-align: center;
+                width: 100%;
+                top: -45px;
+            }
+            .auth-box {
+                margin-top: 3rem;
+                padding: 1.5rem;
+            }
+            .tab-btn {
+                font-size: 0.9rem;
+                padding: 0.5rem;
+            }
         }
     </style>
 </head>
@@ -363,35 +498,72 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <hr>
 
     <main>
-        <div class="login-container">
-            <div class="login-box">
-                <div class="login-logo">
+        <div class="auth-container">
+            <div class="auth-box">
+                <div class="auth-logo">
                     <img src="main/assets/images/logo.png" alt="AfterVolt Logo">
                     <span>AfterVolt</span>
                 </div>
 
-                <h2>Provider Sign In</h2>
+                <div class="tab-container">
+                    <button class="tab-btn active" id="loginTab">Sign In</button>
+                    <button class="tab-btn" id="registerTab">Sign Up</button>
+                </div>
 
-                <form method="POST" action="" id="loginForm">
-                    <div class="email-section">
-                        <input type="email" name="email" class="email-input" id="email" placeholder="Email Address" required>
-                    </div>
+                <div class="form-container active" id="loginForm">
+                    <form method="POST" action="" id="loginFormSubmit">
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" name="email" id="login_email" placeholder="Enter your email" value="<?php echo htmlspecialchars($submitted_email); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" name="password" id="login_password" placeholder="Enter your password" required>
+                        </div>
+                        <?php if ($login_error): ?>
+                        <div class="error-message"><?php echo $login_error; ?></div>
+                        <?php endif; ?>
+                        <button type="submit" name="login" class="submit-btn">SIGN IN</button>
+                    </form>
+                </div>
 
-                    <div class="password-section">
-                        <input type="password" name="password" class="password-input" id="password" placeholder="Password" required>
-                    </div>
+                <div class="form-container" id="registerFormContainer">
+                    <form method="POST" action="" id="registerFormSubmit">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" name="fullname" id="reg_fullname" placeholder="Enter your full name" required>
+                        </div>
 
-                    <?php if ($error): ?>
-                        <div class="error-message show"><?php echo $error; ?></div>
-                    <?php else: ?>
-                        <div class="error-message" id="errorMessage"></div>
-                    <?php endif; ?>
+                        <div class="form-group">
+                            <label>Email Address *</label>
+                            <input type="email" name="reg_email" id="reg_email" placeholder="Enter your email" required>
+                        </div>
 
-                    <div class="button-container">
-                        <a href="index.html" class="back-btn">BACK</a>
-                        <button type="submit" class="login-btn" id="signInBtn">SIGN IN</button>
-                    </div>
-                </form>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" name="phone" id="reg_phone" placeholder="Optional">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Password *</label>
+                            <input type="password" name="reg_password" id="reg_password" placeholder="Create a password" required>
+                            <div class="password-hint" id="passwordHint"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Confirm Password *</label>
+                            <input type="password" name="confirm_password" id="reg_confirm_password" placeholder="Confirm your password" required>
+                        </div>
+
+                        <?php if ($register_error): ?>
+                        <div class="error-message"><?php echo $register_error; ?></div>
+                        <?php endif; ?>
+                        <?php if ($register_success): ?>
+                        <div class="success-message"><?php echo $register_success; ?></div>
+                        <?php endif; ?>
+                        <button type="submit" name="register" class="submit-btn">SIGN UP</button>
+                    </form>
+                </div>
             </div>
         </div>
     </main>
@@ -433,79 +605,132 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (themeToggleDesktop) themeToggleDesktop.addEventListener('click', toggleTheme);
             if (themeToggleMobile) themeToggleMobile.addEventListener('click', toggleTheme);
 
-            const emailInput = document.getElementById('email');
-            const passwordInput = document.getElementById('password');
-            const form = document.getElementById('loginForm');
-            const errorMessage = document.getElementById('errorMessage');
-
-            emailInput.addEventListener('input', function() {
-                this.classList.remove('input-error');
-                if (errorMessage) errorMessage.classList.remove('show');
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerFormContainer');
+            
+            function switchToLogin() {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                loginForm.classList.add('active');
+                registerForm.classList.remove('active');
+            }
+            
+            function switchToRegister() {
+                registerTab.classList.add('active');
+                loginTab.classList.remove('active');
+                registerForm.classList.add('active');
+                loginForm.classList.remove('active');
+            }
+            
+            loginTab.addEventListener('click', switchToLogin);
+            registerTab.addEventListener('click', switchToRegister);
+            
+            const loginEmail = document.getElementById('login_email');
+            const loginPassword = document.getElementById('login_password');
+            
+            if (loginEmail) {
+                loginEmail.addEventListener('input', function() {
+                    this.classList.remove('input-error');
+                });
+            }
+            
+            if (loginPassword) {
+                loginPassword.addEventListener('input', function() {
+                    this.classList.remove('input-error');
+                });
+            }
+            
+            const regPassword = document.getElementById('reg_password');
+            const passwordHint = document.getElementById('passwordHint');
+            
+            if (regPassword) {
+                function updatePasswordHint() {
+                    const password = regPassword.value;
+                    let validCount = 0;
+                    let hints = [];
+                    
+                    if (password.length >= 8) validCount++;
+                    else hints.push('8+ characters');
+                    if (/[a-z]/.test(password)) validCount++;
+                    else hints.push('lowercase');
+                    if (/[A-Z]/.test(password)) validCount++;
+                    else hints.push('uppercase');
+                    if (/[0-9]/.test(password)) validCount++;
+                    else hints.push('number');
+                    
+                    if (password.length === 0) {
+                        passwordHint.innerHTML = '';
+                    } else if (validCount === 4) {
+                        passwordHint.innerHTML = '✓ Strong password';
+                        passwordHint.style.color = '#4CAF50';
+                    } else {
+                        passwordHint.innerHTML = 'Requires: ' + hints.join(', ');
+                        passwordHint.style.color = 'var(--Gray)';
+                    }
+                }
+                
+                regPassword.addEventListener('input', updatePasswordHint);
+            }
+            
+            const registerFormSubmit = document.getElementById('registerFormSubmit');
+            const registerErrorMsg = document.querySelector('#registerFormContainer .error-message');
+            const registerSuccessMsg = document.querySelector('#registerFormContainer .success-message');
+            
+            if (registerFormSubmit) {
+                registerFormSubmit.addEventListener('submit', function(e) {
+                    const password = document.getElementById('reg_password').value;
+                    const confirm = document.getElementById('reg_confirm_password').value;
+                    
+                    if (password !== confirm) {
+                        e.preventDefault();
+                        alert('Passwords do not match.');
+                        document.getElementById('reg_confirm_password').classList.add('input-error');
+                        return;
+                    }
+                    
+                    if (password.length < 8) {
+                        e.preventDefault();
+                        alert('Password must be at least 8 characters long.');
+                        document.getElementById('reg_password').classList.add('input-error');
+                        return;
+                    }
+                    
+                    if (!/[a-z]/.test(password)) {
+                        e.preventDefault();
+                        alert('Password must contain at least one lowercase letter.');
+                        document.getElementById('reg_password').classList.add('input-error');
+                        return;
+                    }
+                    
+                    if (!/[A-Z]/.test(password)) {
+                        e.preventDefault();
+                        alert('Password must contain at least one uppercase letter.');
+                        document.getElementById('reg_password').classList.add('input-error');
+                        return;
+                    }
+                    
+                    if (!/[0-9]/.test(password)) {
+                        e.preventDefault();
+                        alert('Password must contain at least one number.');
+                        document.getElementById('reg_password').classList.add('input-error');
+                        return;
+                    }
+                });
+            }
+            
+            const regInputs = document.querySelectorAll('#reg_fullname, #reg_email, #reg_phone, #reg_password, #reg_confirm_password');
+            regInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('input-error');
+                });
             });
             
-            passwordInput.addEventListener('input', function() {
-                this.classList.remove('input-error');
-                if (errorMessage) errorMessage.classList.remove('show');
-            });
-
-            form.addEventListener('submit', function(e) {
-                const email = emailInput.value.trim();
-                const password = passwordInput.value;
-                
-                emailInput.classList.remove('input-error');
-                passwordInput.classList.remove('input-error');
-                if (errorMessage) errorMessage.classList.remove('show');
-                
-                if (!email) {
-                    e.preventDefault();
-                    showError('Please enter your email address', emailInput);
-                    return;
-                }
-                
-                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailPattern.test(email)) {
-                    e.preventDefault();
-                    showError('Please enter a valid email address', emailInput);
-                    return;
-                }
-                
-                if (!password) {
-                    e.preventDefault();
-                    showError('Please enter your password', passwordInput);
-                    return;
-                }
-                
-                if (password.length < 8) {
-                    e.preventDefault();
-                    showError('Password must be at least 8 characters long', passwordInput);
-                    return;
-                }
-                
-                if (!/[a-z]/.test(password)) {
-                    e.preventDefault();
-                    showError('Password must contain at least one lowercase letter', passwordInput);
-                    return;
-                }
-                
-                if (!/[A-Z]/.test(password)) {
-                    e.preventDefault();
-                    showError('Password must contain at least one uppercase letter', passwordInput);
-                    return;
-                }
-                
-                if (!/[0-9]/.test(password)) {
-                    e.preventDefault();
-                    showError('Password must contain at least one number', passwordInput);
-                    return;
-                }
-            });
-            
-            function showError(message, inputElement) {
-                if (errorMessage) {
-                    errorMessage.textContent = message;
-                    errorMessage.classList.add('show');
-                }
-                inputElement.classList.add('input-error');
+            if (registerSuccessMsg && registerSuccessMsg.textContent.trim() !== '') {
+                setTimeout(function() {
+                    switchToLogin();
+                }, 2000);
             }
         });
     </script>
