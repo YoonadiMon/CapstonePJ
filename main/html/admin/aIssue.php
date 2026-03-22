@@ -1,3 +1,44 @@
+<?php
+session_start();
+include("../../php/dbConn.php");
+
+// // check if user is logged in
+// include("../../php/sessionCheck.php");
+
+// Temporarily set session as admin ID 1 until login is implemented
+if (!isset($_SESSION['userID'])) {
+    $_SESSION['userID']   = 1;
+    $_SESSION['userType'] = 'admin';
+}
+
+$userID   = $_SESSION['userID'];
+$userType = $_SESSION['userType'];
+
+function sanitize($val) {
+    return htmlspecialchars(trim($val), ENT_QUOTES, 'UTF-8');
+}
+
+// Fetch all issues with reporter name and assigned admin name
+$result = $conn->query("
+    SELECT i.issueID, i.requestID, i.jobID,
+           i.issueType, i.severity, i.subject, i.description,
+           i.status, i.reportedAt, i.assignedAt, i.resolvedAt, i.notes,
+           i.assignedAdminID,
+           u.fullname AS reportedByName,
+           a.fullname AS assignedAdminName
+    FROM tblissue i
+    JOIN tblusers u ON i.reportedBy = u.userID
+    LEFT JOIN tblusers a ON i.assignedAdminID = a.userID
+    ORDER BY i.reportedAt DESC
+");
+
+$issues = [];
+while ($row = $result->fetch_assoc()) {
+    $issues[] = $row;
+}
+
+$issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,11 +98,18 @@
             text-align: center;
             box-shadow: 0 2px 8px var(--shadow-color);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
+            cursor: pointer;
+            user-select: none;
         }
 
         .stat-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px var(--shadow-color);
+        }
+
+        .stat-card.active {
+            border-color: var(--MainBlue);
+            box-shadow: 0 0 0 2px var(--MainBlue), 0 4px 16px var(--shadow-color);
         }
 
         .stat-number {
@@ -84,15 +132,15 @@
         }
 
         .stat-progress { 
-            color: hsl(30, 90%, 50%); 
-        }
-
-        .stat-critical { 
             color: hsl(0, 80%, 55%); 
         }
 
         .stat-resolved { 
             color: hsl(145, 60%, 40%); 
+        }
+
+        .stat-assigned-you {
+            color: hsl(270, 60%, 50%);
         }
 
         .section-header {
@@ -136,7 +184,7 @@
             border-radius: 8px;
             padding: 0.5rem 0.85rem;
             font-size: 0.875rem;
-            transition: border-color 0.2s;
+            cursor: pointer;
             min-width: 0;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
@@ -178,16 +226,15 @@
         }
 
         .clear-btn {
-            background-color: transparent;
-            color: var(--Gray);
-            border: 1px solid var(--BlueGray);
+            background: var(--Gray);
+            color: var(--White);
+            border: none;
             border-radius: 8px;
             padding: 0.5rem 1rem;
             font-size: 0.875rem;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
-            transition: color 0.2s, border-color 0.2s, transform 0.1s;
             display: none;
         }
 
@@ -196,8 +243,7 @@
         }
 
         .clear-btn:hover {
-            color: var(--text-color);
-            border-color: var(--Gray);
+            background: var(--BlueGray);
         }
 
         .clear-btn:active { 
@@ -365,7 +411,7 @@
             color: var(--DarkerMainBlue); 
         }
 
-        .status-inprogress { 
+        .status-assigned { 
             background: hsl(30, 80%, 90%);  
             color: hsl(25, 80%, 30%); 
         }
@@ -492,7 +538,7 @@
                     </section>
 
                     <a href="../../html/admin/aHome.html">Home</a>
-                    <a href="../../html/admin/aRequests.html">Requests</a><br>
+                    <a href="../../html/admin/aRequests.php">Requests</a><br>
                     <a href="../../html/admin/aJobs.html">Jobs</a><br>
                     <a href="../../html/admin/aIssue.html">Issue</a><br>
                     <a href="../../html/admin/aOperations.html">Operations</a><br>
@@ -505,7 +551,7 @@
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
             <a href="../../html/admin/aHome.html">Home</a>
-            <a href="../../html/admin/aRequests.html">Requests</a><br>
+            <a href="../../html/admin/aRequests.php">Requests</a><br>
             <a href="../../html/admin/aJobs.html">Jobs</a><br>
             <a href="../../html/admin/aIssue.html">Issue</a><br>
             <a href="../../html/admin/aOperations.html">Operations</a><br>
@@ -535,21 +581,21 @@
 
             <!-- Stats Overview -->
             <div class="stats-overview">
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByCard('status', 'Open')">
                     <div class="stat-number stat-open" id="statOpen">0</div>
                     <div class="stat-label">Open Issues</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByCard('status', 'Assigned')">
                     <div class="stat-number stat-progress" id="statProgress">0</div>
-                    <div class="stat-label">In Progress</div>
+                    <div class="stat-label">Assigned</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number stat-critical" id="statCritical">0</div>
-                    <div class="stat-label">Critical</div>
-                </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByCard('status', 'Resolved')">
                     <div class="stat-number stat-resolved" id="statResolved">0</div>
                     <div class="stat-label">Resolved</div>
+                </div>
+                <div class="stat-card" onclick="filterByCard('assignedToYou', '')">
+                    <div class="stat-number stat-assigned-you" id="statAssignedYou">0</div>
+                    <div class="stat-label">Assigned to You</div>
                 </div>
             </div>
 
@@ -571,24 +617,28 @@
                 <div class="filters">
                     <select class="filter-select" id="typeFilter">
                         <option value="all">All Types</option>
-                        <option value="operational">Operational</option>
-                        <option value="vehicle">Vehicle</option>
-                        <option value="safety">Safety</option>
-                        <option value="technical">Technical</option>
-                        <option value="other">Other</option>
+                        <option value="Operational">Operational</option>
+                        <option value="Vehicle">Vehicle</option>
+                        <option value="Safety">Safety</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Other">Other</option>
                     </select>
                     <select class="filter-select" id="severityFilter">
                         <option value="all">All Severities</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
                     </select>
                     <select class="filter-select" id="statusFilter">
                         <option value="all">All Status</option>
-                        <option value="open">Open</option>
-                        <option value="inprogress">In Progress</option>
-                        <option value="resolved">Resolved</option>
+                        <option value="Open">Open</option>
+                        <option value="Assigned">Assigned</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                    <select class="filter-select" id="assigneeFilter">
+                        <option value="all">All Assignees</option>
+                        <option value="me">Assigned to You</option>
                     </select>
                 </div>
 
@@ -625,16 +675,16 @@
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
                 <a href="../../html/admin/aJobs.html">Collection Jobs</a><br>
-                <a href="../../html/admin/aIssue.html">Issue</a><br>
+                <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
                 <b>System Operation</b><br>
-                <a href="../../html/admin/aProviders.html">Providers</a><br>
-                <a href="../../html/admin/aCollectors.html">Collectors</a><br>
-                <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
-                <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
+                <a href="../../html/admin/aProviders.php">Providers</a><br>
+                <a href="../../html/admin/aCollectors.php">Collectors</a><br>
+                <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
+                <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
                 <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
             </div>
             <div>
@@ -647,70 +697,22 @@
 
     <script src="../../javascript/mainScript.js"></script>
     <script>
-        //dummy data
-        const ISSUES = [
-            {
-                issueID:        1,
-                requestID:      101,
-                jobID:          201,
-                reportedBy:     "John Tan",
-                assignedAdmin:  null,
-                issueType:      "vehicle",
-                severity:       "high",
-                subject:        "Engine Overheating",
-                description:    "Truck engine overheating during collection route on Jalan Ampang. Driver reports temperature gauge in red zone.",
-                status:         "open",
-                reportedAt:     "2025-06-10T08:23:00",
-                assignedAt:     null,
-                resolvedAt:     null,
-                notes:          null
-            },
-            {
-                issueID:        2,
-                requestID:      102,
-                jobID:          202,
-                reportedBy:     "Ahmad Razif",
-                assignedAdmin:  "Sarah Lee",
-                issueType:      "operational",
-                severity:       "medium",
-                subject:        "Collection Failed",
-                description:    "Collection could not be completed due to locked gate at customer premises. Multiple attempts made.",
-                status:         "inprogress",
-                reportedAt:     "2025-06-09T14:05:00",
-                assignedAt:     "2025-06-09T15:30:00",
-                resolvedAt:     null,
-                notes:          null
-            },
-            {
-                issueID:        3,
-                requestID:      106,
-                jobID:          206,
-                reportedBy:     "Daniel Foo",
-                assignedAdmin:  "Sarah Lee",
-                issueType:      "vehicle",
-                severity:       "high",
-                subject:        "Van Tyre Blowout",
-                description:    "Van tyre blowout on highway causing delay to 3 scheduled collections.",
-                status:         "resolved",
-                reportedAt:     "2025-06-08T07:55:00",
-                assignedAt:     "2025-06-08T08:00:00",
-                resolvedAt:     "2025-06-08T12:00:00",
-                notes:          "Roadside assistance deployed. Collections rescheduled."
-            }
-        ];
+        // Real data from PHP/DB (replaces dummy data)
+        const ISSUES = <?php echo $issuesJson; ?>;
+        const CURRENT_USER_ID = <?php echo (int)$userID; ?>;
 
         function formatType(type) {
-            const map = { operational:"Operational", vehicle:"Vehicle", safety:"Safety", technical:"Technical", other:"Other" };
+            const map = { Operational:"Operational", Vehicle:"Vehicle", Safety:"Safety", Technical:"Technical", Other:"Other" };
             return map[type] || type;
         }
 
         function formatSeverity(sev) {
-            return sev.charAt(0).toUpperCase() + sev.slice(1);
+            return sev.charAt(0).toUpperCase() + sev.slice(1).toLowerCase();
         }
 
         function formatStatus(status) {
-            if (status === "inprogress") return "In Progress";
-            return status.charAt(0).toUpperCase() + status.slice(1);
+            if (status === "Assigned") return "Assigned";
+            return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
         }
 
         function formatTime(dateStr) {
@@ -732,11 +734,6 @@
             return str.length > len ? str.slice(0, len) + "…" : str;
         }
 
-        function typeInitial(type) {
-            const map = { operational:"OP", vehicle:"VH", safety:"SF", technical:"TC", other:"OT" };
-            return map[type] || "??";
-        }
-
         function renderIssues(issues) {
             const list = document.getElementById("issuesList");
 
@@ -756,6 +753,10 @@
                     ? `<a class="linked-id" href="../../html/admin/aJobDetail.html?id=${issue.jobID}" onclick="event.stopPropagation()">JOB #${issue.jobID}</a>`
                     : "";
 
+                // CSS class keys match DB ENUM values (capitalised)
+                const severityCss = issue.severity ? issue.severity.toLowerCase() : 'low';
+                const statusCss   = issue.status   ? issue.status.toLowerCase()   : 'open';
+
                 return `
                 <div class="issue-item"
                     data-type="${issue.issueType}"
@@ -771,8 +772,8 @@
                         <div class="issue-meta">
                             <span class="issue-id">#${issue.issueID}</span>
                             <span class="badge-type">${formatType(issue.issueType)}</span>
-                            <span class="badge-severity severity-${issue.severity}">${formatSeverity(issue.severity)}</span>
-                            <span class="badge-status status-${issue.status}">${formatStatus(issue.status)}</span>
+                            <span class="badge-severity severity-${severityCss}">${formatSeverity(issue.severity)}</span>
+                            <span class="badge-status status-${statusCss}">${formatStatus(issue.status)}</span>
                             <span class="issue-time">${formatTime(issue.reportedAt)}</span>
                             ${linkedReq}
                             ${linkedJob}
@@ -789,36 +790,63 @@
         }
 
         function updateStats(issues) {
-            document.getElementById("statOpen").textContent     = issues.filter(i => i.status === "open").length;
-            document.getElementById("statProgress").textContent = issues.filter(i => i.status === "inprogress").length;
-            document.getElementById("statCritical").textContent = issues.filter(i => i.severity === "critical").length;
-            document.getElementById("statResolved").textContent = issues.filter(i => i.status === "resolved").length;
-            document.getElementById("totalBadge").textContent   = issues.length;
+            document.getElementById("statOpen").textContent        = issues.filter(i => i.status === "Open").length;
+            document.getElementById("statProgress").textContent    = issues.filter(i => i.status === "Assigned").length;
+            document.getElementById("statResolved").textContent    = issues.filter(i => i.status === "Resolved").length;
+            document.getElementById("statAssignedYou").textContent = issues.filter(i => parseInt(i.assignedAdminID) === CURRENT_USER_ID).length;
+            document.getElementById("totalBadge").textContent      = issues.length;
+        }
+
+        function filterByCard(filterType, value) {
+            // If this card is already active, clear it (toggle off)
+            const cards = document.querySelectorAll('.stat-card');
+            const clickedCard = event.currentTarget;
+            const wasActive = clickedCard.classList.contains('active');
+
+            // Remove active from all cards
+            cards.forEach(c => c.classList.remove('active'));
+
+            if (wasActive) {
+                // Toggle off — reset that filter to 'all' and re-apply
+                if (filterType === 'status')        document.getElementById('statusFilter').value   = 'all';
+                if (filterType === 'severity')      document.getElementById('severityFilter').value = 'all';
+                if (filterType === 'assignedToYou') document.getElementById('assigneeFilter').value = 'all';
+            } else {
+                // Activate this card and set the matching filter
+                clickedCard.classList.add('active');
+                if (filterType === 'status')        document.getElementById('statusFilter').value   = value;
+                if (filterType === 'severity')      document.getElementById('severityFilter').value = value;
+                if (filterType === 'assignedToYou') document.getElementById('assigneeFilter').value = 'me';
+            }
+
+            applyFilters();
         }
 
         function applyFilters() {
             var typeVal     = document.getElementById("typeFilter").value;
             var severityVal = document.getElementById("severityFilter").value;
             var statusVal   = document.getElementById("statusFilter").value;
+            var assigneeVal = document.getElementById("assigneeFilter").value;
             var searchVal   = document.getElementById("issueSearch").value.trim().toLowerCase();
 
             var filtered = ISSUES.filter(function(issue) {
                 var matchType     = typeVal     === "all" || issue.issueType === typeVal;
                 var matchSeverity = severityVal === "all" || issue.severity  === severityVal;
                 var matchStatus   = statusVal   === "all" || issue.status    === statusVal;
+                var matchAssignee = assigneeVal === "all" || parseInt(issue.assignedAdminID) === CURRENT_USER_ID;
                 var matchSearch   = !searchVal  ||
-                    (issue.subject     && issue.subject.toLowerCase().indexOf(searchVal) !== -1)     ||
-                    (issue.description && issue.description.toLowerCase().indexOf(searchVal) !== -1) ||
-                    (issue.reportedBy  && issue.reportedBy.toLowerCase().indexOf(searchVal) !== -1)  ||
+                    (issue.subject         && issue.subject.toLowerCase().indexOf(searchVal) !== -1)         ||
+                    (issue.description     && issue.description.toLowerCase().indexOf(searchVal) !== -1)     ||
+                    (issue.reportedByName  && issue.reportedByName.toLowerCase().indexOf(searchVal) !== -1)  ||
                     String(issue.issueID).indexOf(searchVal) !== -1;
-                return matchType && matchSeverity && matchStatus && matchSearch;
+                return matchType && matchSeverity && matchStatus && matchAssignee && matchSearch;
             });
 
             renderIssues(filtered);
             document.getElementById("totalBadge").textContent = filtered.length;
 
             // show Clear button if anything is active
-            var hasFilters = searchVal || typeVal !== "all" || severityVal !== "all" || statusVal !== "all";
+            var hasFilters = searchVal || typeVal !== "all" || severityVal !== "all" || statusVal !== "all" || assigneeVal !== "all";
             document.getElementById("clearBtn").classList.toggle("visible", !!hasFilters);
         }
 
@@ -827,7 +855,9 @@
             document.getElementById("typeFilter").value = "all";
             document.getElementById("severityFilter").value = "all";
             document.getElementById("statusFilter").value = "all";
+            document.getElementById("assigneeFilter").value = "all";
             document.getElementById("clearBtn").classList.remove("visible");
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
             renderIssues(ISSUES);
             document.getElementById("totalBadge").textContent = ISSUES.length;
         }
@@ -843,20 +873,12 @@
             document.getElementById("typeFilter").addEventListener("change", applyFilters);
             document.getElementById("severityFilter").addEventListener("change", applyFilters);
             document.getElementById("statusFilter").addEventListener("change", applyFilters);
+            document.getElementById("assigneeFilter").addEventListener("change", applyFilters);
         });
 
         function viewIssue(id) {
-            window.location.href = `../../html/admin/aIssueDetail.html?id=${id}`;
+            window.location.href = `../../html/admin/aIssueDetail.php?id=${id}`;
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            updateStats(ISSUES);
-            renderIssues(ISSUES);
-
-            document.getElementById("typeFilter").addEventListener("change", applyFilters);
-            document.getElementById("severityFilter").addEventListener("change", applyFilters);
-            document.getElementById("statusFilter").addEventListener("change", applyFilters);
-        });
     </script>
 </body>
 </html>
