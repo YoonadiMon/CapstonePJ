@@ -928,11 +928,11 @@ $statesJson     = json_encode($validStates);
                     </section>
 
                     <a href="../../html/admin/aHome.html">Home</a>
-                    <a href="../../html/admin/aRequests.html">Requests</a><br>
-                    <a href="../../html/admin/aJobs.html">Jobs</a><br>
-                    <a href="../../html/admin/aIssue.html">Issue</a><br>
-                    <a href="../../html/admin/aOperations.html">Operations</a><br>
-                    <a href="../../html/admin/aReport.html">Report</a>
+                    <a href="../../html/admin/aRequests.php">Requests</a><br>
+                    <a href="../../html/admin/aJobs.php">Jobs</a><br>
+                    <a href="../../html/admin/aIssue.php">Issue</a><br>
+                    <a href="../../html/admin/aOperations.php">Operations</a><br>
+                    <a href="../../html/admin/aReport.php">Report</a>
                 </div>
             </div>
 
@@ -941,11 +941,11 @@ $statesJson     = json_encode($validStates);
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
             <a href="../../html/admin/aHome.html">Home</a>
-            <a href="../../html/admin/aRequests.html">Requests</a><br>
-            <a href="../../html/admin/aJobs.html">Jobs</a><br>
-            <a href="../../html/admin/aIssue.html">Issue</a><br>
-            <a href="../../html/admin/aOperations.html">Operations</a><br>
-            <a href="../../html/admin/aReport.html">Report</a>
+            <a href="../../html/admin/aRequests.php">Requests</a><br>
+            <a href="../../html/admin/aJobs.php">Jobs</a><br>
+            <a href="../../html/admin/aIssue.php">Issue</a><br>
+            <a href="../../html/admin/aOperations.php">Operations</a><br>
+            <a href="../../html/admin/aReport.php">Report</a>
         </nav>          
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
@@ -1087,9 +1087,9 @@ $statesJson     = json_encode($validStates);
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aRequests.html">Collection Requests</a><br>
-                <a href="../../html/admin/aJobs.html">Collection Jobs</a><br>
-                <a href="../../html/admin/aIssue.html">Issue</a><br>
+                <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
+                <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
+                <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
                 <b>System Operation</b><br>
@@ -1097,7 +1097,7 @@ $statesJson     = json_encode($validStates);
                 <a href="../../html/admin/aCollectors.php">Collectors</a><br>
                 <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
-                <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
+                <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
             </div>
             <div>
                 <b>Proxy</b><br>
