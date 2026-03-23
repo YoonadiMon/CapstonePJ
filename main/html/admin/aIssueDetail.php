@@ -447,17 +447,116 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
 
-        $stmt = $conn->prepare("UPDATE tblcollection_request SET preferredDateTime = ? WHERE requestID = ?");
-        $stmt->bind_param('si', $newDateTime, $requestID);
-        if ($stmt->execute() && $stmt->affected_rows > 0) {
-            $_SESSION['successMsg'] = 'Request preferred date/time updated successfully.';
-            $iRow = $conn->query("SELECT requestID, jobID FROM tblissue WHERE issueID=$issueID")->fetch_assoc();
+        $iRow = $conn->query("SELECT requestID, jobID FROM tblissue WHERE issueID=$issueID")->fetch_assoc();
+
+        $conn->begin_transaction();
+        try {
+            $stmt = $conn->prepare("UPDATE tblcollection_request SET preferredDateTime = ? WHERE requestID = ?");
+            $stmt->bind_param('si', $newDateTime, $requestID);
+            $stmt->execute();
+
+            if ($stmt->affected_rows <= 0) {
+                throw new Exception('No rows updated. The request may not exist.');
+            }
+            $stmt->close();
+
             $formattedDT = date('d M Y, g:i A', strtotime($newDateTime));
             logActivity($conn, $userID, 'Issue', 'Request Rescheduled', "Issue #$issueID: request #$requestID preferred date/time updated to $formattedDT.", $iRow['requestID'] ?? null, $iRow['jobID'] ?? null);
-        } else {
-            $_SESSION['errorMsg'] = 'Failed to update the request date/time.';
+
+            $conn->commit();
+            $_SESSION['successMsg'] = 'Request preferred date/time updated successfully.';
+        } catch (Exception $e) {
+            $conn->rollback();
+            $_SESSION['errorMsg'] = 'Failed to update the request date/time: ' . sanitize($e->getMessage());
         }
-        $stmt->close();
+        header("Location: aIssueDetail.php?id=$issueID"); exit;
+    }
+
+    if ($action === 'reschedule_request_with_job') {
+        $requestID   = (int)($_POST['requestID']      ?? 0);
+        $newDateTime = trim($_POST['new_datetime']     ?? '');
+        $jobID       = (int)($_POST['jobID']           ?? 0);
+        $newDate     = trim($_POST['new_date']         ?? '');
+        $newTime     = trim($_POST['new_time']         ?? '');
+        $newEndTime  = trim($_POST['new_end_time']     ?? '');
+        $newCollectorID = (int)($_POST['collectorID']  ?? 0);
+        $newVehicleID   = (int)($_POST['vehicleID']    ?? 0);
+
+        if ($requestID <= 0 || !$newDateTime || $jobID <= 0 || !$newDate || !$newTime || $newCollectorID <= 0 || $newVehicleID <= 0) {
+            $_SESSION['errorMsg'] = 'All fields are required.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        $escapedDate = $conn->real_escape_string($newDate);
+
+        $jRow = $conn->query("SELECT collectorID, vehicleID FROM tbljob WHERE jobID=$jobID")->fetch_assoc();
+        $origCollID = (int)($jRow['collectorID'] ?? 0);
+        $origVehID  = (int)($jRow['vehicleID']   ?? 0);
+
+        if ($newCollectorID !== $origCollID) {
+            $cConflict = $conn->query("
+                SELECT 1 FROM tbljob
+                WHERE collectorID = $newCollectorID
+                AND scheduledDate = '$escapedDate'
+                AND status IN ('Pending','Scheduled','Ongoing')
+                AND jobID != $jobID
+                LIMIT 1
+            ")->num_rows > 0;
+            if ($cConflict) {
+                $_SESSION['errorMsg'] = 'Selected collector already has a job on ' . date('d M Y', strtotime($newDate)) . '.';
+                header("Location: aIssueDetail.php?id=$issueID"); exit;
+            }
+        }
+
+        if ($newVehicleID !== $origVehID) {
+            $vConflict = $conn->query("
+                SELECT 1 FROM tbljob
+                WHERE vehicleID = $newVehicleID
+                AND scheduledDate = '$escapedDate'
+                AND status IN ('Pending','Scheduled','Ongoing')
+                AND jobID != $jobID
+                LIMIT 1
+            ")->num_rows > 0;
+            $vMaintConflict = $conn->query("
+                SELECT 1 FROM tblmaintenance
+                WHERE vehicleID = $newVehicleID
+                AND status IN ('Scheduled','In Progress')
+                AND startDate <= '$escapedDate'
+                AND (endDate IS NULL OR endDate >= '$escapedDate')
+                LIMIT 1
+            ")->num_rows > 0;
+            if ($vConflict) {
+                $_SESSION['errorMsg'] = 'Selected vehicle already has a job on ' . date('d M Y', strtotime($newDate)) . '.';
+                header("Location: aIssueDetail.php?id=$issueID"); exit;
+            }
+            if ($vMaintConflict) {
+                $_SESSION['errorMsg'] = 'Selected vehicle has maintenance on ' . date('d M Y', strtotime($newDate)) . '.';
+                header("Location: aIssueDetail.php?id=$issueID"); exit;
+            }
+        }
+
+        $conn->begin_transaction();
+        try {
+            $conn->query("UPDATE tblcollection_request SET preferredDateTime = '$newDateTime' WHERE requestID = $requestID");
+
+            $conn->query("UPDATE tbljob SET status='Cancelled', rejectionReason='Rescheduled via issue #$issueID' WHERE jobID=$jobID");
+
+            $ins = $conn->prepare("INSERT INTO tbljob (requestID, collectorID, vehicleID, scheduledDate, scheduledTime, estimatedEndTime, status) VALUES (?,?,?,?,?,?,'Pending')");
+            $ins->bind_param('iiisss', $requestID, $newCollectorID, $newVehicleID, $newDate, $newTime, $newEndTime);
+            $ins->execute();
+            $newJobID = (int)$conn->insert_id;
+            $conn->commit();
+
+            $formattedDT = date('d M Y, g:i A', strtotime($newDateTime));
+            $cName  = $conn->query("SELECT fullname FROM tblusers WHERE userID=$newCollectorID")->fetch_assoc()['fullname'] ?? "ID: $newCollectorID";
+            $vPlate = $conn->query("SELECT plateNum FROM tblvehicle WHERE vehicleID=$newVehicleID")->fetch_assoc()['plateNum'] ?? "ID: $newVehicleID";
+            logActivity($conn, $userID, 'Issue', 'Request + Job Rescheduled', "Issue #$issueID: request #$requestID preferred datetime updated to $formattedDT. Old job #$jobID cancelled, new job #$newJobID created with collector $cName and vehicle $vPlate.", $requestID, $newJobID);
+
+            $_SESSION['successMsg'] = 'Request rescheduled and job updated successfully.';
+        } catch (Exception $e) {
+            $conn->rollback();
+            $_SESSION['errorMsg'] = 'Database error: ' . sanitize($e->getMessage());
+        }
         header("Location: aIssueDetail.php?id=$issueID"); exit;
     }
 
@@ -746,6 +845,24 @@ if (!empty($issueRow['jobID'])) $jobRow = $conn->query("
 // Fetch linked request (always, since requestID is NOT NULL)
 $reqRow = $conn->query("SELECT * FROM tblcollection_request WHERE requestID={$issueRow['requestID']}")->fetch_assoc();
 
+$pendingJobForReq = null;
+if ($reqRow) {
+    $pjRes = $conn->query("
+        SELECT j.jobID, j.collectorID, j.vehicleID, j.scheduledDate, j.scheduledTime, j.estimatedEndTime,
+               uc.fullname AS collectorName,
+               v.plateNum AS vehiclePlate, v.model AS vehicleModel, v.type AS vehicleType
+        FROM tbljob j
+        JOIN tblcollector c ON j.collectorID = c.collectorID
+        JOIN tblusers uc ON c.collectorID = uc.userID
+        JOIN tblvehicle v ON j.vehicleID = v.vehicleID
+        WHERE j.requestID = {$reqRow['requestID']}
+          AND j.status IN ('Pending','Scheduled')
+        ORDER BY j.jobID DESC
+        LIMIT 1
+    ");
+    $pendingJobForReq = $pjRes ? $pjRes->fetch_assoc() : null;
+}
+
 // Determine pickup / dropoff state from tblitem 
 // pickup collected = all items for this request have status 'Collected' or beyond
 $pickupDone  = false;
@@ -843,6 +960,50 @@ if ($jobRow) {
         ORDER BY v.plateNum
     ");
     while ($r = $res->fetch_assoc()) $availVehicles[] = $r;
+}
+
+$reqOnlyAvailCollectors = [];
+$reqOnlyAvailVehicles   = [];
+if (!$jobRow && $pendingJobForReq) {
+    $pjDate = $conn->real_escape_string($pendingJobForReq['scheduledDate']);
+    $pjID   = (int)$pendingJobForReq['jobID'];
+
+    $res = $conn->query("
+        SELECT c.collectorID, u.fullname, u.phone
+        FROM tblcollector c
+        JOIN tblusers u ON c.collectorID = u.userID
+        WHERE c.status = 'active'
+          AND c.collectorID != {$pendingJobForReq['collectorID']}
+          AND c.collectorID NOT IN (
+              SELECT collectorID FROM tbljob
+              WHERE scheduledDate = '$pjDate'
+                AND status IN ('Pending','Scheduled','Ongoing')
+                AND jobID != $pjID
+          )
+        ORDER BY u.fullname
+    ");
+    while ($r = $res->fetch_assoc()) $reqOnlyAvailCollectors[] = $r;
+
+    $res2 = $conn->query("
+        SELECT v.vehicleID, v.plateNum, v.model, v.type, v.capacityWeight
+        FROM tblvehicle v
+        WHERE v.status = 'Available'
+          AND v.vehicleID != {$pendingJobForReq['vehicleID']}
+          AND v.vehicleID NOT IN (
+              SELECT vehicleID FROM tbljob
+              WHERE scheduledDate = '$pjDate'
+                AND status IN ('Pending','Scheduled','Ongoing')
+                AND jobID != $pjID
+          )
+          AND v.vehicleID NOT IN (
+              SELECT vehicleID FROM tblmaintenance
+              WHERE status IN ('Scheduled','In Progress')
+                AND startDate <= '$pjDate'
+                AND (endDate IS NULL OR endDate >= '$pjDate')
+          )
+        ORDER BY v.plateNum
+    ");
+    while ($r = $res2->fetch_assoc()) $reqOnlyAvailVehicles[] = $r;
 }
 
 // Available collectors for dropoff reassignment (today's date, excluding current)
@@ -1888,7 +2049,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
             <!-- Linked Job & Request Info -->
             <?php if ($jobRow && $reqRow): ?>
             <div class="card">
-                <div class="card-title">Linked Job &amp; Request Info</div>
+                <div class="card-title">Linked Job & Request Info</div>
                 <div class="info-grid">
                     <div class="info-field">
                         <span class="info-label">Linked Job</span>
@@ -1911,7 +2072,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                         <span class="info-value"><?php echo sanitize($jobRow['status']); ?></span>
                     </div>
                     <div class="info-field">
-                        <span class="info-label">Scheduled Date &amp; Time</span>
+                        <span class="info-label">Scheduled Date & Time</span>
                         <span class="info-value"><?php echo date('d M Y', strtotime($jobRow['scheduledDate'])) . ', ' . date('g:i A', strtotime($jobRow['scheduledTime'])); ?></span>
                     </div>
                     <div class="info-field">
@@ -1962,7 +2123,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                         <span class="info-value"><?php echo sanitize($reqRow['pickupAddress'] . ', ' . $reqRow['pickupState']); ?></span>
                     </div>
                     <div class="info-field">
-                        <span class="info-label">Preferred Date &amp; Time</span>
+                        <span class="info-label">Preferred Date & Time</span>
                         <span class="info-value"><?php echo fmtDateTime($reqRow['preferredDateTime']); ?></span>
                     </div>
                 </div>
@@ -2022,12 +2183,12 @@ $canAct         = $isAssigned && $isAssignedToMe;
                             <div class="action-group">
                                 <?php if (!empty($dropoffAvailCollectors) && !empty($dropoffAvailVehicles)): ?>
                                     <?php if ($prevDropoffJobID > 0): ?>
-                                        <button class="btn-warning" onclick="openModalReassignDropoff(true)">Re-Assign Collector &amp; Vehicle</button>
+                                        <button class="btn-warning" onclick="openModalReassignDropoff(true)">Re-Assign Collector & Vehicle</button>
                                     <?php else: ?>
-                                        <button class="c-btn-secondary" onclick="openModalReassignDropoff(false)">Reassign Collector &amp; Vehicle</button>
+                                        <button class="c-btn-secondary" onclick="openModalReassignDropoff(false)">Reassign Collector & Vehicle</button>
                                     <?php endif; ?>
                                 <?php else: ?>
-                                    <button class="c-btn-secondary btn-disabled" disabled title="No available collectors or vehicles for today">Reassign Collector &amp; Vehicle</button>
+                                    <button class="c-btn-secondary btn-disabled" disabled title="No available collectors or vehicles for today">Reassign Collector & Vehicle</button>
                                 <?php endif; ?>
                                 <?php if (!empty($collectedItems)): ?>
                                     <button class="c-btn-secondary" onclick="openModal('modalReassignCentre')">Reassign Drop-off Centre</button>
@@ -2036,7 +2197,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
 
                         <?php else: ?>
                             <!-- Both done -->
-                            <div class="action-section-label">Pickup &amp; Drop-off Completed</div>
+                            <div class="action-section-label">Pickup & Drop-off Completed</div>
                             <p class="no-options-note">All collections are complete. No reassignment actions are available.</p>
                             <hr class="section-divider">
                         <?php endif; ?>
@@ -2359,7 +2520,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
     <?php if ($pickupDone && !$dropoffDone && (!empty($dropoffAvailCollectors) && !empty($dropoffAvailVehicles))): ?>
     <div class="modal-overlay" id="modalReassignDropoff">
         <div class="modal modal-wide">
-            <div class="modal-title">Reassign Collector &amp; Vehicle for Drop-off</div>
+            <div class="modal-title">Reassign Collector & Vehicle for Drop-off</div>
 
             <?php if ($prevDropoffJobID > 0): ?>
             <div class="reassign-warning-notice" id="reAssignWarning">
@@ -2574,25 +2735,79 @@ $canAct         = $isAssigned && $isAssignedToMe;
 
     <!-- Reschedule Request (request-only) -->
     <div class="modal-overlay" id="modalRescheduleRequest">
-        <div class="modal">
+        <div class="modal modal-wide">
             <button class="modal-close-btn" onclick="closeModal('modalRescheduleRequest')">
                 <img src="../../assets/images/icon-menu-close.svg" class="light-icon" alt="Close">
                 <img src="../../assets/images/icon-menu-close-dark.png" class="dark-icon" alt="Close">
             </button>
             <div class="modal-title">Reschedule Request</div>
+
+            <?php if ($pendingJobForReq): ?>
+            <div class="reassign-warning-notice">
+                ⚠ A pending job (JOB #<?php echo $pendingJobForReq['jobID']; ?>) is linked to this request.
+                It will be <strong>cancelled</strong> and a new job created with the details below.
+            </div>
+            <?php endif; ?>
+
             <p class="modal-desc">
-                This will update the preferred collection date and time on the request.
-                Current: <strong><?php echo fmtDateTime($reqRow['preferredDateTime']); ?></strong>
+                Current preferred datetime: <strong><?php echo fmtDateTime($reqRow['preferredDateTime']); ?></strong>
             </p>
+
             <form method="POST">
-                <input type="hidden" name="action"    value="reschedule_request">
+                <input type="hidden" name="action" value="<?php echo $pendingJobForReq ? 'reschedule_request_with_job' : 'reschedule_request'; ?>">
                 <input type="hidden" name="requestID" value="<?php echo $reqRow['requestID']; ?>">
+                <?php if ($pendingJobForReq): ?>
+                <input type="hidden" name="jobID" value="<?php echo $pendingJobForReq['jobID']; ?>">
+                <?php endif; ?>
+
                 <div class="form-group">
                     <label class="form-label">New Preferred Date &amp; Time <span class="required-star">*</span></label>
                     <input type="datetime-local" class="form-input" name="new_datetime" required
                         min="<?php echo date('Y-m-d\TH:i'); ?>"
                         value="<?php echo date('Y-m-d\TH:i', strtotime($reqRow['preferredDateTime'])); ?>">
                 </div>
+
+                <?php if ($pendingJobForReq): ?>
+                <div class="form-group">
+                    <label class="form-label">New Scheduled Date <span class="required-star">*</span></label>
+                    <input type="date" class="form-input" name="new_date" required min="<?php echo date('Y-m-d'); ?>">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Start Time <span class="required-star">*</span></label>
+                    <input type="time" class="form-input" name="new_time" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Estimated End Time</label>
+                    <input type="time" class="form-input" name="new_end_time">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Collector <span class="required-star">*</span></label>
+                    <select class="form-select" name="collectorID" required>
+                        <option value="<?php echo $pendingJobForReq['collectorID']; ?>" selected>
+                            <?php echo sanitize($pendingJobForReq['collectorName']); ?> (current)
+                        </option>
+                        <?php foreach ($reqOnlyAvailCollectors as $col): ?>
+                        <option value="<?php echo $col['collectorID']; ?>">
+                            <?php echo sanitize($col['fullname']); ?> — <?php echo sanitize($col['phone']); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Vehicle <span class="required-star">*</span></label>
+                    <select class="form-select" name="vehicleID" required>
+                        <option value="<?php echo $pendingJobForReq['vehicleID']; ?>" selected>
+                            <?php echo sanitize($pendingJobForReq['vehiclePlate'] . ' — ' . $pendingJobForReq['vehicleModel'] . ' (' . $pendingJobForReq['vehicleType'] . ')'); ?> (current)
+                        </option>
+                        <?php foreach ($reqOnlyAvailVehicles as $veh): ?>
+                        <option value="<?php echo $veh['vehicleID']; ?>">
+                            <?php echo sanitize($veh['plateNum'] . ' — ' . $veh['model'] . ' (' . $veh['type'] . ', ' . number_format($veh['capacityWeight'], 0) . ' kg)'); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
+
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn c-btn-small" onclick="closeModal('modalRescheduleRequest')">Cancel</button>
                     <button type="submit" class="c-btn-primary c-btn-small">Confirm</button>
