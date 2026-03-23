@@ -12,34 +12,40 @@ $login_error = "";
 $register_error = "";
 $register_success = "";
 $submitted_email = "";
+$reg_fullname = "";
+$reg_email = "";
+$reg_phone = "";
+$show_register_tab = false;
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
     $submitted_email = $email;
-    
+
     $stmt = $conn->prepare("SELECT * FROM tblusers WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
-    
-    if ($result->num_rows == 1) {
+
+    if ($result && $result->num_rows === 1) {
         $user = $result->fetch_assoc();
-        
-        if ($password == $user['password']) {
+
+        if ($password === $user['password']) {
             $_SESSION['userID'] = $user['userID'];
             $_SESSION['userType'] = $user['userType'];
             $_SESSION['fullname'] = $user['fullname'];
             $_SESSION['email'] = $user['email'];
             $_SESSION['phone'] = $user['phone'] ?? '';
             $_SESSION['lastLogin'] = date("Y-m-d H:i:s");
-            
-            if ($user['userType'] == 'provider') {
+
+            if ($user['userType'] === 'provider') {
                 header("Location: main/html/provider/pHome.php");
-            } else if ($user['userType'] == 'collector') {
+            } elseif ($user['userType'] === 'collector') {
                 header("Location: main/html/collector/cHome.php");
-            } else if ($user['userType'] == 'admin') {
+            } elseif ($user['userType'] === 'admin') {
                 header("Location: main/html/admin/aHome.php");
+            } else {
+                $login_error = "Invalid user role.";
             }
             exit();
         } else {
@@ -48,20 +54,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
     } else {
         $login_error = "Account '" . htmlspecialchars($email) . "' does not exist.";
     }
+
     $stmt->close();
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
-    $fullname = trim($_POST['fullname']);
-    $email = trim($_POST['reg_email']);
-    $password = $_POST['reg_password'];
-    $confirm_password = $_POST['confirm_password'];
-    $phone = trim($_POST['phone']);
-    
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
+    $fullname = trim($_POST['fullname'] ?? '');
+    $email = trim($_POST['reg_email'] ?? '');
+    $password = $_POST['reg_password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+    $phone = trim($_POST['phone'] ?? '');
+
+    $reg_fullname = $fullname;
+    $reg_email = $email;
+    $reg_phone = $phone;
+    $show_register_tab = true;
+
     $username = 'provider_' . time();
-    
-    if (empty($fullname) || empty($email) || empty($password)) {
+
+    if ($fullname === '' || $email === '' || $password === '') {
         $register_error = "Please fill in all required fields.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $register_error = "Please enter a valid email address.";
     } elseif ($password !== $confirm_password) {
         $register_error = "Passwords do not match.";
     } elseif (strlen($password) < 8) {
@@ -77,33 +91,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
         $check_stmt->bind_param("s", $email);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
-        
-        if ($check_result->num_rows > 0) {
+
+        if ($check_result && $check_result->num_rows > 0) {
             $register_error = "Email address already registered. Please use a different email or sign in.";
         } else {
             $userType = 'provider';
             $createdAt = date("Y-m-d H:i:s");
-            
+
             $insert_stmt = $conn->prepare("INSERT INTO tblusers (username, fullname, email, password, phone, userType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $insert_stmt->bind_param("sssssss", $username, $fullname, $email, $password, $phone, $userType, $createdAt);
-            
+
             if ($insert_stmt->execute()) {
                 $userID = $insert_stmt->insert_id;
-                
+
                 $empty_address = '';
                 $empty_state = '';
                 $empty_postcode = '';
+
                 $provider_stmt = $conn->prepare("INSERT INTO tblprovider (providerID, address, state, postcode, point) VALUES (?, ?, ?, ?, 0)");
                 $provider_stmt->bind_param("isss", $userID, $empty_address, $empty_state, $empty_postcode);
                 $provider_stmt->execute();
                 $provider_stmt->close();
-                
+
                 $register_success = "Registration successful! You can now sign in.";
+                $show_register_tab = false;
+                $reg_fullname = "";
+                $reg_email = "";
+                $reg_phone = "";
             } else {
                 $register_error = "Registration failed. Please try again.";
             }
+
             $insert_stmt->close();
         }
+
         $check_stmt->close();
     }
 }
@@ -175,7 +196,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
             gap: 0.75rem;
         }
 
-        .c-navbar-more button {
+        .c-navbar-more button,
+        .c-navbar-more-mobile button {
             background: none;
             border: none;
             cursor: pointer;
@@ -185,7 +207,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
             justify-content: center;
         }
 
-        .c-navbar-more button img {
+        .c-navbar-more button img,
+        .c-navbar-more-mobile button img {
             width: 1.4rem;
             height: auto;
         }
@@ -198,20 +221,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
             .c-navbar-more {
                 display: none !important;
             }
+
             .c-navbar-more-mobile {
                 display: block;
-            }
-            
-            .c-navbar-more-mobile button {
-                background: none;
-                border: none;
-                cursor: pointer;
-                padding: 0.5rem;
-            }
-            
-            .c-navbar-more-mobile button img {
-                width: 1.4rem;
-                height: auto;
             }
         }
 
@@ -239,7 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
 
         .auth-box {
             background-color: var(--sec-bg-color);
-            padding: 2rem 2rem;
+            padding: 2rem;
             border-radius: 28px;
             box-shadow: 0 12px 28px var(--shadow-color);
             width: 100%;
@@ -461,10 +473,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
                 width: 100%;
                 top: -45px;
             }
+
             .auth-box {
                 margin-top: 3rem;
                 padding: 1.5rem;
             }
+
             .tab-btn {
                 font-size: 0.9rem;
                 padding: 0.5rem;
@@ -474,7 +488,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
 </head>
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
-    
+
     <header>
         <section class="c-logo-section">
             <a href="index.html" class="c-logo-link">
@@ -484,13 +498,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
         </section>
 
         <section class="c-navbar-more">
-            <button id="themeToggleDesktop">
+            <button id="themeToggleDesktop" type="button">
                 <img src="main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
         </section>
 
         <section class="c-navbar-more-mobile">
-            <button id="themeToggleMobile">
+            <button id="themeToggleMobile" type="button">
                 <img src="main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
         </section>
@@ -506,42 +520,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
                 </div>
 
                 <div class="tab-container">
-                    <button class="tab-btn active" id="loginTab">Sign In</button>
-                    <button class="tab-btn" id="registerTab">Sign Up</button>
+                    <button class="tab-btn <?php echo $show_register_tab ? '' : 'active'; ?>" id="loginTab" type="button">Sign In</button>
+                    <button class="tab-btn <?php echo $show_register_tab ? 'active' : ''; ?>" id="registerTab" type="button">Sign Up</button>
                 </div>
 
-                <div class="form-container active" id="loginForm">
+                <div class="form-container <?php echo $show_register_tab ? '' : 'active'; ?>" id="loginForm">
                     <form method="POST" action="" id="loginFormSubmit">
                         <div class="form-group">
                             <label>Email Address</label>
                             <input type="email" name="email" id="login_email" placeholder="Enter your email" value="<?php echo htmlspecialchars($submitted_email); ?>" required>
                         </div>
+
                         <div class="form-group">
                             <label>Password</label>
                             <input type="password" name="password" id="login_password" placeholder="Enter your password" required>
                         </div>
+
                         <?php if ($login_error): ?>
-                        <div class="error-message"><?php echo $login_error; ?></div>
+                            <div class="error-message"><?php echo $login_error; ?></div>
                         <?php endif; ?>
+
+                        <?php if ($register_success): ?>
+                            <div class="success-message"><?php echo $register_success; ?></div>
+                        <?php endif; ?>
+
                         <button type="submit" name="login" class="submit-btn">SIGN IN</button>
                     </form>
                 </div>
 
-                <div class="form-container" id="registerFormContainer">
+                <div class="form-container <?php echo $show_register_tab ? 'active' : ''; ?>" id="registerFormContainer">
                     <form method="POST" action="" id="registerFormSubmit">
                         <div class="form-group">
                             <label>Full Name *</label>
-                            <input type="text" name="fullname" id="reg_fullname" placeholder="Enter your full name" required>
+                            <input type="text" name="fullname" id="reg_fullname" placeholder="Enter your full name" value="<?php echo htmlspecialchars($reg_fullname); ?>" required>
                         </div>
 
                         <div class="form-group">
                             <label>Email Address *</label>
-                            <input type="email" name="reg_email" id="reg_email" placeholder="Enter your email" required>
+                            <input type="email" name="reg_email" id="reg_email" placeholder="Enter your email" value="<?php echo htmlspecialchars($reg_email); ?>" required>
                         </div>
 
                         <div class="form-group">
                             <label>Phone Number</label>
-                            <input type="tel" name="phone" id="reg_phone" placeholder="Optional">
+                            <input type="tel" name="phone" id="reg_phone" placeholder="Optional" value="<?php echo htmlspecialchars($reg_phone); ?>">
                         </div>
 
                         <div class="form-group">
@@ -556,11 +577,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
                         </div>
 
                         <?php if ($register_error): ?>
-                        <div class="error-message"><?php echo $register_error; ?></div>
+                            <div class="error-message"><?php echo $register_error; ?></div>
                         <?php endif; ?>
-                        <?php if ($register_success): ?>
-                        <div class="success-message"><?php echo $register_success; ?></div>
-                        <?php endif; ?>
+
                         <button type="submit" name="register" class="submit-btn">SIGN UP</button>
                     </form>
                 </div>
@@ -569,7 +588,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     </main>
 
     <hr>
-    
+
     <footer>
         <div class="footer-content">
             <div class="footer-info">
@@ -586,131 +605,131 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggleDesktop = document.getElementById('themeToggleDesktop');
             const themeToggleMobile = document.getElementById('themeToggleMobile');
-            
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerFormContainer');
+            const loginEmail = document.getElementById('login_email');
+            const loginPassword = document.getElementById('login_password');
+            const regPassword = document.getElementById('reg_password');
+            const passwordHint = document.getElementById('passwordHint');
+            const registerFormSubmit = document.getElementById('registerFormSubmit');
+
             function toggleTheme() {
                 document.body.classList.toggle('dark-mode');
                 const isDarkMode = document.body.classList.contains('dark-mode');
                 const iconSrc = isDarkMode ? 'main/assets/images/dark-mode-icon.svg' : 'main/assets/images/light-mode-icon.svg';
-                
+
                 if (themeToggleDesktop) {
                     const img = themeToggleDesktop.querySelector('img');
                     if (img) img.src = iconSrc;
                 }
+
                 if (themeToggleMobile) {
                     const img = themeToggleMobile.querySelector('img');
                     if (img) img.src = iconSrc;
                 }
             }
-            
-            if (themeToggleDesktop) themeToggleDesktop.addEventListener('click', toggleTheme);
-            if (themeToggleMobile) themeToggleMobile.addEventListener('click', toggleTheme);
 
-            const loginTab = document.getElementById('loginTab');
-            const registerTab = document.getElementById('registerTab');
-            const loginForm = document.getElementById('loginForm');
-            const registerForm = document.getElementById('registerFormContainer');
-            
             function switchToLogin() {
                 loginTab.classList.add('active');
                 registerTab.classList.remove('active');
                 loginForm.classList.add('active');
                 registerForm.classList.remove('active');
             }
-            
+
             function switchToRegister() {
                 registerTab.classList.add('active');
                 loginTab.classList.remove('active');
                 registerForm.classList.add('active');
                 loginForm.classList.remove('active');
             }
-            
+
+            function updatePasswordHint() {
+                if (!regPassword || !passwordHint) return;
+
+                const password = regPassword.value;
+                let validCount = 0;
+                let hints = [];
+
+                if (password.length >= 8) validCount++;
+                else hints.push('8+ characters');
+
+                if (/[a-z]/.test(password)) validCount++;
+                else hints.push('lowercase');
+
+                if (/[A-Z]/.test(password)) validCount++;
+                else hints.push('uppercase');
+
+                if (/[0-9]/.test(password)) validCount++;
+                else hints.push('number');
+
+                if (password.length === 0) {
+                    passwordHint.innerHTML = '';
+                } else if (validCount === 4) {
+                    passwordHint.innerHTML = '✓ Strong password';
+                    passwordHint.style.color = '#4CAF50';
+                } else {
+                    passwordHint.innerHTML = 'Requires: ' + hints.join(', ');
+                    passwordHint.style.color = 'var(--Gray)';
+                }
+            }
+
+            if (themeToggleDesktop) themeToggleDesktop.addEventListener('click', toggleTheme);
+            if (themeToggleMobile) themeToggleMobile.addEventListener('click', toggleTheme);
+
             loginTab.addEventListener('click', switchToLogin);
             registerTab.addEventListener('click', switchToRegister);
-            
-            const loginEmail = document.getElementById('login_email');
-            const loginPassword = document.getElementById('login_password');
-            
+
             if (loginEmail) {
                 loginEmail.addEventListener('input', function() {
                     this.classList.remove('input-error');
                 });
             }
-            
+
             if (loginPassword) {
                 loginPassword.addEventListener('input', function() {
                     this.classList.remove('input-error');
                 });
             }
-            
-            const regPassword = document.getElementById('reg_password');
-            const passwordHint = document.getElementById('passwordHint');
-            
+
             if (regPassword) {
-                function updatePasswordHint() {
-                    const password = regPassword.value;
-                    let validCount = 0;
-                    let hints = [];
-                    
-                    if (password.length >= 8) validCount++;
-                    else hints.push('8+ characters');
-                    if (/[a-z]/.test(password)) validCount++;
-                    else hints.push('lowercase');
-                    if (/[A-Z]/.test(password)) validCount++;
-                    else hints.push('uppercase');
-                    if (/[0-9]/.test(password)) validCount++;
-                    else hints.push('number');
-                    
-                    if (password.length === 0) {
-                        passwordHint.innerHTML = '';
-                    } else if (validCount === 4) {
-                        passwordHint.innerHTML = '✓ Strong password';
-                        passwordHint.style.color = '#4CAF50';
-                    } else {
-                        passwordHint.innerHTML = 'Requires: ' + hints.join(', ');
-                        passwordHint.style.color = 'var(--Gray)';
-                    }
-                }
-                
                 regPassword.addEventListener('input', updatePasswordHint);
             }
-            
-            const registerFormSubmit = document.getElementById('registerFormSubmit');
-            const registerErrorMsg = document.querySelector('#registerFormContainer .error-message');
-            const registerSuccessMsg = document.querySelector('#registerFormContainer .success-message');
-            
+
             if (registerFormSubmit) {
                 registerFormSubmit.addEventListener('submit', function(e) {
                     const password = document.getElementById('reg_password').value;
                     const confirm = document.getElementById('reg_confirm_password').value;
-                    
+
                     if (password !== confirm) {
                         e.preventDefault();
                         alert('Passwords do not match.');
                         document.getElementById('reg_confirm_password').classList.add('input-error');
                         return;
                     }
-                    
+
                     if (password.length < 8) {
                         e.preventDefault();
                         alert('Password must be at least 8 characters long.');
                         document.getElementById('reg_password').classList.add('input-error');
                         return;
                     }
-                    
+
                     if (!/[a-z]/.test(password)) {
                         e.preventDefault();
                         alert('Password must contain at least one lowercase letter.');
                         document.getElementById('reg_password').classList.add('input-error');
                         return;
                     }
-                    
+
                     if (!/[A-Z]/.test(password)) {
                         e.preventDefault();
                         alert('Password must contain at least one uppercase letter.');
                         document.getElementById('reg_password').classList.add('input-error');
                         return;
                     }
-                    
+
                     if (!/[0-9]/.test(password)) {
                         e.preventDefault();
                         alert('Password must contain at least one number.');
@@ -719,19 +738,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
                     }
                 });
             }
-            
+
             const regInputs = document.querySelectorAll('#reg_fullname, #reg_email, #reg_phone, #reg_password, #reg_confirm_password');
             regInputs.forEach(input => {
                 input.addEventListener('input', function() {
                     this.classList.remove('input-error');
                 });
             });
-            
-            if (registerSuccessMsg && registerSuccessMsg.textContent.trim() !== '') {
-                setTimeout(function() {
-                    switchToLogin();
-                }, 2000);
-            }
+
+            updatePasswordHint();
         });
     </script>
 </body>

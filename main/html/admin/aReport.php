@@ -2,13 +2,11 @@
 session_start();
 include("../../php/dbConn.php");
 
-// Check if user is logged in and is admin
 if (!isset($_SESSION['userID']) || $_SESSION['userType'] != 'admin') {
-    header("Location: ../../signin.php");
+    header("Location: ../../../signIn.php");
     exit();
 }
 
-// Fetch statistics from database
 $total_ewaste = 0;
 $total_requests = 0;
 $pending_requests = 0;
@@ -16,14 +14,12 @@ $total_users = 0;
 $total_collectors = 0;
 $total_centres = 0;
 
-// Get total e-waste weight from tblitem
 $weight_query = "SELECT SUM(weight) as total FROM tblitem WHERE status IN ('Collected', 'Received', 'Processed', 'Recycled')";
 $weight_result = $conn->query($weight_query);
 if ($weight_result && $row = $weight_result->fetch_assoc()) {
     $total_ewaste = round($row['total'] ?? 0, 2);
 }
 
-// Get total and pending requests
 $requests_query = "SELECT COUNT(*) as total FROM tblcollection_request";
 $requests_result = $conn->query($requests_query);
 if ($requests_result && $row = $requests_result->fetch_assoc()) {
@@ -36,47 +32,45 @@ if ($pending_result && $row = $pending_result->fetch_assoc()) {
     $pending_requests = $row['total'];
 }
 
-// Get total users (providers only for active users)
 $users_query = "SELECT COUNT(*) as total FROM tblusers WHERE userType = 'provider'";
 $users_result = $conn->query($users_query);
 if ($users_result && $row = $users_result->fetch_assoc()) {
     $total_users = $row['total'];
 }
 
-// Get total collectors
 $collectors_query = "SELECT COUNT(*) as total FROM tblcollector WHERE status = 'active'";
 $collectors_result = $conn->query($collectors_query);
 if ($collectors_result && $row = $collectors_result->fetch_assoc()) {
     $total_collectors = $row['total'];
 }
 
-// Get total centres
 $centres_query = "SELECT COUNT(*) as total FROM tblcentre WHERE status = 'Active'";
 $centres_result = $conn->query($centres_query);
 if ($centres_result && $row = $centres_result->fetch_assoc()) {
     $total_centres = $row['total'];
 }
 
-// Fetch weekly trend data
 $trend_labels = [];
 $trend_data = [];
 for ($i = 6; $i >= 0; $i--) {
     $date = date('Y-m-d', strtotime("-$i days"));
     $trend_labels[] = date('D', strtotime($date));
+
     $daily_query = "SELECT SUM(i.weight) as daily_total 
                     FROM tblitem i 
                     JOIN tblcollection_request r ON i.requestID = r.requestID 
                     WHERE DATE(r.createdAt) = '$date' 
                     AND i.status IN ('Collected', 'Received', 'Processed', 'Recycled')";
     $daily_result = $conn->query($daily_query);
+
     $daily_total = 0;
     if ($daily_result && $row = $daily_result->fetch_assoc()) {
         $daily_total = round($row['daily_total'] ?? 0, 2);
     }
+
     $trend_data[] = $daily_total;
 }
 
-// Fetch waste type distribution
 $type_labels = [];
 $type_data = [];
 $type_query = "SELECT it.name, COUNT(i.itemID) as count 
@@ -92,7 +86,6 @@ if ($type_result) {
     }
 }
 
-// Fetch centre summary
 $centres_summary = [];
 $centres_summary_query = "SELECT c.name, COUNT(r.requestID) as total_requests, 
                          COALESCE(SUM(i.weight), 0) as total_weight,
@@ -110,7 +103,6 @@ if ($centres_result) {
     }
 }
 
-// Fetch audit logs
 $audit_logs = [];
 $audit_query = "SELECT al.*, u.email, u.userType 
                 FROM tblactivity_log al 
@@ -123,7 +115,6 @@ if ($audit_result) {
     }
 }
 
-// Fetch issue tickets
 $issue_tickets = [];
 $issue_query = "SELECT i.*, u.email as reported_by_email 
                 FROM tblissue i 
@@ -136,7 +127,6 @@ if ($issue_result) {
     }
 }
 
-// Get ticket counts by status
 $open_tickets = 0;
 $inprogress_tickets = 0;
 $resolved_tickets = 0;
@@ -146,9 +136,15 @@ $ticket_counts_query = "SELECT status, COUNT(*) as count FROM tblissue GROUP BY 
 $ticket_counts_result = $conn->query($ticket_counts_query);
 if ($ticket_counts_result) {
     while ($row = $ticket_counts_result->fetch_assoc()) {
-        if ($row['status'] == 'Open') $open_tickets = $row['count'];
-        if ($row['status'] == 'Assigned') $inprogress_tickets = $row['count'];
-        if ($row['status'] == 'Resolved') $resolved_tickets = $row['count'];
+        if ($row['status'] == 'Open') {
+            $open_tickets = $row['count'];
+        }
+        if ($row['status'] == 'Assigned') {
+            $inprogress_tickets = $row['count'];
+        }
+        if ($row['status'] == 'Resolved') {
+            $resolved_tickets = $row['count'];
+        }
     }
 }
 
@@ -173,51 +169,303 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
     <style>
-        .reports-container { padding: 1rem 0; }
-        .reports-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-        .reports-header h1 { font-size: 2.5rem; font-weight: 700; color: var(--text-color); }
-        .date-range { display: flex; gap: 0.5rem; align-items: center; background-color: var(--sec-bg-color); padding: 0.5rem 1rem; border-radius: 8px; }
-        .date-range input { padding: 0.5rem; border: 1px solid var(--BlueGray); border-radius: 4px; background-color: var(--bg-color); color: var(--text-color); }
-        .export-btn { background-color: var(--MainBlue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; }
-        .export-btn:hover { background-color: var(--DarkerMainBlue); }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background-color: var(--sec-bg-color); padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; gap: 1rem; box-shadow: 0 4px 12px var(--shadow-color); }
-        .stat-icon { width: 50px; height: 50px; background-color: var(--MainBlue); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; }
-        .stat-info h3 { font-size: 0.9rem; color: var(--Gray); margin-bottom: 0.3rem; }
-        .stat-info .stat-number { font-size: 1.8rem; font-weight: 700; color: var(--text-color); }
-        .stat-info .stat-change { font-size: 0.8rem; color: #4CAF50; margin-top: 0.2rem; }
-        .chart-section { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        .chart-card { background-color: var(--sec-bg-color); padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 12px var(--shadow-color); }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
-        .chart-header h2 { font-size: 1.3rem; font-weight: 600; color: var(--text-color); }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-        .report-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--BlueGray); padding-bottom: 0.5rem; flex-wrap: wrap; }
-        .report-tab { padding: 0.5rem 1.5rem; background-color: var(--sec-bg-color); border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 500; transition: all 0.2s; color: var(--text-color); border: 1px solid transparent; }
-        .report-tab:hover { background-color: var(--LowMainBlue); }
-        .report-tab.active { background-color: var(--MainBlue); color: white; }
-        .report-panel { display: none; }
-        .report-panel.active { display: block; }
-        .audit-table-container { overflow-x: auto; background-color: var(--sec-bg-color); border-radius: 16px; padding: 1rem; }
-        .audit-table { width: 100%; border-collapse: collapse; }
-        .audit-table th { text-align: left; padding: 1rem 0.5rem; color: var(--Gray); font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--BlueGray); }
-        .audit-table td { padding: 0.8rem 0.5rem; color: var(--text-color); border-bottom: 1px solid var(--BlueGray); }
-        .audit-table tr:hover { background-color: var(--LowMainBlue); }
-        .badge { padding: 0.3rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500; display: inline-block; }
-        .badge-success { background-color: #4CAF50; color: white; }
-        .badge-warning { background-color: #FF9800; color: white; }
-        .badge-info { background-color: var(--MainBlue); color: white; }
-        .badge-secondary { background-color: var(--Gray); color: white; }
-        .tickets-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .ticket-category { background-color: var(--sec-bg-color); padding: 1rem; border-radius: 12px; text-align: center; }
-        .ticket-category .count { font-size: 2rem; font-weight: 700; color: var(--MainBlue); }
-        .ticket-category .label { color: var(--Gray); font-size: 0.9rem; }
-        .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .filter-bar input, .filter-bar select { padding: 0.5rem; border: 1px solid var(--BlueGray); border-radius: 4px; background-color: var(--bg-color); color: var(--text-color); }
-        .filter-bar input { flex: 1; min-width: 200px; }
-        .priority-high { color: #f44336; font-weight: 500; }
-        .priority-medium { color: #FF9800; font-weight: 500; }
-        .priority-low { color: #4CAF50; font-weight: 500; }
-        @media (min-width: 760px) { .chart-section { grid-template-columns: repeat(2, 1fr); } }
+        .reports-container {
+            padding: 1rem 0;
+        }
+
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .reports-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .date-range {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background-color: var(--sec-bg-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .date-range input {
+            padding: 0.5rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .export-btn {
+            background-color: var(--MainBlue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .export-btn:hover {
+            background-color: var(--DarkerMainBlue);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--sec-bg-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background-color: var(--MainBlue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .stat-info h3 {
+            font-size: 0.9rem;
+            color: var(--Gray);
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-info .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .stat-info .stat-change {
+            font-size: 0.8rem;
+            color: #4CAF50;
+            margin-top: 0.2rem;
+        }
+
+        .chart-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background-color: var(--sec-bg-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .chart-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .report-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--BlueGray);
+            padding-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .report-tab {
+            padding: 0.5rem 1.5rem;
+            background-color: var(--sec-bg-color);
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: var(--text-color);
+            border: 1px solid transparent;
+        }
+
+        .report-tab:hover {
+            background-color: var(--LowMainBlue);
+        }
+
+        .report-tab.active {
+            background-color: var(--MainBlue);
+            color: white;
+        }
+
+        .report-panel {
+            display: none;
+        }
+
+        .report-panel.active {
+            display: block;
+        }
+
+        .audit-table-container {
+            overflow-x: auto;
+            background-color: var(--sec-bg-color);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .audit-table th {
+            text-align: left;
+            padding: 1rem 0.5rem;
+            color: var(--Gray);
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 2px solid var(--BlueGray);
+        }
+
+        .audit-table td {
+            padding: 0.8rem 0.5rem;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--BlueGray);
+        }
+
+        .audit-table tr:hover {
+            background-color: var(--LowMainBlue);
+        }
+
+        .badge {
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .badge-info {
+            background-color: var(--MainBlue);
+            color: white;
+        }
+
+        .badge-secondary {
+            background-color: var(--Gray);
+            color: white;
+        }
+
+        .tickets-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .ticket-category {
+            background-color: var(--sec-bg-color);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .ticket-category .count {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--MainBlue);
+        }
+
+        .ticket-category .label {
+            color: var(--Gray);
+            font-size: 0.9rem;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar input,
+        .filter-bar select {
+            padding: 0.5rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .filter-bar input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .priority-high {
+            color: #f44336;
+            font-weight: 500;
+        }
+
+        .priority-medium {
+            color: #FF9800;
+            font-weight: 500;
+        }
+
+        .priority-low {
+            color: #4CAF50;
+            font-weight: 500;
+        }
+
+        @media (min-width: 760px) {
+            .chart-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
@@ -261,7 +509,8 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
             <a href="../../html/admin/aIssue.html">Issue</a>
             <a href="../../html/admin/aOperations.html">Operations</a>
             <a href="../../html/admin/aReport.html">Report</a>
-        </nav>          
+        </nav>
+
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
                 <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
@@ -298,6 +547,7 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                         <div class="stat-number"><?php echo number_format($total_ewaste, 2); ?> kg</div>
                     </div>
                 </div>
+
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-calendar"></i></div>
                     <div class="stat-info">
@@ -305,6 +555,7 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                         <div class="stat-number"><?php echo $total_requests; ?></div>
                     </div>
                 </div>
+
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-users"></i></div>
                     <div class="stat-info">
@@ -312,6 +563,7 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                         <div class="stat-number"><?php echo $total_users; ?></div>
                     </div>
                 </div>
+
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-clock"></i></div>
                     <div class="stat-info">
@@ -368,17 +620,19 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                             </thead>
                             <tbody>
                                 <?php if (empty($centres_summary)): ?>
-                                <tr><td colspan="5" style="text-align: center;">No data available</td></tr>
+                                    <tr>
+                                        <td colspan="5" style="text-align: center;">No data available</td>
+                                    </tr>
                                 <?php else: ?>
-                                <?php foreach ($centres_summary as $centre): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($centre['name']); ?></td>
-                                    <td><?php echo $centre['total_requests']; ?></td>
-                                    <td><?php echo number_format($centre['total_weight'], 2); ?></td>
-                                    <td><?php echo $centre['completed']; ?></td>
-                                    <td><?php echo $centre['pending']; ?></td>
-                                </tr>
-                                <?php endforeach; ?>
+                                    <?php foreach ($centres_summary as $centre): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($centre['name']); ?></td>
+                                            <td><?php echo $centre['total_requests']; ?></td>
+                                            <td><?php echo number_format($centre['total_weight'], 2); ?></td>
+                                            <td><?php echo $centre['completed']; ?></td>
+                                            <td><?php echo $centre['pending']; ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
                         </table>
@@ -414,17 +668,27 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                             </thead>
                             <tbody>
                                 <?php if (empty($audit_logs)): ?>
-                                <tr><td colspan="5" style="text-align: center;">No audit logs available</td></tr>
+                                    <tr>
+                                        <td colspan="5" style="text-align: center;">No audit logs available</td>
+                                    </tr>
                                 <?php else: ?>
-                                <?php foreach ($audit_logs as $log): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($log['dateTime']); ?></td>
-                                    <td><?php echo htmlspecialchars($log['email']); ?></td>
-                                    <td><span class="badge <?php echo $log['userType'] == 'admin' ? 'badge-warning' : ($log['userType'] == 'collector' ? 'badge-secondary' : 'badge-info'); ?>"><?php echo ucfirst($log['userType']); ?></span></td>
-                                    <td><span class="badge badge-success"><?php echo htmlspecialchars($log['action']); ?></span></td>
-                                    <td><?php echo htmlspecialchars($log['description'] ?? '-'); ?></td>
-                                </tr>
-                                <?php endforeach; ?>
+                                    <?php foreach ($audit_logs as $log): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($log['dateTime']); ?></td>
+                                            <td><?php echo htmlspecialchars($log['email']); ?></td>
+                                            <td>
+                                                <span class="badge <?php echo $log['userType'] == 'admin' ? 'badge-warning' : ($log['userType'] == 'collector' ? 'badge-secondary' : 'badge-info'); ?>">
+                                                    <?php echo ucfirst($log['userType']); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-success">
+                                                    <?php echo htmlspecialchars($log['action']); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($log['description'] ?? '-'); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
                         </table>
@@ -487,20 +751,30 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                             </thead>
                             <tbody>
                                 <?php if (empty($issue_tickets)): ?>
-                                <tr><td colspan="8" style="text-align: center;">No issue tickets found</td></tr>
+                                    <tr>
+                                        <td colspan="8" style="text-align: center;">No issue tickets found</td>
+                                    </tr>
                                 <?php else: ?>
-                                <?php foreach ($issue_tickets as $ticket): ?>
-                                <tr>
-                                    <td>TCK-<?php echo $ticket['issueID']; ?></td>
-                                    <td><?php echo htmlspecialchars($ticket['reported_by_email']); ?></td>
-                                    <td><?php echo htmlspecialchars($ticket['issueType']); ?></td>
-                                    <td><?php echo htmlspecialchars($ticket['subject']); ?></td>
-                                    <td><span class="badge <?php echo $ticket['status'] == 'Resolved' ? 'badge-success' : ($ticket['status'] == 'Assigned' ? 'badge-info' : 'badge-warning'); ?>"><?php echo $ticket['status']; ?></span></td>
-                                    <td class="priority-<?php echo strtolower($ticket['severity']); ?>"><?php echo $ticket['severity']; ?></td>
-                                    <td><?php echo date('Y-m-d', strtotime($ticket['reportedAt'])); ?></td>
-                                    <td><button class="export-btn" style="padding: 0.2rem 0.5rem;" onclick="viewTicket(<?php echo $ticket['issueID']; ?>)">View</button></td>
-                                </tr>
-                                <?php endforeach; ?>
+                                    <?php foreach ($issue_tickets as $ticket): ?>
+                                        <tr>
+                                            <td>TCK-<?php echo $ticket['issueID']; ?></td>
+                                            <td><?php echo htmlspecialchars($ticket['reported_by_email']); ?></td>
+                                            <td><?php echo htmlspecialchars($ticket['issueType']); ?></td>
+                                            <td><?php echo htmlspecialchars($ticket['subject']); ?></td>
+                                            <td>
+                                                <span class="badge <?php echo $ticket['status'] == 'Resolved' ? 'badge-success' : ($ticket['status'] == 'Assigned' ? 'badge-info' : 'badge-warning'); ?>">
+                                                    <?php echo $ticket['status']; ?>
+                                                </span>
+                                            </td>
+                                            <td class="priority-<?php echo strtolower($ticket['severity']); ?>">
+                                                <?php echo $ticket['severity']; ?>
+                                            </td>
+                                            <td><?php echo date('Y-m-d', strtotime($ticket['reportedAt'])); ?></td>
+                                            <td>
+                                                <button class="export-btn" style="padding: 0.2rem 0.5rem;" onclick="viewTicket(<?php echo $ticket['issueID']; ?>)">View</button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
                         </table>
@@ -511,6 +785,7 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
     </main>
 
     <hr>
+
     <footer>
         <section class="c-footer-info-section">
             <a href="../../html/admin/aHome.html">
@@ -550,7 +825,7 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
     <script src="../../javascript/mainScript.js"></script>
     <script>
         let trendChart, typeChart;
-        
+
         const trendLabels = <?php echo json_encode($trend_labels); ?>;
         const trendData = <?php echo json_encode($trend_data); ?>;
         const typeLabels = <?php echo json_encode($type_labels); ?>;
@@ -566,7 +841,10 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
             document.querySelectorAll('.report-panel').forEach(panel => panel.classList.remove('active'));
             event.target.classList.add('active');
             document.getElementById(tabId).classList.add('active');
-            setTimeout(() => { if (trendChart) trendChart.resize(); if (typeChart) typeChart.resize(); }, 100);
+            setTimeout(() => {
+                if (trendChart) trendChart.resize();
+                if (typeChart) typeChart.resize();
+            }, 100);
         }
 
         function initTrendChart() {
@@ -584,7 +862,15 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                         fill: true
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
             });
         }
 
@@ -596,16 +882,38 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                     labels: typeLabels.length ? typeLabels : ['No Data'],
                     datasets: [{
                         data: typeLabels.length ? typeData : [1],
-                        backgroundColor: ['hsl(225, 94%, 67%)', 'hsl(237, 52%, 36%)', 'hsl(240, 60%, 20%)', 'hsl(220, 100%, 90%)', 'hsl(226, 28%, 73%)']
+                        backgroundColor: [
+                            'hsl(225, 94%, 67%)',
+                            'hsl(237, 52%, 36%)',
+                            'hsl(240, 60%, 20%)',
+                            'hsl(220, 100%, 90%)',
+                            'hsl(226, 28%, 73%)'
+                        ]
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
             });
         }
 
-        function updateTrendChart() { alert('Chart updated'); }
-        function exportData() { alert('Exporting data...'); }
-        function viewTicket(id) { alert('Viewing ticket: TCK-' + id); }
+        function updateTrendChart() {
+            alert('Chart updated');
+        }
+
+        function exportData() {
+            alert('Exporting data...');
+        }
+
+        function viewTicket(id) {
+            alert('Viewing ticket: TCK-' + id);
+        }
     </script>
 </body>
 </html>
