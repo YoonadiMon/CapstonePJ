@@ -126,10 +126,13 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
         .step-title { font-size: 1.2rem; font-weight: 600; color: var(--text-color); }
         .step-content { color: var(--text-color); line-height: 1.5; padding-left: 3rem; }
         .step-icon { margin-right: 0.5rem; color: var(--MainBlue); }
+        .step-video { margin: 0.8rem 0; border-radius: 12px; overflow: hidden; background-color: var(--bg-color); }
+        .step-video video { width: 100%; max-height: 200px; border-radius: 8px; }
+        .video-caption { font-size: 0.7rem; color: var(--Gray); text-align: center; display: block; margin-top: 0.3rem; }
         .checklist-item { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; cursor: pointer; }
         .checklist-item input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--MainBlue); }
         .download-btn { background-color: var(--MainBlue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; }
-        @media (min-width: 760px) { .steps-grid { grid-template-columns: repeat(2, 1fr); } .step-card { flex-direction: row; padding: 1.5rem; } .step-content { padding-left: 0; } }
+        @media (min-width: 760px) { .steps-grid { grid-template-columns: repeat(2, 1fr); } .step-card { flex-direction: row; padding: 1.5rem; } .step-content { padding-left: 0; } .step-video { max-width: 200px; margin-right: 1rem; } }
         .journey-container { padding: 1rem 0; }
         .journey-container h2 { font-size: 2.5rem; font-weight: 700; color: var(--text-color); margin-bottom: 1rem; }
         .journey-intro { font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem; }
@@ -137,6 +140,11 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
         .stat-bubble { background: linear-gradient(135deg, var(--MainBlue), var(--DarkerMainBlue)); color: white; padding: 1rem; border-radius: 16px; text-align: center; flex: 1; min-width: 120px; }
         .stat-bubble .number { font-size: 1.8rem; font-weight: 700; }
         .stat-bubble .label { font-size: 0.8rem; opacity: 0.9; }
+        .recycle-process-video { margin-bottom: 2rem; background-color: var(--sec-bg-color); border-radius: 20px; padding: 1.5rem; }
+        .recycle-process-video h3 { font-size: 1.3rem; font-weight: 600; color: var(--MainBlue); margin-bottom: 1rem; }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 16px; margin-bottom: 0.5rem; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px; }
+        .video-description { font-size: 0.9rem; color: var(--Gray); text-align: center; margin-top: 0.5rem; }
         .journey-steps { display: flex; flex-direction: column; gap: 2rem; }
         .journey-step { display: flex; flex-direction: column; background-color: var(--sec-bg-color); border-radius: 20px; padding: 1.5rem; transition: transform 0.2s; cursor: pointer; }
         .journey-step:hover { transform: translateX(5px); }
@@ -260,13 +268,13 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                                 <div class="details-hours">
                                     <h4>Opening Hours</h4>
                                     <table class="hours-table">
-                                        <tr><td>Monday:</td><td>09:00 - 18:00</td></tr>
-                                        <tr><td>Tuesday:</td><td>09:00 - 18:00</td></tr>
-                                        <tr><td>Wednesday:</td><td>09:00 - 18:00</td></tr>
-                                        <tr><td>Thursday:</td><td>09:00 - 18:00</td></tr>
-                                        <tr><td>Friday:</td><td>09:00 - 18:00</td></tr>
-                                        <tr><td>Saturday:</td><td>10:00 - 16:00</td></tr>
-                                        <tr><td>Sunday:</td><td>Closed</td></tr>
+                                         <td>Monday:</td><td>09:00 - 18:00</td>
+                                         <td>Tuesday:</td><td>09:00 - 18:00</td>
+                                         <td>Wednesday:</td><td>09:00 - 18:00</td>
+                                         <td>Thursday:</td><td>09:00 - 18:00</td>
+                                         <td>Friday:</td><td>09:00 - 18:00</td>
+                                         <td>Saturday:</td><td>10:00 - 16:00</td>
+                                         <td>Sunday:</td><td>Closed</td>
                                     </table>
                                 </div>
                             </div>
@@ -294,7 +302,7 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                             <i class="fas fa-microchip"></i>
                             <span><?php echo htmlspecialchars($item['name']); ?></span>
                             <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
-                            <?php if (in_array($item['name'], ['Power Bank', 'Phone Batteries', 'Laptop Batteries'])): ?>
+                            <?php if (in_array($item['name'], ['Power Bank'])): ?>
                                 <span class="special-badge">⚠️ Special</span>
                             <?php endif; ?>
                         </div>
@@ -358,6 +366,12 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                 
                 <div class="steps-grid">
                     <div class="step-card">
+                        <div class="step-video">
+                            <video controls preload="metadata">
+                                <source src="../../assets/videos/step 1-backup data.mp4" type="video/mp4">
+                            </video>
+                            <span class="video-caption">📹 How to backup your phone data</span>
+                        </div>
                         <div style="flex:1;">
                             <div class="step-header">
                                 <div class="step-number">1</div>
@@ -373,6 +387,12 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                         </div>
                     </div>
                     <div class="step-card">
+                        <div class="step-video">
+                            <video controls preload="metadata">
+                                <source src="../../assets/videos/step 2-wipe data.mp4" type="video/mp4">
+                            </video>
+                            <span class="video-caption">📹 How to factory reset your device</span>
+                        </div>
                         <div style="flex:1;">
                             <div class="step-header">
                                 <div class="step-number">2</div>
@@ -388,6 +408,12 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                         </div>
                     </div>
                     <div class="step-card">
+                        <div class="step-video">
+                            <video controls preload="metadata">
+                                <source src="../../assets/videos/step 3-remove batteries.mp4" type="video/mp4">
+                            </video>
+                            <span class="video-caption">📹 How to safely remove batteries</span>
+                        </div>
                         <div style="flex:1;">
                             <div class="step-header">
                                 <div class="step-number">3</div>
@@ -403,6 +429,12 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                         </div>
                     </div>
                     <div class="step-card">
+                        <div class="step-video">
+                            <video controls preload="metadata">
+                                <source src="../../assets/videos/step 4-do not dismantle.mp4" type="video/mp4">
+                            </video>
+                            <span class="video-caption">📹 Why you should not dismantle devices</span>
+                        </div>
                         <div style="flex:1;">
                             <div class="step-header">
                                 <div class="step-number">4</div>
@@ -418,6 +450,12 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                         </div>
                     </div>
                     <div class="step-card">
+                        <div class="step-video">
+                            <video controls preload="metadata">
+                                <source src="../../assets/videos/step 5-pack securely.mp4" type="video/mp4">
+                            </video>
+                            <span class="video-caption">📹 How to pack e-waste safely</span>
+                        </div>
                         <div style="flex:1;">
                             <div class="step-header">
                                 <div class="step-number">5</div>
@@ -472,6 +510,20 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                         <div class="number" id="waterSaved">0</div>
                         <div class="label">Water Saved (L)</div>
                     </div>
+                </div>
+
+                <div class="recycle-process-video">
+                    <h3>♻️ Watch the E-Waste Recycling Process</h3>
+                    <div class="video-container">
+                        <iframe 
+                            src="https://www.youtube.com/embed/3s_ZNEFPiE0" 
+                            title="E-Waste Recycling Process" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                    <p class="video-description">See how electronic devices are dismantled, sorted, and transformed into valuable materials.</p>
                 </div>
 
                 <div class="journey-steps">
