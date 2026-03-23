@@ -26,6 +26,30 @@ $weight_result = $conn->query($weight_query);
 if ($weight_result && $row = $weight_result->fetch_assoc()) {
     $total_recycled = round($row['total'] ?? 0, 2);
 }
+
+$item_image_map = [
+    'Extension Cord' => 'extension cord.jpg',
+    'Adapters' => 'adapters.jpg',
+    'Television' => 'television.jpg',
+    'Projector' => 'projector.jpg',
+    'Projectors' => 'projector.jpg',
+    'Camera' => 'camera.jpg',
+    'Scanner' => 'scanner.jpg',
+    'Router' => 'router.jpg',
+    'PC / CPU' => 'pc_cpu.jpg',
+    'Modem' => 'modem.jpg',
+    'Headphones / Earphones' => 'headphones_earphones.jpg',
+    'Cables' => 'cables.jpg',
+    'USB Flash Drive' => 'USB Flash Drive.jpg',
+    'Power Bank' => 'powerbank.jpg',
+    'Power Banks' => 'powerbank.jpg',
+    'Laptop' => 'laptop.jpg',
+    'External Hard Drive' => 'external-hard-disk.jpg'
+];
+
+function getItemImage($itemName, $itemImageMap) {
+    return $itemImageMap[$itemName] ?? '';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,122 +65,1008 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
+        main {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 2rem 1.25rem 3rem;
+        }
+
         .guide-tabs {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
-            margin: 2rem 0;
-            border-bottom: 2px solid var(--BlueGray);
-            padding-bottom: 0.5rem;
+            gap: 0.75rem;
+            margin: 0 0 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--BlueGray);
         }
+
         .guide-tab {
-            padding: 0.8rem 1.5rem;
+            padding: 0.85rem 1.4rem;
             background-color: var(--sec-bg-color);
-            border-radius: 8px 8px 0 0;
+            border-radius: 999px;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
+            font-weight: 600;
+            transition: all 0.2s ease;
             color: var(--text-color);
             text-decoration: none;
-            border: 1px solid transparent;
+            border: 1px solid var(--BlueGray);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
         }
-        .guide-tab:hover { background-color: var(--LowMainBlue); }
-        .guide-tab.active { background-color: var(--MainBlue); color: white; border-bottom: 1px solid var(--MainBlue); }
-        .guide-content { display: none; padding: 2rem 0; }
-        .guide-content.active { display: block; }
-        .find-centre-container { display: flex; flex-direction: column; gap: 2rem; padding: 1rem 0; }
-        .search-section { width: 100%; }
-        .search-section h2 { font-size: 2rem; font-weight: 600; color: var(--text-color); margin-bottom: 1.5rem; }
-        .search-bar { display: flex; width: 100%; max-width: 600px; margin-bottom: 2rem; }
-        .search-bar input { flex: 1; padding: 1rem 1.2rem; border: 1px solid var(--BlueGray); border-radius: 50px 0 0 50px; background-color: var(--bg-color); color: var(--text-color); font-size: 1rem; }
-        .search-bar button { padding: 1rem 2rem; background-color: var(--MainBlue); color: white; border: none; border-radius: 0 50px 50px 0; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
-        .search-bar button:hover { background-color: var(--DarkerMainBlue); }
-        .results-layout { display: flex; flex-direction: column; gap: 2rem; width: 100%; }
-        .centre-list { flex: 1; background-color: var(--sec-bg-color); padding: 1.5rem; border-radius: 16px; max-height: 600px; overflow-y: auto; }
-        .centre-list h3 { font-size: 1.3rem; font-weight: 600; color: var(--text-color); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--BlueGray); }
-        .centre-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .centre-count { background-color: var(--MainBlue); color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.9rem; }
-        .centre-item { padding: 1rem; border-bottom: 1px solid var(--BlueGray); cursor: pointer; transition: background-color 0.2s; border-radius: 8px; margin-bottom: 0.5rem; }
-        .centre-item:hover { background-color: var(--LowMainBlue); }
-        .centre-item.active { background-color: var(--MainBlue); color: white; }
-        .centre-name { font-weight: 600; font-size: 1.1rem; margin-bottom: 0.3rem; }
-        .centre-address { font-size: 0.9rem; margin-bottom: 0.3rem; opacity: 0.8; }
-        .centre-distance { font-size: 0.8rem; color: var(--Gray); }
-        .centre-details { flex: 1; background-color: var(--sec-bg-color); padding: 1.5rem; border-radius: 16px; }
-        .details-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
-        .details-name { font-size: 1.8rem; font-weight: 600; color: var(--text-color); }
-        .details-rating { background-color: var(--MainBlue); color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.9rem; }
-        .details-status { color: #4CAF50; font-weight: 500; margin: 0.5rem 0; }
-        .details-address { margin: 1rem 0; line-height: 1.6; }
-        .details-phone { margin: 1rem 0; font-weight: 500; }
-        .details-phone a { color: var(--MainBlue); text-decoration: none; }
-        .details-hours { margin: 1.5rem 0; }
-        .details-hours h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
-        .hours-table { width: 100%; border-collapse: collapse; }
-        .hours-table td { padding: 0.3rem 0; }
-        .hours-table td:first-child { font-weight: 500; width: 100px; }
-        .details-links { margin-top: 1rem; }
-        .details-links a { color: var(--MainBlue); text-decoration: none; margin-right: 1rem; }
-        @media (min-width: 760px) { .results-layout { flex-direction: row; } .centre-list { max-width: 40%; } .centre-details { max-width: 60%; } }
-        .accepted-items-container { padding: 1rem 0; }
-        .accepted-items-container h2 { font-size: 2.5rem; font-weight: 700; color: var(--text-color); margin-bottom: 0.5rem; }
-        .accepted-items-container h3 { font-size: 1.8rem; font-weight: 600; color: var(--MainBlue); margin: 2rem 0 1rem; }
-        .intro-text { font-size: 1.1rem; line-height: 1.6; color: var(--text-color); margin-bottom: 2rem; max-width: 800px; }
-        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .item-card { background-color: var(--bg-color); padding: 0.8rem 1rem; border-radius: 12px; display: flex; align-items: center; gap: 0.8rem; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid var(--BlueGray); cursor: pointer; }
-        .item-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow-color); }
-        .item-card i { font-size: 1.5rem; color: var(--MainBlue); width: 30px; text-align: center; }
-        .item-card span { color: var(--text-color); font-size: 0.95rem; flex: 1; }
-        .item-points { font-size: 0.8rem; font-weight: 600; color: #4CAF50; background-color: rgba(76, 175, 80, 0.1); padding: 0.2rem 0.5rem; border-radius: 20px; }
-        .special-badge { background-color: #ff9800; color: white; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 20px; margin-left: 0.5rem; }
-        .item-detail-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .item-detail-content { background-color: var(--sec-bg-color); padding: 2rem; border-radius: 20px; max-width: 400px; width: 90%; position: relative; }
-        .close-modal { position: absolute; top: 1rem; right: 1rem; cursor: pointer; font-size: 1.5rem; color: var(--Gray); }
-        .category-section { background-color: var(--sec-bg-color); padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; }
-        .search-items { margin-bottom: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .search-items input { flex: 1; padding: 0.8rem 1rem; border: 1px solid var(--BlueGray); border-radius: 50px; background-color: var(--bg-color); color: var(--text-color); }
-        .preparation-container { padding: 1rem 0; }
-        .preparation-container h2 { font-size: 2.5rem; font-weight: 700; color: var(--text-color); margin-bottom: 1rem; }
-        .preparation-intro { font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem; }
-        .steps-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
-        .step-card { display: flex; flex-direction: column; background-color: var(--sec-bg-color); border-radius: 20px; overflow: hidden; transition: transform 0.2s; }
-        .step-card:hover { transform: translateY(-4px); }
-        .step-number { width: 40px; height: 40px; background-color: var(--MainBlue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; margin-right: 1rem; }
-        .step-header { display: flex; align-items: center; margin-bottom: 0.8rem; }
-        .step-title { font-size: 1.2rem; font-weight: 600; color: var(--text-color); }
-        .step-content { color: var(--text-color); line-height: 1.5; padding-left: 3rem; }
-        .step-icon { margin-right: 0.5rem; color: var(--MainBlue); }
-        .step-video { margin: 0.8rem 0; border-radius: 12px; overflow: hidden; background-color: var(--bg-color); }
-        .step-video video { width: 100%; max-height: 200px; border-radius: 8px; }
-        .video-caption { font-size: 0.7rem; color: var(--Gray); text-align: center; display: block; margin-top: 0.3rem; }
-        .checklist-item { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; cursor: pointer; }
-        .checklist-item input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--MainBlue); }
-        .download-btn { background-color: var(--MainBlue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; }
-        @media (min-width: 760px) { .steps-grid { grid-template-columns: repeat(2, 1fr); } .step-card { flex-direction: row; padding: 1.5rem; } .step-content { padding-left: 0; } .step-video { max-width: 200px; margin-right: 1rem; } }
-        .journey-container { padding: 1rem 0; }
-        .journey-container h2 { font-size: 2.5rem; font-weight: 700; color: var(--text-color); margin-bottom: 1rem; }
-        .journey-intro { font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem; }
-        .journey-stats { display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; }
-        .stat-bubble { background: linear-gradient(135deg, var(--MainBlue), var(--DarkerMainBlue)); color: white; padding: 1rem; border-radius: 16px; text-align: center; flex: 1; min-width: 120px; }
-        .stat-bubble .number { font-size: 1.8rem; font-weight: 700; }
-        .stat-bubble .label { font-size: 0.8rem; opacity: 0.9; }
-        .recycle-process-video { margin-bottom: 2rem; background-color: var(--sec-bg-color); border-radius: 20px; padding: 1.5rem; }
-        .recycle-process-video h3 { font-size: 1.3rem; font-weight: 600; color: var(--MainBlue); margin-bottom: 1rem; }
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 16px; margin-bottom: 0.5rem; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px; }
-        .video-description { font-size: 0.9rem; color: var(--Gray); text-align: center; margin-top: 0.5rem; }
-        .journey-steps { display: flex; flex-direction: column; gap: 2rem; }
-        .journey-step { display: flex; flex-direction: column; background-color: var(--sec-bg-color); border-radius: 20px; padding: 1.5rem; transition: transform 0.2s; cursor: pointer; }
-        .journey-step:hover { transform: translateX(5px); }
-        .journey-step h3 { font-size: 1.3rem; font-weight: 600; color: var(--MainBlue); margin-bottom: 0.8rem; }
-        .journey-step p { color: var(--text-color); line-height: 1.6; }
-        .journey-list { list-style: none; padding-left: 1rem; }
-        .journey-list li { margin: 0.5rem 0; color: var(--text-color); position: relative; padding-left: 1.2rem; }
-        .journey-list li:before { content: "•"; color: var(--MainBlue); font-size: 1.2rem; position: absolute; left: 0; }
-        .impact-meter { background-color: var(--bg-color); border-radius: 12px; padding: 1rem; margin-top: 1rem; }
-        .impact-bar { height: 8px; background-color: var(--BlueGray); border-radius: 4px; overflow: hidden; margin: 0.5rem 0; }
-        .impact-fill { width: 0%; height: 100%; background-color: var(--MainBlue); border-radius: 4px; transition: width 1s ease; }
-        @media (min-width: 760px) { .journey-step { flex-direction: row; gap: 2rem; align-items: center; } .journey-step-content { flex: 1; } }
+
+        .guide-tab:hover {
+            background-color: var(--LowMainBlue);
+            border-color: var(--MainBlue);
+        }
+
+        .guide-tab.active {
+            background-color: var(--MainBlue);
+            color: white;
+            border-color: var(--MainBlue);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .guide-content {
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .guide-content.active {
+            display: block;
+        }
+
+        .section-heading {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-heading h2 {
+            font-size: clamp(2rem, 4vw, 2.6rem);
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.6rem;
+            line-height: 1.2;
+        }
+
+        .section-heading p {
+            font-size: 1.03rem;
+            line-height: 1.7;
+            color: var(--Gray);
+            max-width: 820px;
+            margin: 0;
+        }
+
+        .surface-card {
+            background-color: var(--sec-bg-color);
+            border: 1px solid rgba(128, 128, 128, 0.12);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .find-centre-container,
+        .accepted-items-container,
+        .preparation-container,
+        .journey-container {
+            padding: 0.5rem 0;
+        }
+
+        .search-section {
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-bar {
+            display: flex;
+            width: 100%;
+            max-width: 640px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 1rem 1.2rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 999px 0 0 999px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-bar input:focus,
+        .search-items input:focus {
+            border-color: var(--MainBlue);
+            box-shadow: 0 0 0 3px rgba(52, 120, 246, 0.12);
+        }
+
+        .search-bar button {
+            padding: 1rem 1.6rem;
+            background-color: var(--MainBlue);
+            color: white;
+            border: none;
+            border-radius: 0 999px 999px 0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .search-bar button:hover,
+        .download-btn:hover {
+            background-color: var(--DarkerMainBlue);
+            transform: translateY(-1px);
+        }
+
+        .search-feedback {
+            margin-top: 0.9rem;
+            font-size: 0.95rem;
+            color: var(--Gray);
+            min-height: 1.2rem;
+        }
+
+        .search-feedback.error {
+            color: #d32f2f;
+        }
+
+        .search-feedback.success {
+            color: #2e7d32;
+        }
+
+        .results-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .centre-list,
+        .centre-details {
+            padding: 1.5rem;
+        }
+
+        .centre-list {
+            flex: 1;
+            max-height: 620px;
+            overflow-y: auto;
+        }
+
+        .centre-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--BlueGray);
+        }
+
+        .centre-list h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .centre-count {
+            background-color: var(--MainBlue);
+            color: white;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+
+        .centre-item {
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 14px;
+            margin-bottom: 0.75rem;
+            border: 1px solid transparent;
+            background-color: var(--bg-color);
+        }
+
+        .centre-item:hover {
+            background-color: var(--LowMainBlue);
+            border-color: rgba(52, 120, 246, 0.18);
+        }
+
+        .centre-item.active {
+            background-color: var(--MainBlue);
+            color: white;
+            box-shadow: 0 10px 20px rgba(52, 120, 246, 0.22);
+        }
+
+        .centre-item.active .centre-address,
+        .centre-item.active .centre-distance {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .centre-name {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .centre-address {
+            font-size: 0.92rem;
+            margin-bottom: 0.35rem;
+            color: var(--Gray);
+            line-height: 1.5;
+        }
+
+        .centre-distance {
+            font-size: 0.84rem;
+            color: var(--Gray);
+            font-weight: 500;
+        }
+
+        .centre-details {
+            flex: 1;
+            min-height: 380px;
+        }
+
+        .detail-view {
+            animation: fadeIn 0.25s ease;
+        }
+
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .details-name {
+            font-size: clamp(1.6rem, 3vw, 2rem);
+            font-weight: 700;
+            color: var(--text-color);
+            line-height: 1.2;
+        }
+
+        .details-rating {
+            background-color: var(--MainBlue);
+            color: white;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .details-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background-color: rgba(76, 175, 80, 0.1);
+            color: #2e7d32;
+            font-weight: 700;
+            margin: 0 0 1.2rem;
+            padding: 0.5rem 0.9rem;
+            border-radius: 999px;
+        }
+
+        .details-info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .details-info-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 16px;
+            padding: 1rem 1.1rem;
+        }
+
+        .details-info-card h4 {
+            margin: 0 0 0.7rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--MainBlue);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .details-info-card p,
+        .details-phone a {
+            margin: 0;
+            color: var(--text-color);
+            line-height: 1.65;
+            text-decoration: none;
+        }
+
+        .hours-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .hours-table tr:not(:last-child) {
+            border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+        }
+
+        .hours-table td {
+            padding: 0.55rem 0;
+            vertical-align: top;
+            color: var(--text-color);
+        }
+
+        .hours-table td:first-child {
+            font-weight: 600;
+            width: 120px;
+        }
+
+        .accepted-items-container h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--MainBlue);
+            margin: 0 0 1rem;
+        }
+
+        .search-items {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-items input {
+            flex: 1;
+            padding: 0.95rem 1rem;
+            border: 1px solid var(--BlueGray);
+            border-radius: 999px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-width: 240px;
+            outline: none;
+        }
+
+        .category-section {
+            padding: 1.5rem;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            background-color: var(--sec-bg-color);
+            border: 1px solid rgba(128, 128, 128, 0.12);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .item-card {
+            background-color: var(--bg-color);
+            padding: 0.95rem;
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            border: 1px solid var(--BlueGray);
+            cursor: pointer;
+            min-height: 100%;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border-color: rgba(52, 120, 246, 0.25);
+        }
+
+        .item-image-wrap {
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            border-radius: 14px;
+            overflow: hidden;
+            background-color: var(--sec-bg-color);
+            border: 1px solid rgba(128, 128, 128, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .item-icon-fallback {
+            font-size: 1.8rem;
+            color: var(--MainBlue);
+            width: 54px;
+            height: 54px;
+            min-width: 54px;
+            border-radius: 16px;
+            background-color: rgba(52, 120, 246, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            flex: 1;
+        }
+
+        .item-name {
+            color: var(--text-color);
+            font-size: 1rem;
+            line-height: 1.45;
+            font-weight: 700;
+            min-height: 2.8em;
+        }
+
+        .item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            align-items: center;
+        }
+
+        .item-points {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #2e7d32;
+            background-color: rgba(76, 175, 80, 0.12);
+            padding: 0.28rem 0.55rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .special-badge {
+            background-color: #ff9800;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.24rem 0.52rem;
+            border-radius: 999px;
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        .item-note {
+            margin-top: 1rem;
+            color: var(--Gray);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .no-items-message {
+            display: none;
+            padding: 1rem 1.2rem;
+            border-radius: 14px;
+            background-color: var(--sec-bg-color);
+            border: 1px dashed var(--BlueGray);
+            color: var(--Gray);
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+
+        .item-detail-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .item-detail-content {
+            background-color: var(--sec-bg-color);
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 420px;
+            width: 100%;
+            position: relative;
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.16);
+        }
+
+        .item-detail-content h3 {
+            margin: 0 0 0.75rem;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .item-detail-content p {
+            color: var(--text-color);
+            line-height: 1.65;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--Gray);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+
+        .close-modal:hover {
+            background-color: var(--bg-color);
+        }
+
+        .preparation-container h2,
+        .journey-container h2 {
+            font-size: clamp(2rem, 4vw, 2.6rem);
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+
+        .preparation-intro,
+        .journey-intro {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--Gray);
+            margin-bottom: 2rem;
+            max-width: 820px;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .step-card {
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, var(--sec-bg-color) 0%, rgba(52, 120, 246, 0.03) 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            border: 1px solid rgba(128, 128, 128, 0.12);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+            height: 100%;
+        }
+
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
+            border-color: rgba(52, 120, 246, 0.18);
+        }
+
+        .step-media {
+            width: 100%;
+            padding: 1rem 1rem 0;
+        }
+
+        .step-video {
+            width: 100%;
+            margin: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+            aspect-ratio: 16 / 9;
+        }
+
+        .step-video video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            border-radius: 18px;
+            background: #000;
+        }
+
+        .video-caption {
+            font-size: 0.78rem;
+            color: var(--Gray);
+            text-align: center;
+            display: block;
+            margin-top: 0.7rem;
+            line-height: 1.5;
+        }
+
+        .step-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 1.15rem 1.2rem 1.2rem;
+        }
+
+        .step-number {
+            width: 44px;
+            height: 44px;
+            background-color: var(--MainBlue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-right: 0.95rem;
+            box-shadow: 0 8px 18px rgba(52, 120, 246, 0.28);
+            flex-shrink: 0;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.95rem;
+        }
+
+        .step-title {
+            font-size: 1.18rem;
+            font-weight: 700;
+            color: var(--text-color);
+            line-height: 1.35;
+        }
+
+        .step-content {
+            color: var(--text-color);
+            line-height: 1.7;
+            padding-left: 0;
+            font-size: 0.97rem;
+            flex: 1;
+        }
+
+        .step-icon {
+            margin-right: 0.45rem;
+            color: var(--MainBlue);
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            margin-top: 1rem;
+            cursor: pointer;
+            padding: 0.9rem 1rem;
+            border-radius: 14px;
+            background-color: rgba(52, 120, 246, 0.05);
+            border: 1px solid rgba(52, 120, 246, 0.09);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .checklist-item:hover {
+            background-color: rgba(52, 120, 246, 0.08);
+            border-color: rgba(52, 120, 246, 0.14);
+        }
+
+        .checklist-item input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--MainBlue);
+            margin-top: 0.12rem;
+            flex-shrink: 0;
+        }
+
+        .checklist-item span {
+            line-height: 1.5;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .step-card.safety-card {
+            background: linear-gradient(180deg, rgba(255, 152, 0, 0.08) 0%, var(--sec-bg-color) 100%);
+            border-color: rgba(255, 152, 0, 0.22);
+            min-height: 220px;
+        }
+
+        .step-card.safety-card .step-body {
+            justify-content: center;
+        }
+
+        .download-btn {
+            background-color: var(--MainBlue);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .journey-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-bubble {
+            background: linear-gradient(135deg, var(--MainBlue), var(--DarkerMainBlue));
+            color: white;
+            padding: 1.2rem 1rem;
+            border-radius: 18px;
+            text-align: center;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 12px 24px rgba(52, 120, 246, 0.18);
+        }
+
+        .stat-bubble .number {
+            font-size: 1.9rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 0.35rem;
+        }
+
+        .stat-bubble .label {
+            font-size: 0.88rem;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .recycle-process-video {
+            margin-bottom: 2rem;
+            border-radius: 20px;
+            padding: 1.5rem;
+            background-color: var(--sec-bg-color);
+            border: 1px solid rgba(128, 128, 128, 0.12);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        }
+
+        .recycle-process-video h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--MainBlue);
+            margin-bottom: 1rem;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 16px;
+            margin-bottom: 0.5rem;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+        }
+
+        .video-description {
+            font-size: 0.92rem;
+            color: var(--Gray);
+            text-align: center;
+            margin-top: 0.6rem;
+            line-height: 1.6;
+        }
+
+        .journey-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .journey-step {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background-color: var(--sec-bg-color);
+            border-radius: 20px;
+            padding: 1.3rem 1.4rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid rgba(128, 128, 128, 0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .journey-step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .journey-step::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: linear-gradient(to bottom, var(--MainBlue), var(--DarkerMainBlue));
+        }
+
+        .journey-step-content {
+            flex: 1;
+            padding-left: 0.6rem;
+        }
+
+        .journey-step h3 {
+            font-size: 1.22rem;
+            font-weight: 700;
+            color: var(--MainBlue);
+            margin-bottom: 0.7rem;
+        }
+
+        .journey-step p {
+            color: var(--text-color);
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        .extra-detail {
+            margin-top: 0.9rem;
+            padding: 0.95rem 1rem;
+            background-color: var(--bg-color);
+            border-radius: 14px;
+            font-size: 0.94rem;
+            line-height: 1.65;
+            color: var(--text-color);
+            border: 1px solid rgba(128, 128, 128, 0.12);
+        }
+
+        .impact-meter {
+            background-color: var(--bg-color);
+            border-radius: 16px;
+            padding: 1.2rem;
+            margin-top: 1.5rem;
+            border: 1px solid var(--BlueGray);
+        }
+
+        .impact-meter h4 {
+            margin: 0 0 0.55rem;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .impact-meter p {
+            margin: 0;
+            color: var(--Gray);
+            line-height: 1.6;
+        }
+
+        .impact-bar {
+            height: 10px;
+            background-color: var(--BlueGray);
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 0.85rem 0 0.65rem;
+        }
+
+        .impact-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--MainBlue), var(--DarkerMainBlue));
+            border-radius: 999px;
+            transition: width 1s ease;
+        }
+
+        .impact-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.82rem;
+            color: var(--text-color);
+        }
+
+        .impact-estimate {
+            margin-top: 0.7rem;
+            font-size: 0.82rem;
+            color: var(--Gray);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (min-width: 760px) {
+            .results-layout {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+
+            .centre-list {
+                max-width: 38%;
+            }
+
+            .centre-details {
+                max-width: 62%;
+            }
+
+            .details-info-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .steps-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1.6rem;
+            }
+
+            .step-card {
+                min-height: 100%;
+            }
+            .step-card.safety-card {
+                grid-column: 1 / -1;
+                min-height: 180px;
+            }
+        }
+
+        @media (max-width: 759px) {
+            main {
+                padding: 1.5rem 1rem 2.5rem;
+            }
+
+            .guide-tabs {
+                gap: 0.6rem;
+            }
+
+            .guide-tab {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .search-bar {
+                flex-direction: column;
+                gap: 0.75rem;
+                max-width: 100%;
+            }
+
+            .search-bar input,
+            .search-bar button {
+                border-radius: 999px;
+                width: 100%;
+            }
+
+            .items-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .step-media {
+                padding: 0.9rem 0.9rem 0;
+            }
+
+            .step-body {
+                padding: 1rem 1rem 1.05rem;
+            }
+
+            .step-title {
+                font-size: 1.08rem;
+            }
+
+            .video-caption {
+                font-size: 0.74rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -176,7 +1086,7 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                 <img src="../../assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
                 <div class="c-navbar-side-items">
                     <section class="c-navbar-side-more">
-                        <button id="themeToggleMobile">
+                        <button id="themeToggleMobile" type="button">
                             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                         </button>
                         <a href="../../html/common/Setting.html">
@@ -198,9 +1108,10 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
             <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
             <a href="../../html/common/About.html">About</a>
-        </nav>          
+        </nav>
+
         <section class="c-navbar-more">
-            <button id="themeToggleDesktop">
+            <button id="themeToggleDesktop" type="button">
                 <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
             <a href="../../html/common/Setting.html">
@@ -212,152 +1123,236 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
 
     <main>
         <div class="guide-tabs">
-            <a href="#" class="guide-tab" onclick="switchTab(event, 'find-centre')">📍 Find a Centre</a>
-            <a href="#" class="guide-tab active" onclick="switchTab(event, 'accepted-items')">📋 Accepted Items</a>
-            <a href="#" class="guide-tab" onclick="switchTab(event, 'preparation')">📝 Preparation Guide</a>
-            <a href="#" class="guide-tab" onclick="switchTab(event, 'journey')">🔄 The Journey</a>
+            <a href="#" class="guide-tab active" onclick="switchTab(event, 'find-centre')">📍 <span>Find a Centre</span></a>
+            <a href="#" class="guide-tab" onclick="switchTab(event, 'accepted-items')">📋 <span>Accepted Items</span></a>
+            <a href="#" class="guide-tab" onclick="switchTab(event, 'preparation')">📝 <span>Preparation Guide</span></a>
+            <a href="#" class="guide-tab" onclick="switchTab(event, 'journey')">🔄 <span>The Journey</span></a>
         </div>
 
-        <div id="find-centre" class="guide-content">
+        <div id="find-centre" class="guide-content active">
             <div class="find-centre-container">
-                <div class="search-section">
-                    <h2>Find a location near you</h2>
-                    <div class="search-bar">
-                        <input type="text" placeholder="Enter your address or postcode" id="searchInput">
-                        <button id="searchBtn">Search</button>
-                    </div>
+                <div class="section-heading">
+                    <h2>Find a Location Near You</h2>
+                    <p>Browse our active collection centres and quickly search by centre name, address, state, or postcode.</p>
                 </div>
+
+                <div class="search-section">
+                    <div class="search-bar">
+                        <input type="text" placeholder="Enter centre name, address, state, or postcode" id="searchInput">
+                        <button id="searchBtn" type="button">Search</button>
+                    </div>
+                    <div id="searchFeedback" class="search-feedback"></div>
+                </div>
+
                 <div class="results-layout">
-                    <div class="centre-list">
+                    <div class="centre-list surface-card">
                         <div class="centre-list-header">
-                            <h3>All locations</h3>
+                            <h3>All Locations</h3>
                             <span class="centre-count" id="totalCount"><?php echo count($centres); ?></span>
                         </div>
+
                         <div id="centreList">
                             <?php if (empty($centres)): ?>
                                 <div class="centre-item">No centres available</div>
-                            <?php else: 
-                                foreach ($centres as $index => $centre): ?>
-                                <div class="centre-item <?php echo $index === 0 ? 'active' : ''; ?>" data-id="<?php echo $centre['centreID']; ?>" onclick="selectCentre(<?php echo $centre['centreID']; ?>)">
-                                    <div class="centre-name"><?php echo htmlspecialchars($centre['name']); ?></div>
-                                    <div class="centre-address"><?php echo htmlspecialchars(substr($centre['address'], 0, 50)) . '...'; ?></div>
-                                    <div class="centre-distance"><?php echo htmlspecialchars($centre['state']); ?></div>
-                                </div>
-                            <?php endforeach; endif; ?>
+                            <?php else: ?>
+                                <?php foreach ($centres as $index => $centre): ?>
+                                    <div class="centre-item <?php echo $index === 0 ? 'active' : ''; ?>" data-id="<?php echo $centre['centreID']; ?>" onclick="selectCentre(<?php echo $centre['centreID']; ?>)">
+                                        <div class="centre-name"><?php echo htmlspecialchars($centre['name']); ?></div>
+                                        <div class="centre-address"><?php echo htmlspecialchars($centre['address']); ?></div>
+                                        <div class="centre-distance"><?php echo htmlspecialchars($centre['postcode'] . ', ' . $centre['state']); ?></div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <div class="centre-details" id="centreDetails">
-                        <?php if (!empty($centres)): 
-                            foreach ($centres as $index => $centre): ?>
-                            <div id="detail-<?php echo $centre['centreID']; ?>" class="detail-view" style="<?php echo $index === 0 ? 'display: block;' : 'display: none;'; ?>">
-                                <div class="details-header">
-                                    <span class="details-name"><?php echo htmlspecialchars($centre['name']); ?></span>
-                                    <span class="details-rating">★★★★★</span>
+
+                    <div class="centre-details surface-card" id="centreDetails">
+                        <?php if (!empty($centres)): ?>
+                            <?php foreach ($centres as $index => $centre): ?>
+                                <div id="detail-<?php echo $centre['centreID']; ?>" class="detail-view" style="<?php echo $index === 0 ? 'display: block;' : 'display: none;'; ?>">
+                                    <div class="details-header">
+                                        <span class="details-name"><?php echo htmlspecialchars($centre['name']); ?></span>
+                                        <span class="details-rating">★★★★★</span>
+                                    </div>
+
+                                    <div class="details-status">
+                                        <i class="fas fa-circle-check"></i>
+                                        <?php echo $centre['status'] === 'Active' ? 'Open Now' : 'Closed'; ?>
+                                    </div>
+
+                                    <div class="details-info-grid">
+                                        <div class="details-info-card">
+                                            <h4><i class="fas fa-location-dot"></i> Address</h4>
+                                            <p>
+                                                <?php echo htmlspecialchars($centre['address']); ?><br>
+                                                <?php echo htmlspecialchars($centre['postcode'] . ', ' . $centre['state']); ?>
+                                            </p>
+                                        </div>
+
+                                        <div class="details-info-card">
+                                            <h4><i class="fas fa-phone"></i> Contact</h4>
+                                            <p class="details-phone">
+                                                <a href="tel:<?php echo htmlspecialchars($centre['contact']); ?>">
+                                                    <?php echo htmlspecialchars($centre['contact']); ?>
+                                                </a>
+                                            </p>
+                                        </div>
+
+                                        <div class="details-info-card" style="grid-column: 1 / -1;">
+                                            <h4><i class="fas fa-clock"></i> Opening Hours</h4>
+                                            <table class="hours-table">
+                                                <tr><td>Monday</td><td>09:00 - 18:00</td></tr>
+                                                <tr><td>Tuesday</td><td>09:00 - 18:00</td></tr>
+                                                <tr><td>Wednesday</td><td>09:00 - 18:00</td></tr>
+                                                <tr><td>Thursday</td><td>09:00 - 18:00</td></tr>
+                                                <tr><td>Friday</td><td>09:00 - 18:00</td></tr>
+                                                <tr><td>Saturday</td><td>10:00 - 16:00</td></tr>
+                                                <tr><td>Sunday</td><td>Closed</td></tr>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="details-status"><?php echo $centre['status'] == 'Active' ? 'Open now' : 'Closed'; ?></div>
-                                <div class="details-address">
-                                    <?php echo htmlspecialchars($centre['address']); ?><br>
-                                    <?php echo htmlspecialchars($centre['postcode'] . ', ' . $centre['state']); ?>
-                                </div>
-                                <div class="details-phone">
-                                    📞 <a href="tel:<?php echo $centre['contact']; ?>"><?php echo $centre['contact']; ?></a>
-                                </div>
-                                <div class="details-links">
-                                    <a href="#">Get directions</a>
-                                </div>
-                                <div class="details-hours">
-                                    <h4>Opening Hours</h4>
-                                    <table class="hours-table">
-                                         <td>Monday:</td><td>09:00 - 18:00</td>
-                                         <td>Tuesday:</td><td>09:00 - 18:00</td>
-                                         <td>Wednesday:</td><td>09:00 - 18:00</td>
-                                         <td>Thursday:</td><td>09:00 - 18:00</td>
-                                         <td>Friday:</td><td>09:00 - 18:00</td>
-                                         <td>Saturday:</td><td>10:00 - 16:00</td>
-                                         <td>Sunday:</td><td>Closed</td>
-                                    </table>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="detail-view">
+                                <div class="section-heading" style="margin-bottom: 0;">
+                                    <h2 style="font-size: 1.8rem;">No Active Centres</h2>
+                                    <p>There are currently no active collection centres available.</p>
                                 </div>
                             </div>
-                        <?php endforeach; endif; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="accepted-items" class="guide-content active">
+        <div id="accepted-items" class="guide-content">
             <div class="accepted-items-container">
-                <h2>What Can You Recycle?</h2>
-                <p class="intro-text">We accept a wide range of electronic devices. If it runs on electricity or batteries, it can likely be recycled! Click any item to learn more.</p>
-                
+                <div class="section-heading">
+                    <h2>What Can You Recycle?</h2>
+                    <p>We accept a wide range of electronic devices. Search for an item below and click any card to learn more about handling and recycling guidance.</p>
+                </div>
+
                 <div class="search-items">
                     <input type="text" id="itemSearchInput" placeholder="Search for an item... (e.g., laptop, battery)">
                 </div>
 
-                <div class="category-section">
+                <div id="noItemsMessage" class="no-items-message">No matching items found. Try another keyword.</div>
+
+                <div class="category-section item-category">
                     <h3>📱 Small Appliances</h3>
-                    <div class="items-grid" id="itemsGridSmall">
-                        <?php foreach ($items_with_points as $item): 
-                            if (in_array($item['name'], ['Smartphone', 'Tablet', 'Laptop', 'Digital camera', 'Projectors', 'MP3 Players', 'DVD Players', 'Power Bank', 'USB Flash Drive', 'External Hard Drive'])): ?>
-                        <div class="item-card" data-name="<?php echo strtolower($item['name']); ?>" onclick="showItemDetail('<?php echo htmlspecialchars($item['name']); ?>', <?php echo $item['recycle_points']; ?>)">
-                            <i class="fas fa-microchip"></i>
-                            <span><?php echo htmlspecialchars($item['name']); ?></span>
-                            <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
-                            <?php if (in_array($item['name'], ['Power Bank'])): ?>
-                                <span class="special-badge">⚠️ Special</span>
+                    <div class="items-grid">
+                        <?php foreach ($items_with_points as $item): ?>
+                            <?php if (in_array($item['name'], ['Smartphone', 'Tablet', 'Laptop', 'Digital camera', 'Projectors', 'MP3 Players', 'DVD Players', 'Power Bank', 'USB Flash Drive', 'External Hard Drive'])): ?>
+                                <?php $itemImage = getItemImage($item['name'], $item_image_map); ?>
+                                <div class="item-card" data-name="<?php echo strtolower($item['name']); ?>" onclick="showItemDetail('<?php echo htmlspecialchars($item['name']); ?>', <?php echo $item['recycle_points']; ?>)">
+                                    <div class="item-image-wrap">
+                                        <?php if ($itemImage): ?>
+                                            <img class="item-img" src="../../assets/images/<?php echo rawurlencode($itemImage); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+                                        <?php else: ?>
+                                            <i class="fas fa-microchip item-icon-fallback"></i>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="item-card-body">
+                                        <span class="item-name"><?php echo htmlspecialchars($item['name']); ?></span>
+                                        <div class="item-meta">
+                                            <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
+                                            <?php if (in_array($item['name'], ['Power Bank'])): ?>
+                                                <span class="special-badge">⚠️ Special</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
                             <?php endif; ?>
-                        </div>
-                        <?php endif; endforeach; ?>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
-                <div class="category-section">
+                <div class="category-section item-category">
                     <h3>💻 Computer Hardware</h3>
-                    <div class="items-grid" id="itemsGridComputer">
-                        <?php foreach ($items_with_points as $item): 
-                            if (in_array($item['name'], ['Keyboards', 'Desktop', 'Computer Mice', 'Monitors', 'Headphones / Earphones', 'Printers', 'Scanner', 'PC / CPU', 'Router', 'Modem', 'Cables'])): ?>
-                        <div class="item-card" data-name="<?php echo strtolower($item['name']); ?>" onclick="showItemDetail('<?php echo htmlspecialchars($item['name']); ?>', <?php echo $item['recycle_points']; ?>)">
-                            <i class="fas fa-desktop"></i>
-                            <span><?php echo htmlspecialchars($item['name']); ?></span>
-                            <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
-                        </div>
-                        <?php endif; endforeach; ?>
+                    <div class="items-grid">
+                        <?php foreach ($items_with_points as $item): ?>
+                            <?php if (in_array($item['name'], ['Keyboards', 'Desktop', 'Computer Mice', 'Monitors', 'Headphones / Earphones', 'Printers', 'Scanner', 'PC / CPU', 'Router', 'Modem', 'Cables'])): ?>
+                                <?php $itemImage = getItemImage($item['name'], $item_image_map); ?>
+                                <div class="item-card" data-name="<?php echo strtolower($item['name']); ?>" onclick="showItemDetail('<?php echo htmlspecialchars($item['name']); ?>', <?php echo $item['recycle_points']; ?>)">
+                                    <div class="item-image-wrap">
+                                        <?php if ($itemImage): ?>
+                                            <img class="item-img" src="../../assets/images/<?php echo rawurlencode($itemImage); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+                                        <?php else: ?>
+                                            <i class="fas fa-desktop item-icon-fallback"></i>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="item-card-body">
+                                        <span class="item-name"><?php echo htmlspecialchars($item['name']); ?></span>
+                                        <div class="item-meta">
+                                            <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
-                <div class="category-section">
+                <div class="category-section item-category">
                     <h3>📺 Entertainment & Audio</h3>
-                    <div class="items-grid" id="itemsGridEntertainment">
-                        <?php foreach ($items_with_points as $item): 
-                            if (in_array($item['name'], ['Television', 'Speakers', 'Gaming Consoles', 'Camera', 'Projector'])): ?>
-                        <div class="item-card" data-name="<?php echo strtolower($item['name']); ?>" onclick="showItemDetail('<?php echo htmlspecialchars($item['name']); ?>', <?php echo $item['recycle_points']; ?>)">
-                            <i class="fas fa-tv"></i>
-                            <span><?php echo htmlspecialchars($item['name']); ?></span>
-                            <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
-                        </div>
-                        <?php endif; endforeach; ?>
+                    <div class="items-grid">
+                        <?php foreach ($items_with_points as $item): ?>
+                            <?php if (in_array($item['name'], ['Television', 'Speakers', 'Gaming Consoles', 'Camera', 'Projector'])): ?>
+                                <?php $itemImage = getItemImage($item['name'], $item_image_map); ?>
+                                <div class="item-card" data-name="<?php echo strtolower($item['name']); ?>" onclick="showItemDetail('<?php echo htmlspecialchars($item['name']); ?>', <?php echo $item['recycle_points']; ?>)">
+                                    <div class="item-image-wrap">
+                                        <?php if ($itemImage): ?>
+                                            <img class="item-img" src="../../assets/images/<?php echo rawurlencode($itemImage); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+                                        <?php else: ?>
+                                            <i class="fas fa-tv item-icon-fallback"></i>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="item-card-body">
+                                        <span class="item-name"><?php echo htmlspecialchars($item['name']); ?></span>
+                                        <div class="item-meta">
+                                            <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
-                <div class="category-section">
+                <div class="category-section item-category">
                     <h3>🔋 Batteries & Accessories</h3>
-                    <div class="items-grid" id="itemsGridBattery">
-                        <?php foreach ($items_with_points as $item): 
-                            if (in_array($item['name'], ['AA/AAA Batteries', 'Phone Batteries', 'Laptop Batteries', 'Chargers & Cables', 'Power Banks', 'Adapters', 'Extension Cord'])): ?>
-                        <div class="item-card" data-name="<?php echo strtolower($item['name']); ?>" onclick="showItemDetail('<?php echo htmlspecialchars($item['name']); ?>', <?php echo $item['recycle_points']; ?>)">
-                            <i class="fas fa-battery-full"></i>
-                            <span><?php echo htmlspecialchars($item['name']); ?></span>
-                            <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
-                            <span class="special-badge">⚠️ Special</span>
-                        </div>
-                        <?php endif; endforeach; ?>
+                    <div class="items-grid">
+                        <?php foreach ($items_with_points as $item): ?>
+                            <?php if (in_array($item['name'], ['AA/AAA Batteries', 'Phone Batteries', 'Laptop Batteries', 'Chargers & Cables', 'Power Banks', 'Adapters', 'Extension Cord'])): ?>
+                                <?php $itemImage = getItemImage($item['name'], $item_image_map); ?>
+                                <div class="item-card" data-name="<?php echo strtolower($item['name']); ?>" onclick="showItemDetail('<?php echo htmlspecialchars($item['name']); ?>', <?php echo $item['recycle_points']; ?>)">
+                                    <div class="item-image-wrap">
+                                        <?php if ($itemImage): ?>
+                                            <img class="item-img" src="../../assets/images/<?php echo rawurlencode($itemImage); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+                                        <?php else: ?>
+                                            <i class="fas fa-battery-full item-icon-fallback"></i>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="item-card-body">
+                                        <span class="item-name"><?php echo htmlspecialchars($item['name']); ?></span>
+                                        <div class="item-meta">
+                                            <span class="item-points">+<?php echo $item['recycle_points']; ?> pts</span>
+                                            <span class="special-badge">⚠️ Special</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
-                    <p style="margin-top: 1rem; color: var(--Gray); font-size: 0.9rem;">
-                        <i class="fas fa-exclamation-triangle" style="color: orange;"></i> 
-                        Please tape the ends of lithium batteries before disposal.
-                    </p>
                 </div>
-            </div>
-        </div>
+
+                <p class="item-note">
+                    <i class="fas fa-exclamation-triangle" style="color: orange;"></i>
+                    Please tape the ends of lithium batteries before disposal.
+                </p>
+                </div>
+                </div>
 
         <div id="preparation" class="guide-content">
             <div class="preparation-container">
@@ -366,13 +1361,15 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                 
                 <div class="steps-grid">
                     <div class="step-card">
-                        <div class="step-video">
-                            <video controls preload="metadata">
-                                <source src="../../assets/videos/step 1-backup data.mp4" type="video/mp4">
-                            </video>
+                        <div class="step-media">
+                            <div class="step-video">
+                                <video controls preload="metadata">
+                                    <source src="../../assets/videos/step 1-backup data.mp4" type="video/mp4">
+                                </video>
+                            </div>
                             <span class="video-caption">📹 How to backup your phone data</span>
                         </div>
-                        <div style="flex:1;">
+                        <div class="step-body">
                             <div class="step-header">
                                 <div class="step-number">1</div>
                                 <div class="step-title">Backup Your Data</div>
@@ -386,14 +1383,17 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                             </label>
                         </div>
                     </div>
+
                     <div class="step-card">
-                        <div class="step-video">
-                            <video controls preload="metadata">
-                                <source src="../../assets/videos/step 2-wipe data.mp4" type="video/mp4">
-                            </video>
+                        <div class="step-media">
+                            <div class="step-video">
+                                <video controls preload="metadata">
+                                    <source src="../../assets/videos/step 2-wipe data.mp4" type="video/mp4">
+                                </video>
+                            </div>
                             <span class="video-caption">📹 How to factory reset your device</span>
                         </div>
-                        <div style="flex:1;">
+                        <div class="step-body">
                             <div class="step-header">
                                 <div class="step-number">2</div>
                                 <div class="step-title">Wipe Personal Information</div>
@@ -407,14 +1407,17 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                             </label>
                         </div>
                     </div>
+
                     <div class="step-card">
-                        <div class="step-video">
-                            <video controls preload="metadata">
-                                <source src="../../assets/videos/step 3-remove batteries.mp4" type="video/mp4">
-                            </video>
+                        <div class="step-media">
+                            <div class="step-video">
+                                <video controls preload="metadata">
+                                    <source src="../../assets/videos/step 3-remove batteries.mp4" type="video/mp4">
+                                </video>
+                            </div>
                             <span class="video-caption">📹 How to safely remove batteries</span>
                         </div>
-                        <div style="flex:1;">
+                        <div class="step-body">
                             <div class="step-header">
                                 <div class="step-number">3</div>
                                 <div class="step-title">Remove Batteries (If Possible)</div>
@@ -428,14 +1431,17 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                             </label>
                         </div>
                     </div>
+
                     <div class="step-card">
-                        <div class="step-video">
-                            <video controls preload="metadata">
-                                <source src="../../assets/videos/step 4-do not dismantle.mp4" type="video/mp4">
-                            </video>
+                        <div class="step-media">
+                            <div class="step-video">
+                                <video controls preload="metadata">
+                                    <source src="../../assets/videos/step 4-do not dismantle.mp4" type="video/mp4">
+                                </video>
+                            </div>
                             <span class="video-caption">📹 Why you should not dismantle devices</span>
                         </div>
-                        <div style="flex:1;">
+                        <div class="step-body">
                             <div class="step-header">
                                 <div class="step-number">4</div>
                                 <div class="step-title">Do Not Dismantle</div>
@@ -449,14 +1455,17 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                             </label>
                         </div>
                     </div>
+
                     <div class="step-card">
-                        <div class="step-video">
-                            <video controls preload="metadata">
-                                <source src="../../assets/videos/step 5-pack securely.mp4" type="video/mp4">
-                            </video>
+                        <div class="step-media">
+                            <div class="step-video">
+                                <video controls preload="metadata">
+                                    <source src="../../assets/videos/step 5-pack securely.mp4" type="video/mp4">
+                                </video>
+                            </div>
                             <span class="video-caption">📹 How to pack e-waste safely</span>
                         </div>
-                        <div style="flex:1;">
+                        <div class="step-body">
                             <div class="step-header">
                                 <div class="step-number">5</div>
                                 <div class="step-title">Pack Securely</div>
@@ -470,8 +1479,9 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                             </label>
                         </div>
                     </div>
-                    <div class="step-card">
-                        <div style="flex:1;">
+
+                    <div class="step-card safety-card">
+                        <div class="step-body">
                             <div class="step-header">
                                 <div class="step-number">⚠️</div>
                                 <div class="step-title">Safety Tip</div>
@@ -486,7 +1496,8 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                         </div>
                     </div>
                 </div>
-                <button class="download-btn" onclick="downloadChecklist()">
+
+                <button class="download-btn" type="button" onclick="downloadChecklist()">
                     <i class="fas fa-download"></i> Download Preparation Checklist
                 </button>
             </div>
@@ -495,7 +1506,7 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
         <div id="journey" class="guide-content">
             <div class="journey-container">
                 <h2>What Happens to Your E-Waste?</h2>
-                <p class="journey-intro">Ever wondered what happens after your e-waste is collected? Here's the journey from your doorstep to material recovery.</p>
+                <p class="journey-intro">Ever wondered what happens after your e-waste is collected? Here is the journey from your doorstep to material recovery.</p>
                 
                 <div class="journey-stats">
                     <div class="stat-bubble">
@@ -504,53 +1515,57 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
                     </div>
                     <div class="stat-bubble">
                         <div class="number" id="co2Saved">0</div>
-                        <div class="label">CO₂ Saved (kg)</div>
+                        <div class="label">Estimated CO₂ Saved (kg)</div>
                     </div>
                     <div class="stat-bubble">
                         <div class="number" id="waterSaved">0</div>
-                        <div class="label">Water Saved (L)</div>
+                        <div class="label">Estimated Water Saved (L)</div>
                     </div>
                 </div>
 
                 <div class="recycle-process-video">
                     <h3>♻️ Watch the E-Waste Recycling Process</h3>
                     <div class="video-container">
-                        <iframe 
-                            src="https://www.youtube.com/embed/3s_ZNEFPiE0" 
-                            title="E-Waste Recycling Process" 
-                            frameborder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        <iframe
+                            src="https://www.youtube.com/embed/3s_ZNEFPiE0"
+                            title="E-Waste Recycling Process"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen>
                         </iframe>
                     </div>
-                    <p class="video-description">See how electronic devices are dismantled, sorted, and transformed into valuable materials.</p>
+                    <p class="video-description">See how electronic devices are dismantled, sorted, and transformed into valuable materials for reuse.</p>
                 </div>
 
                 <div class="journey-steps">
                     <div class="journey-step" onclick="toggleStepDetail(this)">
                         <div class="journey-step-content">
                             <h3>📦 Step 1: Collection & Sorting</h3>
-                            <p>E-waste arrives at the recycling facility and is sorted by type. Items that can be reused are set aside for refurbishment.</p>
+                            <p>E-waste arrives at the recycling facility and is sorted by type. Items that can still be reused are set aside for refurbishment.</p>
                         </div>
                     </div>
+
                     <div class="journey-step" onclick="toggleStepDetail(this)">
                         <div class="journey-step-content">
                             <h3>🔧 Step 2: Manual Disassembly</h3>
                             <p>Trained workers carefully take apart devices by hand, separating components like circuit boards, plastic casings, glass, metals, and batteries.</p>
                         </div>
                     </div>
+
                     <div class="journey-step" onclick="toggleStepDetail(this)">
                         <div class="journey-step-content">
                             <h3>⚙️ Step 3: Shredding & Separation</h3>
                             <p>Materials are shredded into small pieces. Magnets and other technologies separate ferrous metals, non-ferrous metals, and plastics.</p>
                         </div>
                     </div>
+
                     <div class="journey-step" onclick="toggleStepDetail(this)">
                         <div class="journey-step-content">
                             <h3>♻️ Step 4: Material Recovery</h3>
                             <p>Metals are melted down and reused. Plastics are processed into pellets. Precious metals like gold and silver are extracted from circuit boards.</p>
                         </div>
                     </div>
+
                     <div class="journey-step" onclick="toggleStepDetail(this)">
                         <div class="journey-step-content">
                             <h3>🏭 Step 5: Safe Disposal</h3>
@@ -561,19 +1576,23 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
 
                 <div class="impact-meter">
                     <h4>🌍 Your Impact Matters</h4>
-                    <p>Recycling 1,000 kg of e-waste saves approximately:</p>
-                    <div class="impact-bar"><div class="impact-fill" id="impactFill"></div></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <p>Recycling 1,000 kg of e-waste can help reduce energy use, conserve water, and lower environmental harm.</p>
+                    <div class="impact-bar">
+                        <div class="impact-fill" id="impactFill"></div>
+                    </div>
+                    <div class="impact-meta">
                         <span>⚡ 1,500 kWh energy</span>
                         <span>💧 150,000 L water</span>
                         <span>🌲 50 trees</span>
                     </div>
+                    <div class="impact-estimate">Estimated values are based on internal approximation for visual awareness.</div>
                 </div>
             </div>
         </div>
     </main>
 
     <hr>
+
     <footer>
         <section class="c-footer-info-section">
             <a href="../../html/provider/pHome.php"><img src="../../assets/images/logo.png" alt="Logo" class="c-logo"></a>
@@ -600,87 +1619,43 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
 
     <script src="../../javascript/mainScript.js"></script>
     <script>
+        let centres = <?php echo json_encode($centres); ?>;
+
+        const journeyDetails = {
+            "📦 Step 1: Collection & Sorting": "Devices are first grouped by category so reusable items can be refurbished and damaged items can move to the correct recycling stream. Proper sorting reduces contamination and improves recovery efficiency.",
+            "🔧 Step 2: Manual Disassembly": "Manual disassembly helps remove batteries, circuit boards, screens, and hazardous parts safely before machines process the remaining material. This step is important for worker safety and better material separation.",
+            "⚙️ Step 3: Shredding & Separation": "After dismantling, machines break materials into smaller fragments. Different technologies then separate metals, plastics, and glass so each material can continue to the correct recovery stage.",
+            "♻️ Step 4: Material Recovery": "Recovered materials are cleaned and processed for reuse in manufacturing. This helps reduce the need for new raw materials and supports a more circular electronics supply chain.",
+            "🏭 Step 5: Safe Disposal": "Any hazardous residue that cannot be recovered is treated according to environmental requirements. Safe disposal prevents toxic substances from leaking into soil, air, and water."
+        };
+
         function switchTab(event, tabId) {
             event.preventDefault();
             document.querySelectorAll('.guide-tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.guide-content').forEach(content => content.classList.remove('active'));
-            event.target.classList.add('active');
+            event.currentTarget.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+
             if (tabId === 'journey') {
-                setTimeout(updateImpactMetrics, 500);
+                setTimeout(updateImpactMetrics, 300);
             }
         }
-
-        let centres = <?php echo json_encode($centres); ?>;
 
         function selectCentre(centreId) {
             document.querySelectorAll('.centre-item').forEach(item => item.classList.remove('active'));
             const selectedItem = document.querySelector(`.centre-item[data-id="${centreId}"]`);
             if (selectedItem) selectedItem.classList.add('active');
+
             document.querySelectorAll('.detail-view').forEach(detail => detail.style.display = 'none');
             const selectedDetail = document.getElementById(`detail-${centreId}`);
             if (selectedDetail) selectedDetail.style.display = 'block';
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchBtn = document.getElementById('searchBtn');
-            const searchInput = document.getElementById('searchInput');
-            if (searchBtn) {
-                searchBtn.addEventListener('click', function() {
-                    const searchTerm = searchInput.value.toLowerCase();
-                    let found = false;
-                    for (let i = 0; i < centres.length; i++) {
-                        if (centres[i].name.toLowerCase().includes(searchTerm) || 
-                            centres[i].address.toLowerCase().includes(searchTerm) ||
-                            (centres[i].postcode && centres[i].postcode.includes(searchTerm))) {
-                            selectCentre(centres[i].centreID);
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found && searchTerm) alert('No matching centre found.');
-                });
-            }
-            if (searchInput) {
-                searchInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') searchBtn.click();
-                });
-            }
-
-            const itemSearch = document.getElementById('itemSearchInput');
-            if (itemSearch) {
-                itemSearch.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-                    document.querySelectorAll('.item-card').forEach(card => {
-                        const name = card.getAttribute('data-name') || '';
-                        if (name.includes(searchTerm) || searchTerm === '') {
-                            card.style.display = 'flex';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-                });
-            }
-
-            const checkboxes = document.querySelectorAll('.step-checkbox');
-            checkboxes.forEach(cb => {
-                cb.addEventListener('change', function() {
-                    const step = this.getAttribute('data-step');
-                    if (this.checked) {
-                        localStorage.setItem(`prep_step_${step}`, 'true');
-                    } else {
-                        localStorage.removeItem(`prep_step_${step}`);
-                    }
-                });
-                const saved = localStorage.getItem(`prep_step_${cb.getAttribute('data-step')}`);
-                if (saved === 'true') cb.checked = true;
-            });
-        });
-
         function showItemDetail(name, points) {
             const modal = document.getElementById('itemDetailModal');
             document.getElementById('modalItemName').textContent = name;
             document.getElementById('modalItemPoints').innerHTML = `Earn <strong>${points} points</strong> for recycling this item!`;
+
             let info = '';
             if (name.includes('Battery') || name.includes('battery')) {
                 info = '⚠️ Special handling required: Please tape battery terminals before disposal.';
@@ -691,6 +1666,7 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
             } else {
                 info = '♻️ This item can be recycled at any of our collection centres.';
             }
+
             document.getElementById('modalItemInfo').innerHTML = info;
             modal.style.display = 'flex';
         }
@@ -703,6 +1679,7 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
             let checklist = 'AfterVolt E-Waste Preparation Checklist\n\n';
             const steps = ['Backup Your Data', 'Wipe Personal Information', 'Remove Batteries (If Possible)', 'Do Not Dismantle', 'Pack Securely', 'Tape Battery Terminals'];
             checklist += '☐ ' + steps.join('\n☐ ');
+
             const blob = new Blob([checklist], { type: 'text/plain' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -717,34 +1694,144 @@ if ($weight_result && $row = $weight_result->fetch_assoc()) {
             const waterSaved = (totalWeight * 150).toFixed(0);
             document.getElementById('co2Saved').textContent = co2Saved;
             document.getElementById('waterSaved').textContent = waterSaved;
+
             const impactPercent = Math.min(100, (totalWeight / 1000) * 100);
             document.getElementById('impactFill').style.width = impactPercent + '%';
         }
 
         function toggleStepDetail(stepElement) {
             const content = stepElement.querySelector('.journey-step-content');
-            if (content) {
-                const extraInfo = content.querySelector('.extra-detail');
-                if (extraInfo) {
-                    extraInfo.remove();
-                } else {
-                    const detail = document.createElement('div');
-                    detail.className = 'extra-detail';
-                    detail.style.marginTop = '0.5rem';
-                    detail.style.padding = '0.5rem';
-                    detail.style.backgroundColor = 'var(--bg-color)';
-                    detail.style.borderRadius = '8px';
-                    detail.style.fontSize = '0.9rem';
-                    detail.innerHTML = '💡 Click again to collapse';
-                    content.appendChild(detail);
+            const title = content.querySelector('h3')?.textContent.trim();
+            const existing = content.querySelector('.extra-detail');
+
+            document.querySelectorAll('.extra-detail').forEach(detail => {
+                if (detail !== existing) detail.remove();
+            });
+
+            if (existing) {
+                existing.remove();
+                return;
+            }
+
+            const detail = document.createElement('div');
+            detail.className = 'extra-detail';
+            detail.innerHTML = journeyDetails[title] || 'This step supports safer, cleaner, and more effective recycling.';
+            content.appendChild(detail);
+        }
+
+        function filterCentres() {
+            const searchInput = document.getElementById('searchInput');
+            const searchFeedback = document.getElementById('searchFeedback');
+            const searchTerm = searchInput.value.trim().toLowerCase();
+
+            if (!searchTerm) {
+                searchFeedback.textContent = '';
+                searchFeedback.className = 'search-feedback';
+
+                const firstVisible = document.querySelector('.centre-item');
+                if (firstVisible) {
+                    const firstId = firstVisible.getAttribute('data-id');
+                    selectCentre(firstId);
+                }
+                return;
+            }
+
+            let foundCentre = null;
+
+            for (let i = 0; i < centres.length; i++) {
+                const centre = centres[i];
+                const name = (centre.name || '').toLowerCase();
+                const address = (centre.address || '').toLowerCase();
+                const state = (centre.state || '').toLowerCase();
+                const postcode = (centre.postcode || '').toString().toLowerCase();
+
+                if (
+                    name.includes(searchTerm) ||
+                    address.includes(searchTerm) ||
+                    state.includes(searchTerm) ||
+                    postcode.includes(searchTerm)
+                ) {
+                    foundCentre = centre;
+                    break;
                 }
             }
+
+            if (foundCentre) {
+                selectCentre(foundCentre.centreID);
+                searchFeedback.textContent = `Showing result for "${searchInput.value.trim()}".`;
+                searchFeedback.className = 'search-feedback success';
+            } else {
+                searchFeedback.textContent = 'No matching centre found.';
+                searchFeedback.className = 'search-feedback error';
+            }
         }
+
+        function filterItems() {
+            const itemSearch = document.getElementById('itemSearchInput');
+            const searchTerm = itemSearch.value.trim().toLowerCase();
+            const categories = document.querySelectorAll('.item-category');
+            const noItemsMessage = document.getElementById('noItemsMessage');
+            let totalVisibleItems = 0;
+
+            categories.forEach(category => {
+                const cards = category.querySelectorAll('.item-card');
+                let visibleInCategory = 0;
+
+                cards.forEach(card => {
+                    const name = card.getAttribute('data-name') || '';
+                    const isVisible = searchTerm === '' || name.includes(searchTerm);
+                    card.style.display = isVisible ? 'flex' : 'none';
+                    if (isVisible) visibleInCategory++;
+                });
+
+                category.style.display = visibleInCategory > 0 ? 'block' : 'none';
+                totalVisibleItems += visibleInCategory;
+            });
+
+            noItemsMessage.style.display = totalVisibleItems === 0 ? 'block' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchBtn = document.getElementById('searchBtn');
+            const searchInput = document.getElementById('searchInput');
+            const itemSearch = document.getElementById('itemSearchInput');
+
+            if (searchBtn) {
+                searchBtn.addEventListener('click', filterCentres);
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') filterCentres();
+                });
+            }
+
+            if (itemSearch) {
+                itemSearch.addEventListener('input', filterItems);
+            }
+
+            const checkboxes = document.querySelectorAll('.step-checkbox');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const step = this.getAttribute('data-step');
+                    if (this.checked) {
+                        localStorage.setItem(`prep_step_${step}`, 'true');
+                    } else {
+                        localStorage.removeItem(`prep_step_${step}`);
+                    }
+                });
+
+                const saved = localStorage.getItem(`prep_step_${cb.getAttribute('data-step')}`);
+                if (saved === 'true') cb.checked = true;
+            });
+
+            updateImpactMetrics();
+        });
 
         window.onclick = function(event) {
             const modal = document.getElementById('itemDetailModal');
             if (event.target === modal) closeModal();
-        }
+        };
     </script>
 </body>
 </html>
