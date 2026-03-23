@@ -1149,6 +1149,7 @@
 
 <script src="../../javascript/mainScript.js"></script>
 <script>
+    
 // Pass PHP data to JavaScript
 const allItemsStats = <?php echo json_encode($allItemsStats); ?>;
 const providerId = "<?php echo $provider_id; ?>";
@@ -1221,9 +1222,6 @@ function updateStats() {
     document.getElementById('statPending').textContent = pending;
     document.getElementById('statScheduled').textContent = approved;
     document.getElementById('statCompleted').textContent = providerPoints;
-    
-    // You can add more stats display if needed
-    // console.log(`Stats - Total: ${total}, Pending: ${pending}, Approved: ${approved}, Rejected: ${rejected}, Completed: ${completed}, Cancelled: ${cancelled}`);
 }
 
 function filterPickups(status) {
@@ -1249,6 +1247,15 @@ function renderPickupList() {
     const listContainer = document.getElementById('pickupList');
     
     if (filteredPickups.length === 0) {
+        let emptyMessage = '';
+        if (currentFilter !== 'all') {
+            emptyMessage = `No ${currentFilter} pickups found`;
+        } else if (document.getElementById('searchInput').value) {
+            emptyMessage = 'No pickups match your search';
+        } else {
+            emptyMessage = 'No pickups found';
+        }
+        
         listContainer.innerHTML = `
             <div class="pmp-empty-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1257,7 +1264,7 @@ function renderPickupList() {
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
                 <h3>No Pickups Found</h3>
-                <p>No ${currentFilter !== 'all' ? currentFilter : ''} pickups match your criteria</p>
+                <p>${emptyMessage}</p>
             </div>
         `;
         return;
@@ -1271,7 +1278,7 @@ function renderPickupList() {
         
         const itemCount = pickup.items.length;
         const statusClass = pickup.status.toLowerCase();
-        
+
         html += `
             <div class="pmp-list-item ${selectedPickupId === pickup.requestID ? 'selected' : ''}" onclick="selectPickup('${pickup.requestID}')">
                 <div class="pmp-item-header">
@@ -1410,15 +1417,38 @@ function sortPickups() {
 }
 
 function applySearchAndSort() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     
-    // Apply search
-    let results = [...filteredPickups];
+    // Start with all pickups
+    let results = [...pickups];
+    
+    // Apply status filter
+    if (currentFilter !== 'all') {
+        results = results.filter(p => p.status.toLowerCase() === currentFilter.toLowerCase());
+    }
+    
+    // Apply search filter
     if (searchTerm) {
-        results = results.filter(p => 
-            p.requestID.toLowerCase().includes(searchTerm) ||
-            p.pickupAddress.toLowerCase().includes(searchTerm)
-        );
+        results = results.filter(p => {
+            const requestIdStr = String(p.requestID);
+            const matchesId = requestIdStr === searchTerm;
+            const addressStr = p.pickupAddress.toLowerCase();
+            const matchesAddress = addressStr.includes(searchTerm);
+            
+            // Debug for each request
+            if (searchTerm === '2' && (matchesId || matchesAddress)) {
+                console.log(`ID ${p.requestID} - matchesId: ${matchesId}, matchesAddress: ${matchesAddress}, address: ${addressStr}`);
+            }
+            
+            // Check if search term is a number that matches the request ID exactly
+            const matchesIdNumber = !isNaN(searchTerm) && p.requestID === parseInt(searchTerm);
+            
+            // Only match address if search term is longer than 1 character or if it's not a pure number
+            // This prevents single-digit numbers from matching addresses that contain those digits
+            const shouldMatchAddress = searchTerm.length <= 1 ? false : matchesAddress;
+            
+            return matchesId || matchesIdNumber || (searchTerm.length > 1 && matchesAddress);
+        });
     }
     
     // Apply sort
@@ -1439,6 +1469,10 @@ function applySearchAndSort() {
     
     filteredPickups = results;
     renderPickupList();
+
+    // console.log('Search term:', searchTerm);
+    // console.log('Applied search and sort. Results count:', filteredPickups.length);
+    // console.log('Request IDs of all results:', filteredPickups.map(p => String(p.requestID)).join(', '));
 }
 
 // Modal functions (keep your existing modal functions)
