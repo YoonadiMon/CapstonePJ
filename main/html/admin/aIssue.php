@@ -539,10 +539,10 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
 
                     <a href="../../html/admin/aHome.html">Home</a>
                     <a href="../../html/admin/aRequests.php">Requests</a><br>
-                    <a href="../../html/admin/aJobs.html">Jobs</a><br>
-                    <a href="../../html/admin/aIssue.html">Issue</a><br>
-                    <a href="../../html/admin/aOperations.html">Operations</a><br>
-                    <a href="../../html/admin/aReport.html">Report</a>
+                    <a href="../../html/admin/aJobs.php">Jobs</a><br>
+                    <a href="../../html/admin/aIssue.php">Issue</a><br>
+                    <a href="../../html/admin/aOperations.php">Operations</a><br>
+                    <a href="../../html/admin/aReport.php">Report</a>
                 </div>
             </div>
 
@@ -552,10 +552,10 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
         <nav class="c-navbar-desktop">
             <a href="../../html/admin/aHome.html">Home</a>
             <a href="../../html/admin/aRequests.php">Requests</a><br>
-            <a href="../../html/admin/aJobs.html">Jobs</a><br>
-            <a href="../../html/admin/aIssue.html">Issue</a><br>
-            <a href="../../html/admin/aOperations.html">Operations</a><br>
-            <a href="../../html/admin/aReport.html">Report</a>
+            <a href="../../html/admin/aJobs.php">Jobs</a><br>
+            <a href="../../html/admin/aIssue.php">Issue</a><br>
+            <a href="../../html/admin/aOperations.php">Operations</a><br>
+            <a href="../../html/admin/aReport.php">Report</a>
         </nav>          
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
@@ -676,7 +676,7 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
             <div>
                 <b>Management</b><br>
                 <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
-                <a href="../../html/admin/aJobs.html">Collection Jobs</a><br>
+                <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
                 <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
@@ -685,7 +685,7 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
                 <a href="../../html/admin/aCollectors.php">Collectors</a><br>
                 <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
-                <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
+                <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
             </div>
             <div>
                 <b>Proxy</b><br>
@@ -747,10 +747,10 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
 
             list.innerHTML = issues.map(issue => {
                 const linkedReq = issue.requestID
-                    ? `<a class="linked-id" href="../../html/admin/aRequestDetail.html?id=${issue.requestID}" onclick="event.stopPropagation()">REQ #${issue.requestID}</a>`
+                    ? `<a class="linked-id" href="../../html/admin/aRequestDetail.php?id=${issue.requestID}" onclick="event.stopPropagation()">REQ #${issue.requestID}</a>`
                     : "";
                 const linkedJob = issue.jobID
-                    ? `<a class="linked-id" href="../../html/admin/aJobDetail.html?id=${issue.jobID}" onclick="event.stopPropagation()">JOB #${issue.jobID}</a>`
+                    ? `<a class="linked-id" href="../../html/admin/aJobDetail.php?id=${issue.jobID}" onclick="event.stopPropagation()">JOB #${issue.jobID}</a>`
                     : "";
 
                 // CSS class keys match DB ENUM values (capitalised)

@@ -1737,7 +1737,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                     <a href="../../html/admin/aJobs.php">Jobs</a><br>
                     <a href="../../html/admin/aIssue.php">Issue</a><br>
                     <a href="../../html/admin/aOperations.php">Operations</a><br>
-                    <a href="../../html/admin/aReport.html">Report</a>
+                    <a href="../../html/admin/aReport.php">Report</a>
                 </div>
             </div>
 
@@ -1750,7 +1750,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
             <a href="../../html/admin/aJobs.php">Jobs</a><br>
             <a href="../../html/admin/aIssue.php">Issue</a><br>
             <a href="../../html/admin/aOperations.php">Operations</a><br>
-            <a href="../../html/admin/aReport.html">Report</a>
+            <a href="../../html/admin/aReport.php">Report</a>
         </nav>          
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
@@ -1893,7 +1893,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                     <div class="info-field">
                         <span class="info-label">Linked Job</span>
                         <span class="info-value">
-                            <a class="linked-id" href="../../html/admin/aJobs.html?id=<?php echo $jobRow['jobID'];?>">
+                            <a class="linked-id" href="../../html/admin/aJobs.php?id=<?php echo $jobRow['jobID'];?>">
                                 JOB #<?php echo $jobRow['jobID']; ?>
                             </a>
                         </span>
@@ -2141,7 +2141,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                 <a href="../../html/admin/aCollectors.php">Collectors</a><br>
                 <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
-                <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
+                <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
             </div>
             <div>
                 <b>Proxy</b><br>
