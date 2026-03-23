@@ -568,7 +568,7 @@
                     </section>
                     <a href="../../html/provider/pHome.html">Home</a>
                     <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
-                    <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+                    <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                     <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
                     <a href="../../html/common/About.html">About</a>
                 </div>
@@ -579,7 +579,7 @@
         <nav class="c-navbar-desktop">
             <a href="../../html/provider/pHome.html">Home</a>
             <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
-            <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+            <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
             <a href="../../html/common/About.html">About</a>
         </nav>
@@ -823,7 +823,7 @@
             <div>
                 <b>My Activity</b><br>
                 <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a><br>
-                <a href="../../html/provider/pMainPickup.html">My Pickup</a>
+                <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             </div>
             <div>
                 <b>Proxy</b><br>
@@ -1245,7 +1245,7 @@
         }
         
         function redirectToHome() {
-            window.location.href = 'pMainPickup.html';
+            window.location.href = 'pMainPickup.php';
         }
         
         // Listen for form changes to update summary
