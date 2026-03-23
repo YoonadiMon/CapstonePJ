@@ -918,7 +918,7 @@
         <!-- Greeting -->
         <div class="ph-greeting">
             <div>
-                <h1>Not Welcome back, <span id="providerName"><?php echo $provider_name; ?></span> 👋</h1>
+                <h1>Welcome back, <span id="providerName"><?php echo $provider_name; ?></span> 👋</h1>
                 <p id="currentDateTime">Thursday, 19 Feb 2026 · Kuala Lumpur, MY</p>
             </div>
             <a href="pSchedulePickup.php" class="ph-submit-btn">
