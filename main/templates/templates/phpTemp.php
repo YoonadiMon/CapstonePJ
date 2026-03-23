@@ -74,7 +74,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                         <a href="../../html/provider/pHome.php">Home</a>
                         <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                         <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-                        <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
+                        <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
                         <a href="../../html/common/About.html">About</a>
                     <?php endif; ?>
                 </div>
@@ -105,7 +105,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <a href="../../html/provider/pHome.php">Home</a>
                 <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                 <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-                <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
+                <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
                 <a href="../../html/common/About.html">About</a>
             <?php endif; ?>
         </nav>
@@ -195,7 +195,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <!-- Provider Footer Links -->
                 <div>
                     <b>Recycling</b><br>
-                    <a href="../../html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
+                    <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a><br>
                     <a href="../../html/provider/pWasteType.html">E-Waste Types</a>
                 </div>
                 <div>

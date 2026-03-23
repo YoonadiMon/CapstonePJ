@@ -569,7 +569,7 @@
                     <a href="../../html/provider/pHome.html">Home</a>
                     <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
                     <a href="../../html/provider/pMainPickup.html">My Pickup</a>
-                    <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
+                    <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
                     <a href="../../html/common/About.html">About</a>
                 </div>
             </div>
@@ -580,7 +580,7 @@
             <a href="../../html/provider/pHome.html">Home</a>
             <a href="../../html/provider/pSchedulePickup.html">Schedule Pickup</a>
             <a href="../../html/provider/pMainPickup.html">My Pickup</a>
-            <a href="../../html/provider/pEwasteGuide.html">E-waste Guide</a>
+            <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
             <a href="../../html/common/About.html">About</a>
         </nav>
         
@@ -817,7 +817,7 @@
         <section class="c-footer-links-section">
             <div>
                 <b>Recycling</b><br>
-                <a href="../../html/provider/pEwasteGuide.html">E-Waste Guide</a><br>
+                <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a><br>
                 <a href="../../html/provider/pWasteType.html">E-Waste Types</a>
             </div>
             <div>
