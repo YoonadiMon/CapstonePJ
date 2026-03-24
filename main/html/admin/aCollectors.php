@@ -242,9 +242,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'IC / License must be in the format 121212-12-1234.';
         }
  
-        // Block manually setting 'on duty' or 'suspended' via the edit form
-        if (in_array($status, ['on duty', 'suspended'])) {
-            // Fetch current status to preserve it
+        // Block manually setting 'on duty' via the edit form
+        if ($status === 'on duty') {
             $curStmtCheck = $conn->query("SELECT status FROM tblcollector WHERE collectorID=$collectorID");
             $curRowCheck  = $curStmtCheck->fetch_assoc();
             $status = $curRowCheck['status'] ?? 'active';
@@ -497,8 +496,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: ' . $_SERVER['PHP_SELF']); exit;
         }
 
-        // Block manual 'on duty' or 'suspended' server-side
-        if (in_array(strtolower($newStatus), ['on duty', 'suspended'])) {
+        // Block manual 'on duty' server-side
+        if (in_array(strtolower($newStatus), ['on duty'])) {
             $_SESSION['errorMsg'] = '"' . $newStatus . '" cannot be set manually here.';
             header('Location: ' . $_SERVER['PHP_SELF']); exit;
         }
@@ -2001,10 +2000,12 @@ $collectorsJson  = json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 statusSelect.disabled = true;
                 hintEl.textContent    = '"On Duty" is managed automatically and cannot be changed manually.';
             } else if (isSuspended) {
-                // Locked: suspended can only be changed via Issue interface
+                const suspOpt = statusSelect.querySelector('option[value="suspended"]');
+                if (suspOpt) suspOpt.disabled = false;
                 statusSelect.value    = 'suspended';
-                statusSelect.disabled = true;
-                hintEl.textContent    = 'This collector is Suspended. Status can only be changed via the Issue interface.';
+                if (suspOpt) suspOpt.disabled = true;
+                statusSelect.disabled = false;
+                hintEl.textContent    = 'This collector is Suspended. You may restore them to Active or Inactive.';
             } else {
                 statusSelect.value    = c.status;
                 statusSelect.disabled = false;

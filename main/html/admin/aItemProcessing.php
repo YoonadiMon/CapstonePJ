@@ -316,6 +316,10 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
             height: 14px;
         }
 
+        .dark-mode .section-heading h3 img {
+            content: url("../../assets/images/box-icon-white.svg");
+        }
+
         .filter-label-tag {
             font-size: 0.7rem;
             font-weight: 400;
@@ -345,6 +349,10 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
             height: 13px;
             opacity: 0.5;
             pointer-events: none;
+        }
+
+        .dark-mode .search-wrap img {
+            content: url("../../assets/images/view-icon-white.svg");
         }
 
         .search-input {
@@ -380,6 +388,21 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
 
         .filter-select:focus {
             border-color: var(--MainBlue);
+        }
+
+        .filter-request {
+            position: relative; 
+            display:flex; 
+            align-items: center;
+        }
+
+        .filter-request span {
+            position: absolute; 
+            left: 9px; 
+            font-size: 0.82rem; 
+            font-weight: 700; 
+            color: var(--Gray); 
+            pointer-events: none;
         }
 
         .data-card {
@@ -1131,7 +1154,7 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
         <div>
             <div class="section-heading">
                 <h3>
-                    <img src="../../assets/images/box-icon-white.svg" alt="">
+                    <img src="../../assets/images/box-icon-black.svg" alt="">
                     Items List
                     <?php if ($filterStatus !== 'all' && $filterStatus !== ''): ?>
                     <span class="filter-label-tag">· <?= sanitize($filterStatus) ?></span>
@@ -1140,7 +1163,7 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
                 <form method="GET" class="filters-bar" id="filterForm">
                     <input type="hidden" name="status" value="<?= sanitize($filterStatus) ?>">
                     <div class="search-wrap">
-                        <img src="../../assets/images/view-icon-white.svg" alt="">
+                        <img src="../../assets/images/view-icon-black.svg" alt="">
                         <input
                             type="text"
                             name="search"
@@ -1150,17 +1173,19 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
                             oninput="this.form.submit()"
                         >
                     </div>
-                    <select name="requestID" class="filter-select" onchange="this.form.submit()">
-                        <option value="0">All Requests</option>
-                        <?php
-                        $reqOpts = $conn->query("SELECT requestID FROM tblcollection_request ORDER BY requestID");
-                        while ($ro = $reqOpts->fetch_assoc()):
-                        ?>
-                        <option value="<?= $ro['requestID'] ?>" <?= ($filterReq === (int)$ro['requestID']) ? 'selected' : '' ?>>
-                            Request #<?= $ro['requestID'] ?>
-                        </option>
-                        <?php endwhile; ?>
-                    </select>
+                    <div class="filter-request">
+                        <span>#</span>
+                        <input
+                            type="number"
+                            name="requestID"
+                            class="filter-select"
+                            placeholder="Req ID"
+                            value="<?= $filterReq > 0 ? $filterReq : '' ?>"
+                            min="1"
+                            style="padding-left:22px; width:100px; -moz-appearance:textfield;"
+                            oninput="this.form.submit()"
+                        >
+                    </div>
                     <?php if ($search !== '' || $filterStatus !== 'all' || $filterReq > 0): ?>
                         <a href="?" class="btn-clear-filters">Clear</a>
                     <?php endif; ?>
