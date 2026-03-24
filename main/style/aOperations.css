@@ -624,12 +624,30 @@
 }
 
 .timeline-time {
-    color: var(--Gray);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-color);
     min-width: 60px;
+}
+
+.timeline-date {
+    font-size: 0.62rem;
+    color: var(--Gray);
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
 }
 
 .timeline-event {
     color: var(--text-color);
+    font-size: 0.9rem; 
+    font-weight: 500;
+}
+
+.timeline-event strong {
+    color: var(--MainBlue);
+    font-size: 0.9rem;
+    font-weight: 700;
 }
 
 .timeline-event strong {
