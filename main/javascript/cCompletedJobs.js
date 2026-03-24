@@ -300,3 +300,176 @@
 // }
 
 
+
+/* cCompletedJobs.js
+ * historyData is injected by cCompletedJobs.php as an inline <script> block
+ * just before this file is loaded, so it is already available as a global.
+ * Do NOT redeclare historyData here.
+ */
+
+// ─── STATE ────────────────────────────────────────────────────
+let activeJobId = null;
+let filteredData = [...historyData];
+
+// ─── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    renderStats();
+    renderJobList(historyData);
+});
+
+// ─── STATS ───────────────────────────────────────────────────
+function renderStats() {
+    let totalJobs   = historyData.length;
+    let totalItems  = 0;
+    let totalWeight = 0;
+
+    historyData.forEach(job => {
+        job.items.forEach(item => {
+            totalItems++;
+            totalWeight += parseFloat(item.weight);
+        });
+    });
+
+    document.getElementById('statJobs').textContent   = totalJobs;
+    document.getElementById('statItems').textContent  = totalItems;
+    document.getElementById('statWeight').textContent = totalWeight.toFixed(1) + ' kg';
+}
+
+// ─── JOB LIST ─────────────────────────────────────────────────
+function renderJobList(data) {
+    const list = document.getElementById('historyJobList');
+    list.innerHTML = '';
+
+    if (data.length === 0) {
+        list.innerHTML = '<div class="history-empty-list">No jobs found</div>';
+        return;
+    }
+
+    data.forEach(job => {
+        const item = document.createElement('div');
+        item.className = 'history-job-item' + (job.id === activeJobId ? ' active' : '');
+        item.dataset.jobId = job.id;
+        item.innerHTML = `
+            <span class="history-job-id">${job.id}</span>
+            <span class="history-job-date">${job.date}</span>
+        `;
+        item.addEventListener('click', () => selectJob(job.id));
+        list.appendChild(item);
+    });
+}
+
+// ─── SEARCH / FILTER ──────────────────────────────────────────
+function filterHistory() {
+    const query = document.getElementById('historySearch').value.toLowerCase().trim();
+    filteredData = historyData.filter(job =>
+        job.id.toLowerCase().includes(query) ||
+        job.provider.name.toLowerCase().includes(query) ||
+        job.date.includes(query)
+    );
+    renderJobList(filteredData);
+}
+
+// ─── SELECT JOB & SHOW DETAIL ─────────────────────────────────
+function selectJob(jobId) {
+    activeJobId = jobId;
+
+    // Update active state in list
+    document.querySelectorAll('.history-job-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.jobId === jobId);
+    });
+
+    const job = historyData.find(j => j.id === jobId);
+    if (!job) return;
+
+    // Show detail panel
+    document.getElementById('detailEmpty').style.display = 'none';
+    const content = document.getElementById('detailContent');
+    content.style.display = 'block';
+
+    // Header
+    document.getElementById('detailJobId').textContent = job.id;
+    const badge = document.getElementById('detailStatus');
+    badge.textContent = capitalize(job.status);
+    badge.className = 'detail-badge badge-' + job.status;
+
+    document.getElementById('detailDate').textContent     = job.date;
+    document.getElementById('detailProvider').textContent = job.provider.name;
+
+    // Overview
+    document.getElementById('dProviderName').textContent    = job.provider.name;
+    document.getElementById('dProviderAddress').textContent = job.provider.address;
+    document.getElementById('dProviderDate').textContent    = job.provider.date;
+
+    const itemList  = document.getElementById('dItemList');
+    const brandList = document.getElementById('dBrandList');
+    itemList.innerHTML  = '';
+    brandList.innerHTML = '';
+
+    let totalWeight = 0;
+    job.items.forEach((item, i) => {
+        totalWeight += parseFloat(item.weight);
+        itemList.innerHTML  += `<li>${i + 1}. ${item.name}</li>`;
+        brandList.innerHTML += `<li>${i + 1}. ${item.brand}</li>`;
+    });
+
+    document.getElementById('dTotalWeight').textContent = totalWeight.toFixed(1) + ' kg total';
+
+    // Item dropdowns
+    const dropdowns = document.getElementById('dItemDropdowns');
+    dropdowns.innerHTML = '';
+    job.items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'item-dropdown';
+        el.innerHTML = `
+            <div class="item-dropdown-header">
+                <span>${item.id} — ${item.name}</span>
+                <span class="dropdown-arrow">▼</span>
+            </div>
+            <div class="item-dropdown-content">
+                <div class="item-grid-with-image">
+                    <div class="item-image-col">
+                        <img src="${item.img}" alt="${item.name}" class="item-sample-img"
+                             onerror="this.src='../../assets/images/placeholder-item.png'">
+                        <a class="view-full-pic-link" onclick="openHistoryModal('${item.img}','${item.name}')">View full pic</a>
+                    </div>
+                    <div class="item-details-col">
+                        <p><strong>Item</strong> ${item.name}</p>
+                        <p><strong>Brand</strong> ${item.brand}</p>
+                        <p><strong>Weight</strong> ${item.weight} kg</p>
+                        <p><strong>Drop-off</strong> ${item.dropoff}</p>
+                        <p><strong>Note</strong> ${item.description}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const header = el.querySelector('.item-dropdown-header');
+        const body   = el.querySelector('.item-dropdown-content');
+        const arrow  = el.querySelector('.dropdown-arrow');
+
+        header.addEventListener('click', () => {
+            body.classList.toggle('active');
+            arrow.classList.toggle('rotate');
+        });
+
+        dropdowns.appendChild(el);
+    });
+}
+
+// ─── IMAGE MODAL ──────────────────────────────────────────────
+function openHistoryModal(src, name) {
+    document.getElementById('historyModalImg').src            = src;
+    document.getElementById('historyModalCaption').textContent = name;
+    document.getElementById('historyImageModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeHistoryModal() {
+    document.getElementById('historyImageModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// ─── UTIL ─────────────────────────────────────────────────────
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
