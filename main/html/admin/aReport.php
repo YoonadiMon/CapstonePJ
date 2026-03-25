@@ -153,6 +153,89 @@ $high_priority_result = $conn->query($high_priority_query);
 if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
     $high_priority = $row['count'];
 }
+
+if (isset($_GET['export']) && $_GET['export'] == 'true') {
+    $export_type = isset($_GET['type']) ? $_GET['type'] : 'overview';
+    
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="aftervolt_report_' . date('Y-m-d') . '.csv"');
+    
+    $output = fopen('php://output', 'w');
+    
+    fputcsv($output, ['AfterVolt Report Export']);
+    fputcsv($output, ['Generated on: ' . date('Y-m-d H:i:s')]);
+    fputcsv($output, []);
+    
+    if ($export_type == 'overview') {
+        fputcsv($output, ['=== OVERVIEW REPORT ===']);
+        fputcsv($output, []);
+        fputcsv($output, ['Metric', 'Value']);
+        fputcsv($output, ['Total E-Waste (kg)', number_format($total_ewaste, 2)]);
+        fputcsv($output, ['Total Requests', $total_requests]);
+        fputcsv($output, ['Pending Requests', $pending_requests]);
+        fputcsv($output, ['Active Users', $total_users]);
+        fputcsv($output, ['Active Collectors', $total_collectors]);
+        fputcsv($output, ['Active Centres', $total_centres]);
+        fputcsv($output, []);
+        
+        fputcsv($output, ['Collection Trend (Last 7 Days)']);
+        fputcsv($output, ['Day', 'E-Waste Collected (kg)']);
+        for ($i = 0; $i < count($trend_labels); $i++) {
+            fputcsv($output, [$trend_labels[$i], $trend_data[$i]]);
+        }
+        fputcsv($output, []);
+        
+        fputcsv($output, ['E-Waste by Type']);
+        fputcsv($output, ['Item Type', 'Count']);
+        for ($i = 0; $i < count($type_labels); $i++) {
+            fputcsv($output, [$type_labels[$i], $type_data[$i]]);
+        }
+        fputcsv($output, []);
+        
+        fputcsv($output, ['Collection Summary by Centre']);
+        fputcsv($output, ['Centre', 'Total Requests', 'Total Weight (kg)', 'Completed', 'Pending']);
+        foreach ($centres_summary as $centre) {
+            fputcsv($output, [
+                $centre['name'],
+                $centre['total_requests'],
+                number_format($centre['total_weight'], 2),
+                $centre['completed'],
+                $centre['pending']
+            ]);
+        }
+    } elseif ($export_type == 'audit') {
+        fputcsv($output, ['=== AUDIT TRAIL REPORT ===']);
+        fputcsv($output, []);
+        fputcsv($output, ['Timestamp', 'User', 'Role', 'Action', 'Details']);
+        foreach ($audit_logs as $log) {
+            fputcsv($output, [
+                $log['dateTime'],
+                $log['email'],
+                $log['userType'],
+                $log['action'],
+                $log['description'] ?? '-'
+            ]);
+        }
+    } elseif ($export_type == 'tickets') {
+        fputcsv($output, ['=== ISSUE TICKETS REPORT ===']);
+        fputcsv($output, []);
+        fputcsv($output, ['Ticket ID', 'Reported By', 'Issue Type', 'Subject', 'Status', 'Priority', 'Created']);
+        foreach ($issue_tickets as $ticket) {
+            fputcsv($output, [
+                'TCK-' . $ticket['issueID'],
+                $ticket['reported_by_email'],
+                $ticket['issueType'],
+                $ticket['subject'],
+                $ticket['status'],
+                $ticket['severity'],
+                date('Y-m-d', strtotime($ticket['reportedAt']))
+            ]);
+        }
+    }
+    
+    fclose($output);
+    exit();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -216,10 +299,46 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
             align-items: center;
             gap: 0.5rem;
             font-weight: 500;
+            transition: background-color 0.2s;
         }
 
         .export-btn:hover {
             background-color: var(--DarkerMainBlue);
+        }
+
+        .export-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .export-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--sec-bg-color);
+            min-width: 160px;
+            box-shadow: 0 8px 16px var(--shadow-color);
+            border-radius: 8px;
+            z-index: 1;
+            margin-top: 0.5rem;
+        }
+
+        .export-dropdown-content a {
+            color: var(--text-color);
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            display: block;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+            border-radius: 8px;
+        }
+
+        .export-dropdown-content a:hover {
+            background-color: var(--LowMainBlue);
+        }
+
+        .export-dropdown:hover .export-dropdown-content {
+            display: block;
         }
 
         .stats-grid {
@@ -533,9 +652,16 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                         <span>to</span>
                         <input type="date" id="endDate" value="<?php echo date('Y-m-d'); ?>">
                     </div>
-                    <button class="export-btn" onclick="exportData()">
-                        <i class="fas fa-download"></i> Export
-                    </button>
+                    <div class="export-dropdown">
+                        <button class="export-btn" id="exportBtn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <div class="export-dropdown-content">
+                            <a href="#" onclick="exportReport('overview')">📊 Export Overview Report</a>
+                            <a href="#" onclick="exportReport('audit')">📋 Export Audit Trail</a>
+                            <a href="#" onclick="exportReport('tickets')">🎫 Export Issue Tickets</a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -610,7 +736,7 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
                     <div class="audit-table-container">
                         <table class="audit-table">
                             <thead>
-                                <tr>
+                                32
                                     <th>Collection Centre</th>
                                     <th>Total Requests</th>
                                     <th>Total Weight (kg)</th>
@@ -907,8 +1033,10 @@ if ($high_priority_result && $row = $high_priority_result->fetch_assoc()) {
             alert('Chart updated');
         }
 
-        function exportData() {
-            alert('Exporting data...');
+        function exportReport(type) {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            window.location.href = 'aReport.php?export=true&type=' + type + '&start=' + startDate + '&end=' + endDate;
         }
 
         function viewTicket(id) {

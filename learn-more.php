@@ -337,6 +337,7 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
             color: var(--text-color);
         }
 
+        /* Dark mode button - exactly like template position */
         .c-navbar-more {
             display: flex;
             align-items: center;
@@ -358,6 +359,7 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
             height: auto;
         }
 
+        /* Mobile dark mode button */
         .c-navbar-more-mobile {
             display: none;
         }
@@ -421,7 +423,9 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
     
+    <!-- Logo & Dark Mode Only -->
     <header>
+        <!-- Logo + Name -->
         <section class="c-logo-section">
             <a href="index.html" class="c-logo-link">
                 <img src="main/assets/images/logo.png" alt="Logo" class="c-logo">
@@ -429,12 +433,14 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
             </a>
         </section>
 
+        <!-- Dark Mode Only (Desktop/Tablet) - exactly like template position -->
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
                 <img src="main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
         </section>
 
+        <!-- Dark Mode Only (Mobile) -->
         <section class="c-navbar-more-mobile">
             <button id="themeToggleMobile">
                 <img src="main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
@@ -443,12 +449,15 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
     </header>
     <hr>
 
+    <!-- Main Content -->
     <main>
+        <!-- Hero section -->
         <section class="learn-hero">
             <h1>Our Mission</h1>
             <p>Transforming e-waste into valuable resources through technology, transparency, and community action.</p>
         </section>
 
+        <!-- Why recycle section -->
         <section class="section">
             <h2 class="section-title">Why Recycle E-Waste?</h2>
             <div class="why-grid">
@@ -470,6 +479,7 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
             </div>
         </section>
 
+        <!-- How it works section -->
         <section class="section">
             <h2 class="section-title center">How It Works</h2>
             <div class="process-steps">
@@ -491,6 +501,7 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
             </div>
         </section>
 
+        <!-- Impact stats -->
         <section class="section">
             <h2 class="section-title center">Our Impact</h2>
             <div class="stats-grid">
@@ -513,6 +524,7 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
             </div>
         </section>
 
+        <!-- CTA section -->
         <section class="cta-section">
             <h2>Ready to Make a Difference?</h2>
             <p>Join our community of responsible recyclers today. Together, we can build a cleaner, greener future.</p>
@@ -537,6 +549,7 @@ $total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
         </div>
     </footer>
 
+    // Theme toggle functionality
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggleDesktop = document.getElementById('themeToggleDesktop');
