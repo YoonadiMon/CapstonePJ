@@ -1,3 +1,47 @@
+<?php
+    include("../../php/dbConn.php");
+    if(!isset($_SESSION)) {
+        session_start();
+    }
+    include("../../php/sessionCheck.php");
+
+    // Check if user is provide; only providers can access this page
+    if ($_SESSION['userType'] !== 'collector') {
+        header("Location: ../../index.html");
+        exit();
+    }
+
+    // get active user info of curent session
+    $_SESSION['collector_id'] = $_SESSION['userID'];
+    $collector_id = $_SESSION['collector_id'];
+    $collector_name = $_SESSION['fullname'];
+    $collector_email = $_SESSION['email'];
+    $collector_phone = $_SESSION['phone'];
+    $createdAt = $_SESSION['createdAt'];
+    $lastlogin = $_SESSION['lastLogin'];
+
+    $initials = '';
+    function getInitials($name) {
+        $words = explode(' ', trim($name));
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+        }
+        return strtoupper(substr($words[0], 0, 2));
+    }
+    $initials = getInitials($collector_name);
+
+    $sql = "SELECT * FROM tblusers INNER JOIN tblcollector ON tblusers.userID = tblcollector.collectorID WHERE tblusers.userID = '$collector_id'";
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_assoc($result);
+    if ($row) {
+        $collector_license = $row['licenseNum'];
+        $collector_status = $row['status'];
+    } else {
+        $collector_license = 'N/A';
+        $collector_status = 'N/A';
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,6 +76,7 @@
             overflow: hidden;
             position: relative;
         }
+
         .welcome-banner::after {
             content: '';
             position: absolute;
@@ -41,8 +86,11 @@
             background: rgba(255,255,255,.06);
             pointer-events: none;
         }
+
         .welcome-text h2 { font-size: 1.25rem; font-weight: 700; color: white; margin-bottom: 4px; }
+
         .welcome-text p  { font-size: 0.82rem; color: rgba(255,255,255,.78); }
+        
         .welcome-avatar {
             width: 56px; height: 56px; border-radius: 50%;
             border: 2px solid rgba(255,255,255,.4);
@@ -125,6 +173,9 @@
             display: flex; align-items: center; gap: 14px;
             padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--LowMainBlue);
+        }
+        .profile-top-details > * {
+            margin: 2px 0;
         }
         .profile-avatar {
             width: 52px; height: 52px; border-radius: 50%;
@@ -237,7 +288,7 @@
 
     <header>
         <section class="c-logo-section">
-            <a href="../../html/collector/cHome.html" class="c-logo-link">
+            <a href="../../html/collector/cHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -256,7 +307,7 @@
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <a href="../../html/collector/cHome.html">Home</a>
+                    <a href="../../html/collector/cHome.php">Home</a>
                     <a href="../../html/collector/cMyJobs.html">My Jobs</a>
                     <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a>
                     <a href="../../html/collector/cCompletedJobs.html">History</a>
@@ -266,7 +317,7 @@
         </nav>
 
         <nav class="c-navbar-desktop">
-            <a href="../../html/collector/cHome.html">Home</a>
+            <a href="../../html/collector/cHome.php">Home</a>
             <a href="../../html/collector/cMyJobs.html">My Jobs</a>
             <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a>
             <a href="../../html/collector/cCompletedJobs.html">History</a>
@@ -349,23 +400,23 @@
                 <div class="c-card">
                     <div class="profile-top">
                         <div class="profile-avatar" id="profileAvatar">RK</div>
-                        <div>
-                            <div class="profile-name" id="profileName">Rajan Kumar</div>
+                        <div class="profile-top-details">
+                            <div class="profile-name" id="profileName"><?php echo $collector_name; ?></div>
                             <div class="role-pill">
                                 <svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                                 Collector
                             </div>
-                            <div class="profile-email" id="profileEmail">rajan.k@aftervolt.com</div>
-                            <div class="profile-phone" id="profilePhone">+6 019 334 5566</div>
+                            <div class="profile-email" id="profileEmail"><?php echo $collector_email; ?></div>
+                            <div class="profile-phone" id="profilePhone"><?php echo $collector_phone; ?></div>
                         </div>
                     </div>
                     <div class="profile-grid">
                         <div class="profile-grid-item">
-                            <div class="grid-val" id="profileVehicle">VEH-042</div>
-                            <div class="grid-lbl">Assigned Vehicle</div>
+                            <div class="grid-val" id="profileStatus"><?php echo $collector_status; ?></div>
+                            <div class="grid-lbl">License Status</div>
                         </div>
                         <div class="profile-grid-item">
-                            <div class="grid-val" id="profileLicense">GCK 1234</div>
+                            <div class="grid-val" id="profileLicense"><?php echo $collector_license; ?></div>
                             <div class="grid-lbl">License No.</div>
                         </div>
                     </div>
@@ -559,7 +610,7 @@
 
     <footer>
         <section class="c-footer-info-section">
-            <a href="../../html/collector/cHome.html">
+            <a href="../../html/collector/cHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -595,9 +646,9 @@
 
         const USERS_PREVIEW = {
             col1: {
-                name: 'Rajan Kumar', initials: 'RK',
-                email: 'rajan.k@aftervolt.com', phone: '+6 019 334 5566',
-                vehicle: 'VEH-042', license: 'GCK 1234'
+                name: '<?php echo $collector_name; ?>', initials: '<?php echo $initials; ?>',
+                email: '<?php echo $collector_email; ?>', phone: '<?php echo $collector_phone; ?>',
+                status: '<?php echo $collector_status; ?>', license: '<?php echo $collector_license; ?>'
             }
         };
 
@@ -617,7 +668,7 @@
             document.getElementById('profileName').textContent    = user.name;
             document.getElementById('profileEmail').textContent   = user.email;
             document.getElementById('profilePhone').textContent   = user.phone;
-            document.getElementById('profileVehicle').textContent = user.vehicle;
+            document.getElementById('profileStatus').textContent = user.status.toUpperCase();
             document.getElementById('profileLicense').textContent = user.license;
         })();
 

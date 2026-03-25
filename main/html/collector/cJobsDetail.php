@@ -172,7 +172,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
     <!-- Header -->
     <header>
         <section class="c-logo-section">
-            <a href="../../html/collector/cHome.html" class="c-logo-link">
+            <a href="../../html/collector/cHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -191,7 +191,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <a href="../../html/collector/cHome.html">Home</a>
+                    <a href="../../html/collector/cHome.php">Home</a>
                     <a href="../../html/collector/cMyJobs.html">My Jobs</a>
                     <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a>
                     <a href="../../html/collector/cCompletedJobs.html">History</a>
@@ -201,7 +201,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
         </nav>
 
         <nav class="c-navbar-desktop">
-            <a href="../../html/collector/cHome.html">Home</a>
+            <a href="../../html/collector/cHome.php">Home</a>
             <a href="../../html/collector/cMyJobs.html">My Jobs</a>
             <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a>
             <a href="../../html/collector/cCompletedJobs.html">History</a>
@@ -399,7 +399,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
     <!-- Footer -->
     <footer>
         <section class="c-footer-info-section">
-            <a href="../../html/collector/cHome.html">
+            <a href="../../html/collector/cHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
