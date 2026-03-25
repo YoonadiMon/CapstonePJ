@@ -47,12 +47,29 @@
     $allProviderStats = [];
     $allItemsStats = [];
 
-    $sql = "SELECT * FROM tbljob INNER JOIN tblcollector ON tbljob.collectorID = tblcollector.collectorID WHERE tbljob.collectorID = '$collector_id'";
+    $sql = "SELECT 
+            tbljob.jobID,
+            tbljob.requestID,
+            tbljob.collectorID,
+            tbljob.completedAt,
+            tbljob.vehicleID,
+            tbljob.scheduledDate,
+            tbljob.scheduledTime,
+            tbljob.estimatedEndTime,
+            tbljob.status AS jobStatus,
+            tbljob.rejectionReason,
+            tbljob.startedAt
+        FROM tbljob 
+        INNER JOIN tblcollector 
+        ON tbljob.collectorID = tblcollector.collectorID 
+        WHERE tbljob.collectorID = '$collector_id'";
+
+    // $sql = "SELECT * FROM tbljob INNER JOIN tblcollector ON tbljob.collectorID = tblcollector.collectorID WHERE tbljob.collectorID = '$collector_id'";
     $result = mysqli_query($conn, $sql);
     if ($result) {
         if (mysqli_num_rows($result) > 0) {
             while ($row = mysqli_fetch_assoc($result)) {
-                // echo "<script>console.log('DB Success - Item stats row: " . json_encode($row) . "');</script>";
+                echo "<script>console.log('DB Success - Item stats row: " . json_encode($row) . "');</script>";
                 $allJobsDetails[] = [
                     'jobID' => $row['jobID'] ?? 'N/A',
                     'requestID' => $row['requestID'] ?? 'N/A',
@@ -62,7 +79,7 @@
                     'scheduledDate' => $row['scheduledDate'] ?? 'N/A',
                     'scheduledTime' => $row['scheduledTime'] ?? 'N/A',
                     'estimatedEndTime' => $row['estimatedEndTime'] ?? 'N/A',
-                    'status' => $row['status'] ?? 'N/A',
+                    'status' => $row['jobStatus'] ?? 'N/A',
                     'rejectionReason' => $row['rejectionReason'] ?? 'N/A',
                     'startedAt' => $row['startedAt'] ?? 'N/A'
                 ];
@@ -160,6 +177,25 @@
                     'name' => $row['name']
                 ];
             }
+        }
+    }
+
+    $statusCounts = [
+        'All' => count($allJobsDetails),
+        'Pending' => 0,
+        'Scheduled' => 0,
+        'Ongoing' => 0,
+        'Completed' => 0,
+        'Rejected' => 0,
+        'Cancelled' => 0
+    ];
+
+    echo "<script>console.log('Details of all jobs fetched: " . json_encode($allJobsDetails) . "');</script>";
+    foreach ($allJobsDetails as $job) {
+        $status = $job['status'];
+        echo "<script>console.log('Processing job ID: " . $job['jobID'] . " with status: " . $status . "');</script>";
+        if (isset($statusCounts[$status])) {
+            $statusCounts[$status]++;
         }
     }
 ?>
@@ -469,39 +505,107 @@
         </div>
 
         <!-- OVERVIEW STATS -->
-        <div>
-            <div class="section-heading">
-                <h3>
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    Overview
-                </h3>
-            </div>
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    </div>
-                    <div><div class="stat-value"><?php echo count($allJobsDetails); ?></div><div class="stat-label">Total Jobs</div></div>
+        <div class="stats-row">
+            <!-- All -->
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                    </div>
-                    <div><div class="stat-value">18</div><div class="stat-label">Completed</div></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon orange">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <div><div class="stat-value">4</div><div class="stat-label">Ongoing</div></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon purple">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    </div>
-                    <div><div class="stat-value">2</div><div class="stat-label">Pending</div></div>
+                <div>
+                    <div class="stat-value"><?php echo $statusCounts['All']; ?></div>
+                    <div class="stat-label">All</div>
                 </div>
             </div>
+
+            <!-- Pending -->
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-value"><?php echo $statusCounts['Pending']; ?></div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+
+            <!-- Scheduled -->
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-value"><?php echo $statusCounts['Scheduled']; ?></div>
+                    <div class="stat-label">Scheduled</div>
+                </div>
+            </div>
+
+            <!-- Ongoing -->
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-value"><?php echo $statusCounts['Ongoing']; ?></div>
+                    <div class="stat-label">Ongoing</div>
+                </div>
+            </div>
+
+            <!-- Completed -->
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-value"><?php echo $statusCounts['Completed']; ?></div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+
+            <!-- Rejected -->
+            <div class="stat-card">
+                <div class="stat-icon red">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-value"><?php echo $statusCounts['Rejected']; ?></div>
+                    <div class="stat-label">Rejected</div>
+                </div>
+            </div>
+
+            <!-- Cancelled -->
+            <div class="stat-card">
+                <div class="stat-icon gray">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-value"><?php echo $statusCounts['Cancelled']; ?></div>
+                    <div class="stat-label">Cancelled</div>
+                </div>
+            </div>
+
         </div>
 
         <!-- PROFILE + ACTIVITY -->
@@ -545,51 +649,70 @@
                 </div>
             </div>
 
-            <!-- RECENT ACTIVITY -->
+            <!-- JOBS OVERVIEW -->
             <div>
                 <div class="section-heading">
                     <h3>
-                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        Recent Activity
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <path d="M16 2v4M8 2v4M3 10h18"/>
+                        </svg>
+                        Jobs Overview
                     </h3>
+                    <a href="../../html/collector/cMyJobs.php">
+                        <svg id="usersToggleIcon" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <polyline points="9 6 15 12 9 18"/>
+                        </svg>
+                        <span id="usersToggleText">View All</span>
+                    </a>
                 </div>
+
                 <div class="c-card">
                     <div class="c-card-body">
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background:hsl(145,50%,42%)"></div>
-                            <div>
-                                <div class="activity-desc">Collected 3 items from <strong>Ahmad Zaki</strong></div>
-                                <div class="activity-time">Today, 10:32 AM</div>
+
+                        <?php
+                        if (!empty($allJobsDetails)) {
+                            foreach ($allJobsDetails as $job) {
+
+                                // Status color logic
+                                $color = "var(--MainBlue)";
+                                if ($job['status'] === "completed") {
+                                    $color = "hsl(145,50%,42%)";
+                                } elseif ($job['status'] === "pending") {
+                                    $color = "hsl(40,80%,48%)";
+                                } elseif ($job['status'] === "rejected") {
+                                    $color = "hsl(0,70%,55%)";
+                                }
+
+                                echo '
+                                <div class="activity-item">
+                                    <div class="activity-dot" style="background:' . $color . '"></div>
+                                    <div>
+                                        <div class="activity-desc">
+                                            Job <strong>#' . htmlspecialchars($job['jobID']) . '</strong> — 
+                                            <strong>' . ucfirst($job['status']) . '</strong>
+                                        </div>
+                                        <div class="activity-time">
+                                            Scheduled: ' . htmlspecialchars($job['scheduledDate']) . ' 
+                                            at ' . htmlspecialchars($job['scheduledTime']) . '
+                                        </div>
+                                    </div>
+                                </div>
+                                ';
+                            }
+                        } else {
+                            echo '
+                            <div class="activity-item">
+                                <div class="activity-dot" style="background:gray"></div>
+                                <div>
+                                    <div class="activity-desc">No jobs found</div>
+                                    <div class="activity-time">Try again later</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background:var(--MainBlue)"></div>
-                            <div>
-                                <div class="activity-desc">Job <strong>#JOB-2041</strong> marked as completed</div>
-                                <div class="activity-time">Today, 9:15 AM</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background:hsl(40,80%,48%)"></div>
-                            <div>
-                                <div class="activity-desc">Arrived at <strong>Siti Nora</strong>'s location — pickup pending</div>
-                                <div class="activity-time">Today, 8:50 AM</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background:hsl(145,50%,42%)"></div>
-                            <div>
-                                <div class="activity-desc">Collected 2 items from <strong>Lim Wei Jie</strong></div>
-                                <div class="activity-time">Yesterday, 3:40 PM</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background:var(--MainBlue)"></div>
-                            <div>
-                                <div class="activity-desc">New job <strong>#JOB-2045</strong> assigned to you</div>
-                                <div class="activity-time">Yesterday, 1:00 PM</div>
-                            </div>
-                        </div>
+                            ';
+                        }
+                        ?>
+
                     </div>
                 </div>
             </div>
