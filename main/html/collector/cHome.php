@@ -310,7 +310,7 @@
                     <a href="../../html/collector/cHome.php">Home</a>
                     <a href="../../html/collector/cMyJobs.php">My Jobs</a>
                     <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
-                    <a href="../../html/collector/cCompletedJobs.html">History</a>
+                    <a href="../../html/collector/cCompletedJobs.php">History</a>
                     <a href="../../html/common/About.html">About</a>
                 </div>
             </div>
@@ -320,7 +320,7 @@
             <a href="../../html/collector/cHome.php">Home</a>
             <a href="../../html/collector/cMyJobs.php">My Jobs</a>
             <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
-            <a href="../../html/collector/cCompletedJobs.html">History</a>
+            <a href="../../html/collector/cCompletedJobs.php">History</a>
             <a href="../../html/common/About.html">About</a>
         </nav>
         <section class="c-navbar-more">
@@ -625,7 +625,7 @@
                 <b>My Jobs</b><br>
                 <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
                 <a href="../../html/collector/cInProgress.php">In Progress</a><br>
-                <a href="../../html/collector/cCompletedJobs.html">Completed Jobs</a>
+                <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
             </div>
             <div>
                 <b>Support</b><br>
