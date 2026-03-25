@@ -2,13 +2,13 @@
 session_start();
 include("../../php/dbConn.php");
 
-// // check if user is logged in
-// include("../../php/sessionCheck.php");
+// check if user is logged in
+include("../../php/sessionCheck.php");
 
-// Temporarily set session as admin ID 1 until login is implemented
-if (!isset($_SESSION['userID'])) {
-    $_SESSION['userID']   = 1;
-    $_SESSION['userType'] = 'admin';
+// Check if user is admin
+if ($_SESSION['userType'] !== 'admin') {
+    header("Location: ../../index.html");
+    exit();
 }
 
 $userID   = $_SESSION['userID'];
@@ -513,7 +513,7 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
     <header>
         <!-- Logo + Name -->
         <section class="c-logo-section">
-            <a href="../../html/admin/aHome.html" class="c-logo-link">
+            <a href="../../html/admin/aHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -532,12 +532,12 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
                         <button id="themeToggleMobile">
                             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
                         </button>
-                        <a href="../../html/common/Setting.html">
+                        <a href="../../html/common/Setting.php">
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
 
-                    <a href="../../html/admin/aHome.html">Home</a>
+                    <a href="../../html/admin/aHome.php">Home</a>
                     <a href="../../html/admin/aRequests.php">Requests</a><br>
                     <a href="../../html/admin/aJobs.php">Jobs</a><br>
                     <a href="../../html/admin/aIssue.php">Issue</a><br>
@@ -550,7 +550,7 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
 
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
-            <a href="../../html/admin/aHome.html">Home</a>
+            <a href="../../html/admin/aHome.php">Home</a>
             <a href="../../html/admin/aRequests.php">Requests</a><br>
             <a href="../../html/admin/aJobs.php">Jobs</a><br>
             <a href="../../html/admin/aIssue.php">Issue</a><br>
@@ -561,7 +561,7 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
             <button id="themeToggleDesktop">
                 <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon" >
             </button>
-            <a href="../../html/common/Setting.html">
+            <a href="../../html/common/Setting.php">
                 <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
             </a>
         </section>
@@ -654,7 +654,7 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
     <footer>
         <!-- Column 1 -->
         <section class="c-footer-info-section">
-            <a href="../../html/admin/aHome.html">
+            <a href="../../html/admin/aHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -689,8 +689,8 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
             </div>
             <div>
                 <b>Proxy</b><br>
-                <a href="../../html/common/Profile.html">Edit Profile</a><br>
-                <a href="../../html/common/Setting.html">Setting</a>
+                <a href="../../html/common/Profile.php">Edit Profile</a><br>
+                <a href="../../html/common/Setting.php">Setting</a>
             </div>
         </section>
     </footer>

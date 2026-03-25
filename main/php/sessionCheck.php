@@ -4,7 +4,7 @@ include("dbConn.php");
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-/*
+
 // Check if user is logged in
 if (!isset($_SESSION['userID'])) {
     // Store the attempted page URL
@@ -16,127 +16,10 @@ if (!isset($_SESSION['userID'])) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ReLeaf - Access Denied</title>
+        <title>AfterVolt - Access Denied</title>
         <link rel="icon" type="image/png" href="../../assets/images/Logo.png">
         <link rel="stylesheet" href="../../style/style.css">
-        <style>
-            .notification {
-                top: 0;
-                left: 0;
-                align-items: center;
-                justify-content: center;
-                position: fixed;
-                width: 100vw;
-                height: 100vh;
-                background: rgba(0, 0, 0, 0.85);
-                display: flex;
-                z-index: 9999;
-                animation: fadeIn 0.3s ease;
-            }
-            
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-            
-            .notification-card {
-                background: var(--bg-color);
-                border-radius: 16px;
-                padding: 3rem;
-                max-width: 500px;
-                width: 90%;
-                text-align: center;
-                box-shadow: 0 8px 32px var(--shadow-color);
-                animation: slideUp 0.4s ease;
-            }
-
-            .dark-mode .notification-card {
-                border: 1px solid var(--White);
-            }
-            
-            @keyframes slideUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(50px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            .notification-icon img {
-                max-width: 50%;
-                width: 80px;
-                height: auto;
-                object-fit: contain;
-            }
-            
-            @keyframes bounce {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-20px); }
-            }
-            
-            .notification-title {
-                font-size: 2rem;
-                font-weight: 700;
-                color: red;
-                margin-bottom: 1rem;
-            }
-            
-            .notification-message {
-                font-size: 1.1rem;
-                color: var(--text-color);
-                margin-bottom: 2rem;
-                line-height: 1.6;
-            }
-            
-            .notification-countdown {
-                font-size: 0.9rem;
-                color: var(--text-color);
-                margin-top: 1rem;
-            }
-            
-            .progress-bar {
-                width: 100%;
-                height: 4px;
-                background: var(--BlueGray);
-                border-radius: 2px;
-                overflow: hidden;
-                margin-top: 2rem;
-            }
-            
-            .dark-mode .progress-bar {
-                background: var(--Gray);
-            }   
-
-            .progress-fill {
-                height: 100%;
-                background: var(--MainBlue);
-                width: 100%;
-                animation: progressShrink 3s linear;
-            }
-            
-            @keyframes progressShrink {
-                from { width: 100%; }
-                to { width: 0%; }
-            }
-
-            @media (max-width: 480px) {
-                .notification-card {
-                    padding: 1.5rem;
-                }
-                .notification-title {
-                    font-size: 1.5rem;
-                }
-                .notification-message {
-                    font-size: 0.95rem;
-                }
-                .notification-icon img {
-                    width: 60px;
-                }
-            }
-        </style>
+        <link rel="stylesheet" href="../../style/notification.css">
     </head>
     <body>
         <div class="notification">
@@ -144,9 +27,9 @@ if (!isset($_SESSION['userID'])) {
                 <div class="notification-icon"><img src="../../assets/images/banned-icon-red.svg" alt=""></div>
                 <h1 class="notification-title">Authentication Required</h1>
                 <p class="notification-message">
-                    Redirecting you to the sign ip page...
+                    Redirecting you to the sign in page...
                 </p>
-                <a href="../signIn.php" class="c-btn c-btn-primary">
+                <a href="../../../signIn.php" class="c-btn c-btn-primary">
                     Sign In
                 </a>
                 <p class="notification-countdown">Redirecting in <span id="countdown">3</span> seconds</p>
@@ -155,7 +38,7 @@ if (!isset($_SESSION['userID'])) {
                 </div>
             </div>
         </div>
-        <script src="../../javascript/mainScript.js"></script>>
+        <script src="../../javascript/mainScript.js"></script>
         <script>
             let timeLeft = 3;
             const countdownEl = document.getElementById("countdown");
@@ -166,7 +49,7 @@ if (!isset($_SESSION['userID'])) {
                 
                 if (timeLeft <= 0) {
                     clearInterval(timer);
-                    window.location.href = "../signIn.php";
+                    window.location.href = "../../../signIn.php";
                 }
             }, 1000);
         </script>
@@ -174,7 +57,7 @@ if (!isset($_SESSION['userID'])) {
     </html>';
     exit();
 }
-*/
+
 // Get user type from session
 $userType = isset($_SESSION['userType']) ? $_SESSION['userType'] : 'provider';
 $username = isset($_SESSION['username']) ? $_SESSION['username'] : '';
@@ -186,6 +69,70 @@ $email = $_SESSION['email'] ?? '';
 $phone = $_SESSION['phone'] ?? '';
 $createdAt = $_SESSION['createdAt'] ?? '';
 $lastlogin = $_SESSION['lastLogin'] ?? '';
+
+// Check if provider or collector is suspended
+$isSuspended = false;
+
+if ($userType === 'provider') {
+    $stmt = $conn->prepare("SELECT suspended FROM tblprovider WHERE providerID = ?");
+    $stmt->bind_param("i", $userID);
+    $stmt->execute();
+    $stmt->bind_result($suspended);
+    $stmt->fetch();
+    $stmt->close();
+    if ($suspended == 1) {
+        $isSuspended = true;
+    }
+
+} elseif ($userType === 'collector') {
+    $stmt = $conn->prepare("SELECT status FROM tblcollector WHERE collectorID = ?");
+    $stmt->bind_param("i", $userID);
+    $stmt->execute();
+    $stmt->bind_result($collectorStatus);
+    $stmt->fetch();
+    $stmt->close();
+    if ($collectorStatus === 'suspended') {
+        $isSuspended = true;
+    }
+}
+
+if ($isSuspended) {
+    session_unset();
+    session_destroy();
+
+    echo '<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AfterVolt - Account Suspended</title>
+        <link rel="icon" type="image/png" href="../../assets/images/Logo.png">
+        <link rel="stylesheet" href="../../style/style.css">
+        <link rel="stylesheet" href="../../style/notification.css">
+    </head>
+    <body>
+        <div class="notification">
+            <div class="notification-card">
+                <div class="notification-icon"><img src="../../assets/images/banned-icon-red.svg" alt=""></div>
+                <h1 class="notification-title">Account Suspended</h1>
+                <p class="notification-message">
+                    Your account has been suspended and you are currently unable to access the AfterVolt platform.
+                    This may be due to a violation of our terms of service or a pending review by our administrators.
+                </p>
+                <p class="notification-contact">
+                    If you believe this is a mistake or would like more information,
+                    please contact our support team at <strong>support@aftervolt.com</strong>.
+                </p>
+                <a href="../../../signIn.php" class="c-btn c-btn-primary">
+                    Back to Sign In
+                </a>
+            </div>
+        </div>
+        <script src="../../javascript/mainScript.js"></script>
+    </body>
+    </html>';
+    exit();
+}
 
 // Set home page based on user type
 switch ($userType) {
@@ -200,7 +147,7 @@ switch ($userType) {
         break;
     default:
         // Invalid user type, redirect to login
-        header("Location: ../signIn.php");
+        header("Location: ../../../signIn.php");
         exit();
 }
 ?>

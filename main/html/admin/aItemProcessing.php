@@ -2,9 +2,13 @@
 session_start();
 include("../../php/dbConn.php");
 
-if (!isset($_SESSION['userID'])) {
-    $_SESSION['userID']   = 1;
-    $_SESSION['userType'] = 'admin';
+// check if user is logged in
+include("../../php/sessionCheck.php");
+
+// Check if user is admin
+if ($_SESSION['userType'] !== 'admin') {
+    header("Location: ../../index.html");
+    exit();
 }
 
 $userID   = (int)$_SESSION['userID'];
@@ -1029,7 +1033,7 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
 
     <header>
         <section class="c-logo-section">
-            <a href="../../html/admin/aHome.html" class="c-logo-link">
+            <a href="../../html/admin/aHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -1044,34 +1048,34 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
                         <button id="themeToggleMobile">
                             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                         </button>
-                        <a href="../../html/common/Setting.html">
+                        <a href="../../html/common/Setting.php">
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <a href="../../html/admin/aHome.html">Home</a>
-                    <a href="../../html/admin/aRequests.html">Requests</a>
-                    <a href="../../html/admin/aJobs.html">Jobs</a>
-                    <a href="../../html/admin/aIssue.html">Issue</a>
-                    <a href="../../html/admin/aOperations.html">Operations</a>
-                    <a href="../../html/admin/aReport.html">Report</a>
+                    <a href="../../html/admin/aHome.php">Home</a>
+                    <a href="../../html/admin/aRequests.php">Requests</a>
+                    <a href="../../html/admin/aJobs.php">Jobs</a>
+                    <a href="../../html/admin/aIssue.php">Issue</a>
+                    <a href="../../html/admin/aOperations.php">Operations</a>
+                    <a href="../../html/admin/aReport.php">Report</a>
                 </div>
             </div>
         </nav>
 
         <nav class="c-navbar-desktop">
-            <a href="../../html/admin/aHome.html">Home</a>
-            <a href="../../html/admin/aRequests.html">Requests</a>
-            <a href="../../html/admin/aJobs.html">Jobs</a>
-            <a href="../../html/admin/aIssue.html">Issue</a>
-            <a href="../../html/admin/aOperations.html">Operations</a>
-            <a href="../../html/admin/aReport.html">Report</a>
+            <a href="../../html/admin/aHome.php">Home</a>
+            <a href="../../html/admin/aRequests.php">Requests</a>
+            <a href="../../html/admin/aJobs.php">Jobs</a>
+            <a href="../../html/admin/aIssue.php">Issue</a>
+            <a href="../../html/admin/aOperations.php">Operations</a>
+            <a href="../../html/admin/aReport.php">Report</a>
         </nav>
 
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
                 <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
-            <a href="../../html/common/Setting.html">
+            <a href="../../html/common/Setting.php">
                 <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
             </a>
         </section>
@@ -1336,7 +1340,7 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
 
     <footer>
         <section class="c-footer-info-section">
-            <a href="../../html/admin/aHome.html">
+            <a href="../../html/admin/aHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -1363,8 +1367,8 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
             </div>
             <div>
                 <b>Proxy</b><br>
-                <a href="../../html/common/Profile.html">Edit Profile</a><br>
-                <a href="../../html/common/Setting.html">Setting</a>
+                <a href="../../html/common/Profile.php">Edit Profile</a><br>
+                <a href="../../html/common/Setting.php">Setting</a>
             </div>
         </section>
     </footer>
