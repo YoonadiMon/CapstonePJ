@@ -193,7 +193,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
                     </section>
                     <a href="../../html/collector/cHome.php">Home</a>
                     <a href="../../html/collector/cMyJobs.php">My Jobs</a>
-                    <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a>
+                    <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                     <a href="../../html/collector/cCompletedJobs.html">History</a>
                     <a href="../../html/common/About.html">About</a>
                 </div>
@@ -203,7 +203,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
         <nav class="c-navbar-desktop">
             <a href="../../html/collector/cHome.php">Home</a>
             <a href="../../html/collector/cMyJobs.php">My Jobs</a>
-            <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a>
+            <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
             <a href="../../html/collector/cCompletedJobs.html">History</a>
             <a href="../../html/common/About.html">About</a>
         </nav>
@@ -423,7 +423,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
             <div>
                 <b>My Jobs</b><br>
                 <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
-                <a href="../../html/collector/cInProgress.html">In Progress</a><br>
+                <a href="../../html/collector/cInProgress.php">In Progress</a><br>
                 <a href="../../html/collector/cCompletedJobs.html">Completed Jobs</a>
             </div>
             <div>
