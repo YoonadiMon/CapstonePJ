@@ -1,3 +1,77 @@
+<?php
+session_start();
+include("../../php/dbConn.php");
+
+// For testing, we'll use userID 1 (admin) - you can change this to the logged-in user
+// In production, this should come from session
+$userID = 1; // Hardcoded for testing
+
+// Fetch current user data
+$userQuery = "SELECT userID, username, fullname, email, phone, userType FROM tblusers WHERE userID = ?";
+$stmt = $conn->prepare($userQuery);
+$stmt->bind_param("i", $userID);
+$stmt->execute();
+$userResult = $stmt->get_result();
+
+if ($userResult->num_rows === 0) {
+    die("User not found");
+}
+
+$userData = $userResult->fetch_assoc();
+
+// Handle password update
+$message = "";
+$messageType = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
+    $currentPassword = $_POST['current_password'];
+    $newPassword = $_POST['new_password'];
+    $confirmPassword = $_POST['confirm_password'];
+    
+    // Get current password from database
+    $passQuery = "SELECT password FROM tblusers WHERE userID = ?";
+    $passStmt = $conn->prepare($passQuery);
+    $passStmt->bind_param("i", $userID);
+    $passStmt->execute();
+    $passResult = $passStmt->get_result();
+    $passData = $passResult->fetch_assoc();
+    
+    // Verify current password (plain text for now, but should use password_verify in production)
+    if ($currentPassword === $passData['password']) {
+        if ($newPassword === $confirmPassword) {
+            if (strlen($newPassword) >= 8) {
+                // Update password
+                $updateQuery = "UPDATE tblusers SET password = ? WHERE userID = ?";
+                $updateStmt = $conn->prepare($updateQuery);
+                $updateStmt->bind_param("si", $newPassword, $userID);
+                
+                if ($updateStmt->execute()) {
+                    $message = "Password updated successfully!";
+                    $messageType = "success";
+                } else {
+                    $message = "Error updating password. Please try again.";
+                    $messageType = "error";
+                }
+                $updateStmt->close();
+            } else {
+                $message = "Password must be at least 8 characters long!";
+                $messageType = "error";
+            }
+        } else {
+            $message = "New passwords do not match!";
+            $messageType = "error";
+        }
+    } else {
+        $message = "Current password is incorrect!";
+        $messageType = "error";
+    }
+    $passStmt->close();
+}
+
+$stmt->close();
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -189,6 +263,32 @@
             text-transform: uppercase;
             letter-spacing: 0.06em;
         }
+        
+        /* Password input wrapper for eye icon */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .password-wrapper input {
+            flex: 1;
+            padding-right: 35px;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            cursor: pointer;
+            user-select: none;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        .toggle-password:hover {
+            opacity: 1;
+        }
+        
         input[type="text"],
         input[type="email"],
         input[type="password"],
@@ -304,6 +404,44 @@
             color: var(--text-color);
             background: var(--sec-bg-color);
         }
+        
+        /* Toast message styling */
+        .c-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .c-toast.success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .c-toast.error {
+            background: #ef4444;
+            color: white;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
         @media (max-width: 768px) {
             .settings-layout { grid-template-columns: 1fr; }
@@ -345,7 +483,7 @@
                         <button id="themeToggleMobile">
                             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                         </button>
-                        <a href="../../html/common/Setting.html">
+                        <a href="../../html/common/Setting.php">
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
@@ -370,7 +508,7 @@
             <button id="themeToggleDesktop">
                 <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
-            <a href="../../html/common/Setting.html">
+            <a href="../../html/common/Setting.php">
                 <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
             </a>
         </section>
@@ -411,7 +549,7 @@
 
                 <div class="sidebar-divider"></div>
 
-                <a href="/main/html/common/Profile.html" class="sidebar-item edit-profile">
+                <a href="/main/html/common/Profile.php" class="sidebar-item edit-profile">
                     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="8" r="4"/>
                         <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
@@ -440,35 +578,61 @@
                             <div class="c-card-title">Change Password</div>
                             <div class="c-card-desc">Update your password regularly to keep your account secure</div>
                         </div>
-                        <div class="c-card-body">
-                            <div class="form-row">
-                                <div class="form-group full">
-                                    <label>Current Password</label>
-                                    <input type="password" id="currentPw" placeholder="Enter current password" />
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>New Password</label>
-                                    <input type="password" id="newPw" placeholder="New password" oninput="checkStrength(this.value)" />
-                                    <div class="strength-bar">
-                                        <div class="strength-seg" id="s1"></div>
-                                        <div class="strength-seg" id="s2"></div>
-                                        <div class="strength-seg" id="s3"></div>
-                                        <div class="strength-seg" id="s4"></div>
+                        <form method="POST" action="" id="passwordForm">
+                            <div class="c-card-body">
+                                <div class="form-row">
+                                    <div class="form-group full">
+                                        <label>Current Password</label>
+                                        <div class="password-wrapper">
+                                            <input type="password" id="currentPw" name="current_password" placeholder="Enter current password" required />
+                                            <span class="toggle-password" onclick="togglePassword('currentPw')">
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="strength-text" id="strengthText"></div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Confirm New Password</label>
-                                    <input type="password" id="confirmPw" placeholder="Confirm new password" />
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>New Password</label>
+                                        <div class="password-wrapper">
+                                            <input type="password" id="newPw" name="new_password" placeholder="New password" oninput="checkStrength(this.value)" required />
+                                            <span class="toggle-password" onclick="togglePassword('newPw')">
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                        <div class="strength-bar">
+                                            <div class="strength-seg" id="s1"></div>
+                                            <div class="strength-seg" id="s2"></div>
+                                            <div class="strength-seg" id="s3"></div>
+                                            <div class="strength-seg" id="s4"></div>
+                                        </div>
+                                        <div class="strength-text" id="strengthText"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Confirm New Password</label>
+                                        <div class="password-wrapper">
+                                            <input type="password" id="confirmPw" name="confirm_password" placeholder="Confirm new password" required />
+                                            <span class="toggle-password" onclick="togglePassword('confirmPw')">
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="c-card-footer">
-                            <button class="c-btn-cancel" onclick="clearPasswordFields()">Cancel</button>
-                            <button class="c-btn-primary" onclick="savePassword()">Update Password</button>
-                        </div>
+                            <div class="c-card-footer">
+                                <button type="button" class="c-btn-cancel" onclick="clearPasswordFields()">Cancel</button>
+                                <button type="submit" name="update_password" class="c-btn-primary">Update Password</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
@@ -531,14 +695,19 @@
             <div>
                 <b>Proxy</b><br>
                 <a href="../../html/common/About.html">About</a><br>
-                <a href="../../html/common/Profile.html">Edit Profile</a><br>
-                <a href="../../html/common/Setting.html">Setting</a>
+                <a href="../../html/common/Profile.php">Edit Profile</a><br>
+                <a href="../../html/common/Setting.php">Setting</a>
             </div>
         </section>
     </footer>
 
     <script src="../../javascript/mainScript.js"></script>
     <script>
+        // Display toast message if there's a PHP message
+        <?php if ($message): ?>
+        showToast('<?php echo addslashes($message); ?>', '<?php echo $messageType; ?>');
+        <?php endif; ?>
+        
         // ── SIDEBAR TABS ──────────────────────────────────────────────────
         document.querySelectorAll('.sidebar-item').forEach(item => {
             item.addEventListener('click', () => {
@@ -553,12 +722,8 @@
         function savePref(key, value) {
             localStorage.setItem('pref_' + key, value);
         }
+        
         function loadSettings() {
-            ['fontSize','density','dateFormat','timeFormat'].forEach(key => {
-                const saved = localStorage.getItem('pref_' + key);
-                const el = document.getElementById(key);
-                if (el && saved) el.value = saved;
-            });
             const dark = localStorage.getItem('pref_darkMode') === 'true';
             if (dark) {
                 document.body.classList.add('dark-mode');
@@ -566,7 +731,7 @@
             }
         }
 
-        // ── PASSWORD ─────────────────────────────────────────────────────
+        // ── PASSWORD STRENGTH ─────────────────────────────────────────────────────
         function checkStrength(val) {
             const segs = ['s1','s2','s3','s4'].map(id => document.getElementById(id));
             const txt  = document.getElementById('strengthText');
@@ -584,19 +749,18 @@
             txt.style.color = cls === 'weak' ? 'hsl(0,65%,52%)' : cls === 'medium' ? 'hsl(40,80%,45%)' : 'hsl(145,50%,40%)';
         }
 
-        function savePassword() {
-            const current = document.getElementById('currentPw').value.trim();
-            const newPw   = document.getElementById('newPw').value.trim();
-            const confirm = document.getElementById('confirmPw').value.trim();
-            if (!current) { showToast('Please enter your current password.', 'error'); return; }
-            if (newPw.length < 8) { showToast('New password must be at least 8 characters.', 'error'); return; }
-            if (newPw !== confirm) { showToast('Passwords do not match.', 'error'); return; }
-            clearPasswordFields();
-            showToast('Password updated successfully!');
+        // ── TOGGLE PASSWORD VISIBILITY ───────────────────────────────────
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+            field.setAttribute('type', type);
         }
 
+        // ── CLEAR PASSWORD FIELDS ────────────────────────────────────────
         function clearPasswordFields() {
-            ['currentPw','newPw','confirmPw'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('currentPw').value = '';
+            document.getElementById('newPw').value = '';
+            document.getElementById('confirmPw').value = '';
             checkStrength('');
         }
 
@@ -608,21 +772,39 @@
 
         // ── TOAST ────────────────────────────────────────────────────────
         function showToast(message, type = 'success') {
-            document.querySelector('.c-toast')?.remove();
-            const colors = { success: 'hsl(145,50%,40%)', error: 'hsl(0,65%,52%)' };
-            const icons  = { success: '✓', error: '✕' };
+            const existingToast = document.querySelector('.c-toast');
+            if (existingToast) existingToast.remove();
+            
             const t = document.createElement('div');
-            t.className = 'c-toast';
-            t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${colors[type]};color:white;padding:10px 18px;border-radius:24px;font-size:0.82rem;font-family:'Inter',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;`;
-            t.innerHTML = `<span style="font-weight:700">${icons[type]}</span> ${message}`;
+            t.className = `c-toast ${type}`;
+            const icon = type === 'success' ? '✓' : '✕';
+            t.innerHTML = `<span style="font-weight:700">${icon}</span> ${message}`;
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
 
+        // ── FORM VALIDATION ──────────────────────────────────────────────
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            const newPw = document.getElementById('newPw').value;
+            const confirmPw = document.getElementById('confirmPw').value;
+            
+            if (newPw.length < 8) {
+                e.preventDefault();
+                showToast('Password must be at least 8 characters long!', 'error');
+                return false;
+            }
+            
+            if (newPw !== confirmPw) {
+                e.preventDefault();
+                showToast('New passwords do not match!', 'error');
+                return false;
+            }
+        });
+
         // ── LOGOUT ───────────────────────────────────────────────────────
         function handleLogout() {
             if (confirm('Are you sure you want to log out?')) {
-                // Add your logout/redirect logic here
+                // Clear session and redirect
                 window.location.href = '/main/html/common/Login.html';
             }
         }
