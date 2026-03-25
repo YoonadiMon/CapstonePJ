@@ -7,7 +7,7 @@ include("../../php/sessionCheck.php");
 
 // Check if user is admin
 if ($_SESSION['userType'] !== 'admin') {
-    header("Location: ../../index.html");
+    header("Location: ../../../index.html");
     exit();
 }
 

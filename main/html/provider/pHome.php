@@ -1204,8 +1204,8 @@
             // In production, this would fetch from localStorage or API
             
             const userData = {
-                name: $provider_name,
-                initials: $initials,
+                name: <?php echo $provider_name?>,
+                initials: <?php echo $initials?>,
                 id: 'PRV-2024-00182',
                 email: 'farid@email.com',
                 phone: '+60 11-2345 6789',

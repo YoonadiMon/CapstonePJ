@@ -74,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             $_SESSION['userType'] = $user['userType'];
             $_SESSION['fullname'] = $user['fullname'];
             $_SESSION['email'] = $user['email'];
-            $_SESSION['phone'] = $user['phone'] ?? '';
+            $_SESSION['phone'] = $user['phone'];
+            $_SESSION['createdAt'] = $user['createdAt'];
             $_SESSION['lastLogin'] = date("Y-m-d H:i:s");
 
             if ($user['userType'] === 'provider') {
