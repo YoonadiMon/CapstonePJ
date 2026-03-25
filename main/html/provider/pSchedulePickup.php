@@ -978,8 +978,7 @@
         <section class="c-footer-links-section">
             <div>
                 <b>Recycling</b><br>
-                <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a><br>
-                <a href="../../html/provider/pWasteType.php">E-Waste Types</a>
+                <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a>
             </div>
             <div>
                 <b>My Activity</b><br>

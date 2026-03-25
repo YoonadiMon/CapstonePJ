@@ -195,8 +195,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <!-- Provider Footer Links -->
                 <div>
                     <b>Recycling</b><br>
-                    <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a><br>
-                    <a href="../../html/provider/pWasteType.html">E-Waste Types</a>
+                    <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a>
                 </div>
                 <div>
                     <b>My Activity</b><br>
