@@ -731,7 +731,7 @@
                     <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                     <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                     <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-                    <a href="../../html/common/About.php">About</a>
+                    <a href="../../html/common/About.html">About</a>
                 </div>
             </div>
         </nav>
@@ -742,7 +742,7 @@
             <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
             <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-            <a href="../../html/common/About.php">About</a>
+            <a href="../../html/common/About.html">About</a>
         </nav>
         
         <section class="c-navbar-more">
@@ -988,7 +988,7 @@
             </div>
             <div>
                 <b>Proxy</b><br>
-                <a href="../../html/common/About.php">About</a><br>
+                <a href="../../html/common/About.html">About</a><br>
                 <a href="../../html/common/Profile.php">Edit Profile</a><br>
                 <a href="../../html/common/Setting.php">Setting</a>
             </div>
