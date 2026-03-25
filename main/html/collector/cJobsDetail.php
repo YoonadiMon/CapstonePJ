@@ -47,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         echo json_encode(['success' => $ok, 'action' => 'accept', 'newStatus' => 'Scheduled']);
         exit();
-
     } elseif ($action === 'reject') {
         $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
 
@@ -110,9 +109,9 @@ if ($job) {
             i.brand,
             i.weight,
             i.image,
-            i.status        AS itemStatus,
-            it.name         AS itemTypeName,
-            c.name          AS centreName
+            i.status AS itemStatus,
+            it.name AS itemTypeName,
+            c.name AS centreName
         FROM tblitem i
         JOIN tblitem_type it ON it.itemTypeID = i.itemTypeID
         LEFT JOIN tblcentre c ON c.centreID   = i.centreID
@@ -225,173 +224,173 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
         <div class="back-wrapper">
             <button class="back-btn" onclick="window.history.back()">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M15 10L5 10M5 10L9 14M5 10L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M15 10L5 10M5 10L9 14M5 10L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
                 Back
             </button>
         </div>
 
         <?php if (!$job): ?>
-        <!-- Job not found -->
-        <div style="text-align:center; padding:4rem; color:var(--Gray);">
-            <h2>Job not found</h2>
-            <p>Please go back and select a valid job.</p>
-        </div>
+            <!-- Job not found -->
+            <div style="text-align:center; padding:4rem; color:var(--Gray);">
+                <h2>Job not found</h2>
+                <p>Please go back and select a valid job.</p>
+            </div>
 
         <?php else: ?>
-        <!-- Toast notification -->
-        <div id="toastMsg" class="toast-msg" style="display:none;"></div>
+            <!-- Toast notification -->
+            <div id="toastMsg" class="toast-msg" style="display:none;"></div>
 
-        <!-- Accept confirmation modal -->
-        <div id="acceptModal" class="img-modal-overlay" onclick="closeAcceptModal()">
-            <div class="img-modal-box action-modal-box" onclick="event.stopPropagation()">
-                <button class="img-modal-close" onclick="closeAcceptModal()">&#x2715;</button>
-                <div class="action-modal-icon accept-icon">&#x2713;</div>
-                <h3 class="action-modal-title">Accept Job?</h3>
-                <p class="action-modal-desc">You are about to accept this job. The status will be updated to <strong>Scheduled</strong>.</p>
-                <div class="action-modal-btns">
-                    <button class="btn-reject" onclick="closeAcceptModal()">Cancel</button>
-                    <button class="btn-accept" onclick="submitAccept()">Yes, Accept</button>
+            <!-- Accept confirmation modal -->
+            <div id="acceptModal" class="img-modal-overlay" onclick="closeAcceptModal()">
+                <div class="img-modal-box action-modal-box" onclick="event.stopPropagation()">
+                    <button class="img-modal-close" onclick="closeAcceptModal()">&#x2715;</button>
+                    <div class="action-modal-icon accept-icon">&#x2713;</div>
+                    <h3 class="action-modal-title">Accept Job?</h3>
+                    <p class="action-modal-desc">You are about to accept this job. The status will be updated to <strong>Scheduled</strong>.</p>
+                    <div class="action-modal-btns">
+                        <button class="btn-reject" onclick="closeAcceptModal()">Cancel</button>
+                        <button class="btn-accept" onclick="submitAccept()">Yes, Accept</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Reject confirmation modal -->
-        <div id="rejectModal" class="img-modal-overlay" onclick="closeRejectModal()">
-            <div class="img-modal-box action-modal-box" onclick="event.stopPropagation()">
-                <button class="img-modal-close" onclick="closeRejectModal()">&#x2715;</button>
-                <div class="action-modal-icon reject-icon">&#x2715;</div>
-                <h3 class="action-modal-title">Reject Job?</h3>
-                <p class="action-modal-desc">Provide a reason for rejection (optional):</p>
-                <textarea id="rejectReason" class="reject-reason-input" placeholder="e.g. Schedule conflict, outside service area..."></textarea>
-                <div class="action-modal-btns">
-                    <button class="btn-reject" onclick="closeRejectModal()">Cancel</button>
-                    <button class="btn-reject btn-reject-confirm" onclick="submitReject()">Yes, Reject</button>
+            <!-- Reject confirmation modal -->
+            <div id="rejectModal" class="img-modal-overlay" onclick="closeRejectModal()">
+                <div class="img-modal-box action-modal-box" onclick="event.stopPropagation()">
+                    <button class="img-modal-close" onclick="closeRejectModal()">&#x2715;</button>
+                    <div class="action-modal-icon reject-icon">&#x2715;</div>
+                    <h3 class="action-modal-title">Reject Job?</h3>
+                    <p class="action-modal-desc">Provide a reason for rejection (optional):</p>
+                    <textarea id="rejectReason" class="reject-reason-input" placeholder="e.g. Schedule conflict, outside service area..."></textarea>
+                    <div class="action-modal-btns">
+                        <button class="btn-reject" onclick="closeRejectModal()">Cancel</button>
+                        <button class="btn-reject btn-reject-confirm" onclick="submitReject()">Yes, Reject</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="job-details-container">
+            <div class="job-details-container">
 
-            <div class="job-details-header">
-                <div class="job-title-row">
-                    <h1 id="jobTitle"><?= htmlspecialchars($jobLabel) ?></h1>
-                    <span id="jobStatus" class="job-status-badge <?= $jobStatusClass ?>">
-                        <?= htmlspecialchars($job['jobStatus']) ?>
-                    </span>
-                </div>
-
-                <!-- Show Accept/Reject only if job is still Pending -->
-                <?php if ($job['jobStatus'] === 'Pending'): ?>
-                <div class="job-details-actions">
-                    <button class="btn-accept" onclick="acceptJob()">Accept</button>
-                    <button class="btn-reject" onclick="rejectJob()">Reject</button>
-                </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- Overview Section -->
-            <section class="job-overview">
-                <h2>Details Overview</h2>
-                <div class="overview-grid">
-
-                    <div class="overview-card provider-card">
-                        <h3>Provider</h3>
-                        <div class="provider-info">
-                            <p><strong>Name:</strong> <?= htmlspecialchars($job['providerName']) ?></p>
-                            <p><strong>Address:</strong>
-                                <?= htmlspecialchars($job['pickupAddress'] . ', ' . $job['pickupPostcode'] . ', ' . $job['pickupState'] . ', Malaysia') ?>
-                            </p>
-                            <p><strong>Date:</strong> <?= htmlspecialchars($displayDate) ?></p>
-                        </div>
+                <div class="job-details-header">
+                    <div class="job-title-row">
+                        <h1 id="jobTitle"><?= htmlspecialchars($jobLabel) ?></h1>
+                        <span id="jobStatus" class="job-status-badge <?= $jobStatusClass ?>">
+                            <?= htmlspecialchars($job['jobStatus']) ?>
+                        </span>
                     </div>
 
-                    <div class="overview-card items-card">
-                        <h3>Items</h3>
-                        <ul id="itemList">
-                            <?php foreach ($items as $i => $item): ?>
-                                <li><?= ($i + 1) . '. ' . htmlspecialchars($item['itemTypeName']) ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <div class="total-weight">
-                            <strong>Total Weight:</strong>
-                            <?php
+                    <!-- Show Accept/Reject only if job is still Pending -->
+                    <?php if ($job['jobStatus'] === 'Pending'): ?>
+                        <div class="job-details-actions">
+                            <button class="btn-accept" onclick="acceptJob()">Accept</button>
+                            <button class="btn-reject" onclick="rejectJob()">Reject</button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Overview Section -->
+                <section class="job-overview">
+                    <h2>Details Overview</h2>
+                    <div class="overview-grid">
+
+                        <div class="overview-card provider-card">
+                            <h3>Provider</h3>
+                            <div class="provider-info">
+                                <p><strong>Name:</strong> <?= htmlspecialchars($job['providerName']) ?></p>
+                                <p><strong>Address:</strong>
+                                    <?= htmlspecialchars($job['pickupAddress'] . ', ' . $job['pickupPostcode'] . ', ' . $job['pickupState'] . ', Malaysia') ?>
+                                </p>
+                                <p><strong>Date:</strong> <?= htmlspecialchars($displayDate) ?></p>
+                            </div>
+                        </div>
+
+                        <div class="overview-card items-card">
+                            <h3>Items</h3>
+                            <ul id="itemList">
+                                <?php foreach ($items as $i => $item): ?>
+                                    <li><?= ($i + 1) . '. ' . htmlspecialchars($item['itemTypeName']) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <div class="total-weight">
+                                <strong>Total Weight:</strong>
+                                <?php
                                 $totalWeight = array_sum(array_column($items, 'weight'));
                                 echo number_format($totalWeight, 2);
-                            ?> kg
-                        </div>
-                    </div>
-
-                    <div class="overview-card brands-card">
-                        <h3>Brand &amp; Model</h3>
-                        <ul id="brandList">
-                            <?php foreach ($items as $i => $item): ?>
-                                <li>
-                                    <?= ($i + 1) . '. ' ?>
-                                    <?= htmlspecialchars(($item['brand'] ?? 'N/A') . ' ' . ($item['model'] ?? '')) ?>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-
-                </div>
-            </section>
-
-            <!-- Items Dropdown Section -->
-            <section class="items-section">
-                <div id="itemsContainer">
-                    <?php foreach ($items as $item):
-                        $itemLabel = 'ITEM' . str_pad($item['itemID'], 3, '0', STR_PAD_LEFT);
-                        // Build image path — fallback to placeholder if no image stored
-                        $imgSrc = !empty($item['image'])
-                            ? '../../assets/images/items/' . htmlspecialchars($item['image'])
-                            : 'https://placehold.co/600x400?text=No+Image';
-                        $dropoff = !empty($item['centreName']) ? $item['centreName'] : 'Not assigned yet';
-                    ?>
-                    <div class="item-dropdown">
-                        <div class="item-dropdown-header" onclick="toggleDropdown(this)">
-                            <h3><?= htmlspecialchars($itemLabel) ?> — <?= htmlspecialchars($item['itemTypeName']) ?></h3>
-                            <span class="dropdown-arrow">▼</span>
+                                ?> kg
+                            </div>
                         </div>
 
-                        <div class="item-dropdown-content">
-                            <div class="item-grid-with-image">
-                                <div class="item-image-col">
-                                    <img src="<?= $imgSrc ?>"
-                                         alt="<?= htmlspecialchars($item['itemTypeName']) ?>"
-                                         class="item-sample-img"
-                                         onerror="this.src='https://placehold.co/600x400?text=No+Image'" />
-                                    <a class="view-full-pic-link"
-                                       onclick="openImageModal('<?= $imgSrc ?>',
-                                           '<?= htmlspecialchars(addslashes($item['itemTypeName'])) ?>')">
-                                        View full Pic
-                                    </a>
+                        <div class="overview-card brands-card">
+                            <h3>Brand &amp; Model</h3>
+                            <ul id="brandList">
+                                <?php foreach ($items as $i => $item): ?>
+                                    <li>
+                                        <?= ($i + 1) . '. ' ?>
+                                        <?= htmlspecialchars(($item['brand'] ?? 'N/A') . ' ' . ($item['model'] ?? '')) ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Items Dropdown Section -->
+                <section class="items-section">
+                    <div id="itemsContainer">
+                        <?php foreach ($items as $item):
+                            $itemLabel = 'ITEM' . str_pad($item['itemID'], 3, '0', STR_PAD_LEFT);
+                            // Build image path — fallback to placeholder if no image stored
+                            $imgSrc = !empty($item['image'])
+                                ? '../../assets/images/items/' . htmlspecialchars($item['image'])
+                                : 'https://placehold.co/600x400?text=No+Image';
+                            $dropoff = !empty($item['centreName']) ? $item['centreName'] : 'Not assigned yet';
+                        ?>
+                            <div class="item-dropdown">
+                                <div class="item-dropdown-header" onclick="toggleDropdown(this)">
+                                    <h3><?= htmlspecialchars($itemLabel) ?> — <?= htmlspecialchars($item['itemTypeName']) ?></h3>
+                                    <span class="dropdown-arrow">▼</span>
                                 </div>
-                                <div class="item-details-col">
-                                    <div class="item-grid">
-                                        <div>
-                                            <p><strong>Item:</strong> <?= htmlspecialchars($item['itemTypeName']) ?></p>
-                                            <p><strong>Brand:</strong> <?= htmlspecialchars($item['brand'] ?? 'N/A') ?></p>
-                                            <p><strong>Weight:</strong> <?= htmlspecialchars($item['weight']) ?> kg</p>
+
+                                <div class="item-dropdown-content">
+                                    <div class="item-grid-with-image">
+                                        <div class="item-image-col">
+                                            <img src="<?= $imgSrc ?>"
+                                                alt="<?= htmlspecialchars($item['itemTypeName']) ?>"
+                                                class="item-sample-img"
+                                                onerror="this.src='https://placehold.co/600x400?text=No+Image'" />
+                                            <a class="view-full-pic-link"
+                                                onclick="openImageModal('<?= $imgSrc ?>',
+                                           '<?= htmlspecialchars(addslashes($item['itemTypeName'])) ?>')">
+                                                View full Pic
+                                            </a>
                                         </div>
-                                        <div>
-                                            <p><strong>Model:</strong> <?= htmlspecialchars($item['model'] ?? 'N/A') ?></p>
-                                            <p><strong>Drop-off:</strong> <?= htmlspecialchars($dropoff) ?></p>
-                                            <p><strong>Description:</strong> <?= htmlspecialchars($item['description']) ?></p>
+                                        <div class="item-details-col">
+                                            <div class="item-grid">
+                                                <div>
+                                                    <p><strong>Item:</strong> <?= htmlspecialchars($item['itemTypeName']) ?></p>
+                                                    <p><strong>Brand:</strong> <?= htmlspecialchars($item['brand'] ?? 'N/A') ?></p>
+                                                    <p><strong>Weight:</strong> <?= htmlspecialchars($item['weight']) ?> kg</p>
+                                                </div>
+                                                <div>
+                                                    <p><strong>Model:</strong> <?= htmlspecialchars($item['model'] ?? 'N/A') ?></p>
+                                                    <p><strong>Drop-off:</strong> <?= htmlspecialchars($dropoff) ?></p>
+                                                    <p><strong>Description:</strong> <?= htmlspecialchars($item['description']) ?></p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
 
-                    <?php if (empty($items)): ?>
-                        <p style="color:var(--Gray); text-align:center; padding:2rem;">No items found for this job.</p>
-                    <?php endif; ?>
-                </div>
-            </section>
-        </div>
+                        <?php if (empty($items)): ?>
+                            <p style="color:var(--Gray); text-align:center; padding:2rem;">No items found for this job.</p>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            </div>
         <?php endif; ?>
     </main>
 
@@ -442,131 +441,141 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
 
     <script src="../../javascript/mainScript.js"></script>
     <script>
-    const JOB_ID = <?= (int)$jobID ?>;
+        const JOB_ID = <?= (int)$jobID ?>;
 
-    // ── Dropdown toggle ──
-    function toggleDropdown(header) {
-        const content = header.nextElementSibling;
-        const arrow   = header.querySelector('.dropdown-arrow');
-        content.classList.toggle('active');
-        arrow.classList.toggle('rotate');
-    }
-
-    // ── Image modal ──
-    function openImageModal(src, name) {
-        document.getElementById('modalImg').src = src;
-        document.getElementById('modalCaption').textContent = name;
-        document.getElementById('imageModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeImageModal() {
-        document.getElementById('imageModal').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // ── Accept modal ──
-    function acceptJob() {
-        document.getElementById('acceptModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeAcceptModal() {
-        document.getElementById('acceptModal').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // ── Reject modal ──
-    function rejectJob() {
-        document.getElementById('rejectReason').value = '';
-        document.getElementById('rejectModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeRejectModal() {
-        document.getElementById('rejectModal').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // ── Toast ──
-    function showToast(msg, type) {
-        const toast = document.getElementById('toastMsg');
-        toast.textContent = msg;
-        toast.className   = 'toast-msg toast-' + type;
-        toast.style.display = 'block';
-        // Trigger reflow so the animation replays
-        void toast.offsetWidth;
-        toast.classList.add('toast-show');
-        setTimeout(() => {
-            toast.classList.remove('toast-show');
-            setTimeout(() => { toast.style.display = 'none'; }, 400);
-        }, 3500);
-    }
-
-    // ── Hide action buttons + update badge after action ──
-    function applyStatusChange(newStatus) {
-        // Hide accept/reject buttons
-        const actionsEl = document.querySelector('.job-details-actions');
-        if (actionsEl) actionsEl.style.display = 'none';
-
-        // Update status badge
-        const badge = document.getElementById('jobStatus');
-        if (badge) {
-            const classMap = {
-                'Scheduled': 'accepted',
-                'Rejected':  'rejected',
-            };
-            badge.textContent = newStatus;
-            badge.className   = 'job-status-badge ' + (classMap[newStatus] ?? newStatus.toLowerCase());
+        // ── Dropdown toggle ──
+        function toggleDropdown(header) {
+            const content = header.nextElementSibling;
+            const arrow = header.querySelector('.dropdown-arrow');
+            content.classList.toggle('active');
+            arrow.classList.toggle('rotate');
         }
-    }
 
-    // ── AJAX submit ──
-    function postAction(action, reason) {
-        const body = new URLSearchParams({ action });
-        if (reason !== undefined) body.append('reason', reason);
+        // ── Image modal ──
+        function openImageModal(src, name) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('modalCaption').textContent = name;
+            document.getElementById('imageModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
 
-        return fetch('?id=' + JOB_ID, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
-        }).then(r => r.json());
-    }
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
 
-    function submitAccept() {
-        closeAcceptModal();
-        postAction('accept').then(data => {
-            if (data.success) {
-                applyStatusChange('Scheduled');
-                showToast('Job accepted! Status updated to Scheduled.', 'success');
-            } else {
-                showToast('Something went wrong. Please try again.', 'error');
+        // ── Accept modal ──
+        function acceptJob() {
+            document.getElementById('acceptModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAcceptModal() {
+            document.getElementById('acceptModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ── Reject modal ──
+        function rejectJob() {
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ── Toast ──
+        function showToast(msg, type) {
+            const toast = document.getElementById('toastMsg');
+            toast.textContent = msg;
+            toast.className = 'toast-msg toast-' + type;
+            toast.style.display = 'block';
+            // Trigger reflow so the animation replays
+            void toast.offsetWidth;
+            toast.classList.add('toast-show');
+            setTimeout(() => {
+                toast.classList.remove('toast-show');
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 400);
+            }, 3500);
+        }
+
+        // ── Hide action buttons + update badge after action ──
+        function applyStatusChange(newStatus) {
+            // Hide accept/reject buttons
+            const actionsEl = document.querySelector('.job-details-actions');
+            if (actionsEl) actionsEl.style.display = 'none';
+
+            // Update status badge
+            const badge = document.getElementById('jobStatus');
+            if (badge) {
+                const classMap = {
+                    'Scheduled': 'accepted',
+                    'Rejected': 'rejected',
+                };
+                badge.textContent = newStatus;
+                badge.className = 'job-status-badge ' + (classMap[newStatus] ?? newStatus.toLowerCase());
             }
-        }).catch(() => showToast('Network error. Please try again.', 'error'));
-    }
+        }
 
-    function submitReject() {
-        const reason = document.getElementById('rejectReason').value.trim();
-        closeRejectModal();
-        postAction('reject', reason).then(data => {
-            if (data.success) {
-                applyStatusChange('Rejected');
-                showToast('Job has been rejected.', 'error');
-            } else {
-                showToast('Something went wrong. Please try again.', 'error');
-            }
-        }).catch(() => showToast('Network error. Please try again.', 'error'));
-    }
+        // ── AJAX submit ──
+        function postAction(action, reason) {
+            const body = new URLSearchParams({
+                action
+            });
+            if (reason !== undefined) body.append('reason', reason);
 
-    // ── Entrance animation ──
-    document.addEventListener('DOMContentLoaded', function () {
-        const container = document.querySelector('.job-details-container');
-        if (!container) return;
-        container.style.opacity   = '0';
-        container.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-            container.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-            container.style.opacity    = '1';
-            container.style.transform  = 'translateY(0)';
-        }, 100);
-    });
+            return fetch('?id=' + JOB_ID, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: body.toString()
+            }).then(r => r.json());
+        }
+
+        function submitAccept() {
+            closeAcceptModal();
+            postAction('accept').then(data => {
+                if (data.success) {
+                    applyStatusChange('Scheduled');
+                    showToast('Job accepted! Status updated to Scheduled.', 'success');
+                } else {
+                    showToast('Something went wrong. Please try again.', 'error');
+                }
+            }).catch(() => showToast('Network error. Please try again.', 'error'));
+        }
+
+        function submitReject() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            closeRejectModal();
+            postAction('reject', reason).then(data => {
+                if (data.success) {
+                    applyStatusChange('Rejected');
+                    showToast('Job has been rejected.', 'error');
+                } else {
+                    showToast('Something went wrong. Please try again.', 'error');
+                }
+            }).catch(() => showToast('Network error. Please try again.', 'error'));
+        }
+
+        // ── Entrance animation ──
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.job-details-container');
+            if (!container) return;
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                container.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+        });
     </script>
 </body>
+
 </html>

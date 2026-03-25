@@ -70,7 +70,7 @@ $conn->close();
     <!-- Header -->
     <header>
         <section class="c-logo-section">
-            <a href="../../html/collector/cHome.html" class="c-logo-link">
+            <a href="../../html/collector/cHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -89,20 +89,20 @@ $conn->close();
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <a href="../../html/collector/cHome.html">Home</a>
-                    <a href="../../html/collector/cMyJobs.html">My Jobs</a>
-                    <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a>
-                    <a href="../../html/collector/cCompletedJobs.html">History</a>
+                    <a href="../../html/collector/cHome.php">Home</a>
+                    <a href="../../html/collector/cMyJobs.php">My Jobs</a>
+                    <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
+                    <a href="../../html/collector/cCompletedJobs.php">History</a>
                     <a href="../../html/common/About.html">About</a>
                 </div>
             </div>
         </nav>
 
         <nav class="c-navbar-desktop">
-            <a href="../../html/collector/cHome.html">Home</a>
-            <a href="../../html/collector/cMyJobs.html">My Jobs</a>
-            <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a>
-            <a href="../../html/collector/cCompletedJobs.html">History</a>
+            <a href="../../html/collector/cHome.php">Home</a>
+            <a href="../../html/collector/cMyJobs.php">My Jobs</a>
+            <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
+            <a href="../../html/collector/cCompletedJobs.php">History</a>
             <a href="../../html/common/About.html">About</a>
         </nav>
 
@@ -187,7 +187,7 @@ $conn->close();
     <!-- Footer -->
     <footer>
         <section class="c-footer-info-section">
-            <a href="../../html/collector/cHome.html">
+            <a href="../../html/collector/cHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -201,9 +201,9 @@ $conn->close();
         <section class="c-footer-links-section">
             <div>
                 <b>My Jobs</b><br>
-                <a href="../../html/collector/cMyJobs.html">My Jobs</a><br>
-                <a href="../../html/collector/cInProgress.html">In Progress</a><br>
-                <a href="../../html/collector/cCompletedJobs.html">Completed Jobs</a>
+                <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
+                <a href="../../html/collector/cInProgress.php">In Progress</a><br>
+                <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
             </div>
             <div>
                 <b>Support</b><br>
@@ -212,7 +212,7 @@ $conn->close();
             <div>
                 <b>Proxy</b><br>
                 <a href="../../html/common/About.html">About</a><br>
-                <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                <a href="../../html/common/Profile.php">Edit Profile</a><br>
                 <a href="../../html/common/Setting.html">Setting</a>
             </div>
         </section>

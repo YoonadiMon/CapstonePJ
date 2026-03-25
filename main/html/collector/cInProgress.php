@@ -379,7 +379,7 @@ $journeyStarted = $hasJob && in_array($job['jobStatus'], ['Ongoing','Picked Up',
 
 <header>
     <section class="c-logo-section">
-        <a href="../../html/collector/cHome.html" class="c-logo-link">
+        <a href="../../html/collector/cHome.php" class="c-logo-link">
             <img src="../../assets//images/logo.png" alt="Logo" class="c-logo">
             <div class="c-text">AfterVolt</div>
         </a>
@@ -393,19 +393,19 @@ $journeyStarted = $hasJob && in_array($job['jobStatus'], ['Ongoing','Picked Up',
                     <button id="themeToggleMobile"><img src="../../assets//images/light-mode-icon.svg" alt="Light Mode Icon"></button>
                     <a href="../../html/common/Setting.html"><img src="../../assets//images/setting-light.svg" alt="Settings" id="settingImgM"></a>
                 </section>
-                <a href="../../html/collector/cHome.html">Home</a>
-                <a href="../../html/collector/cMyJobs.html">My Jobs</a><br>
-                <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a><br>
-                <a href="../../html/collector/cCompletedJobs.html">History</a>
+                <a href="../../html/collector/cHome.php">Home</a>
+                <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
+                <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a><br>
+                <a href="../../html/collector/cCompletedJobs.php">History</a>
                 <a href="../../html/common/About.html">About</a><br>
             </div>
         </div>
     </nav>
     <nav class="c-navbar-desktop">
-        <a href="../../html/collector/cHome.html">Home</a>
-        <a href="../../html/collector/cMyJobs.html">My Jobs</a><br>
-        <a href="../../html/collector/cInProgress.html">Ongoing Jobs</a><br>
-        <a href="../../html/collector/cCompletedJobs.html">History</a>
+        <a href="../../html/collector/cHome.php">Home</a>
+        <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
+        <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a><br>
+        <a href="../../html/collector/cCompletedJobs.php">History</a>
         <a href="../../html/common/About.html">About</a><br>
     </nav>
     <section class="c-navbar-more">
@@ -426,7 +426,7 @@ $journeyStarted = $hasJob && in_array($job['jobStatus'], ['Ongoing','Picked Up',
     <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
         <div style="font-size:48px; margin-bottom:16px;">📭</div>
         <h3 style="font-size:18px; font-weight:700; color:var(--text-color); margin-bottom:8px;">No Active Job</h3>
-        <p>You don't have any accepted job to start. Check <a href="../../html/collector/cMyJobs.html" style="color:var(--MainBlue);">My Jobs</a> for pending assignments.</p>
+        <p>You don't have any accepted job to start. Check <a href="../../html/collector/cMyJobs.php" style="color:var(--MainBlue);">My Jobs</a> for pending assignments.</p>
     </div>
 
 <?php else:
@@ -724,7 +724,7 @@ $journeyStarted = $hasJob && in_array($job['jobStatus'], ['Ongoing','Picked Up',
 <hr>
 <footer>
     <section class="c-footer-info-section">
-        <a href="../../html/collector/cHome.html">
+        <a href="../../html/collector/cHome.php">
             <img src="../../assets//images/logo.png" alt="Logo" class="c-logo">
         </a>
         <div class="c-text">AfterVolt</div>
@@ -735,9 +735,9 @@ $journeyStarted = $hasJob && in_array($job['jobStatus'], ['Ongoing','Picked Up',
     <section class="c-footer-links-section">
         <div>
             <b>My Jobs</b><br>
-            <a href="../../html/collector/cMyJobs.html">My Jobs</a><br>
-            <a href="../../html/collector/cInProgress.html">In Progress</a><br>
-            <a href="../../html/collector/cCompletedJobs.html">Completed Jobs</a>
+            <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
+            <a href="../../html/collector/cInProgress.php">In Progress</a><br>
+            <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
         </div>
         <div>
             <b>Support</b><br>
@@ -746,7 +746,7 @@ $journeyStarted = $hasJob && in_array($job['jobStatus'], ['Ongoing','Picked Up',
         <div>
             <b>Proxy</b><br>
             <a href="../../html/common/About.html">About</a><br>
-            <a href="../../html/common/Profile.html">Edit Profile</a><br>
+            <a href="../../html/common/Profile.php">Edit Profile</a><br>
             <a href="../../html/common/Setting.html">Setting</a>
         </div>
     </section>
