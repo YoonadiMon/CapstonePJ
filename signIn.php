@@ -1,7 +1,5 @@
 <?php
 session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 include("main/php/dbConn.php");
 
 if (!isset($conn) || $conn->connect_error) {
@@ -11,26 +9,67 @@ if (!isset($conn) || $conn->connect_error) {
 $login_error = "";
 $register_error = "";
 $register_success = "";
-$submitted_email = "";
+$submitted_login = "";
 $reg_fullname = "";
+$reg_username = "";
 $reg_email = "";
 $reg_phone = "";
+$reg_address = "";
+$reg_state = "";
+$reg_postcode = "";
 $show_register_tab = false;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $submitted_email = $email;
+$allowed_states = [
+    'Johor',
+    'Kedah',
+    'Kelantan',
+    'Melaka',
+    'Negeri Sembilan',
+    'Pahang',
+    'Perak',
+    'Perlis',
+    'Pulau Pinang',
+    'Selangor',
+    'Terengganu',
+    'Kuala Lumpur',
+    'Putrajaya'
+];
 
-    $stmt = $conn->prepare("SELECT * FROM tblusers WHERE email = ?");
-    $stmt->bind_param("s", $email);
+function normalizeMalaysianPhone($phone) {
+    $phone = preg_replace('/\D+/', '', $phone);
+
+    if (strpos($phone, '60') === 0) {
+        $phone = '0' . substr($phone, 2);
+    }
+
+    if (strpos($phone, '0') !== 0) {
+        $phone = '0' . $phone;
+    }
+
+    return $phone;
+}
+
+function isValidMalaysianPhone($phone) {
+    $normalized = normalizeMalaysianPhone($phone);
+    return preg_match('/^01[0-9]{8,9}$/', $normalized);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    $login_input = trim($_POST['login_input'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $submitted_login = $login_input;
+
+    $normalized_login_phone = normalizeMalaysianPhone($login_input);
+
+    $stmt = $conn->prepare("SELECT * FROM tblusers WHERE email = ? OR username = ? OR phone = ?");
+    $stmt->bind_param("sss", $login_input, $login_input, $normalized_login_phone);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result && $result->num_rows === 1) {
         $user = $result->fetch_assoc();
 
-        if ($password === $user['password']) {
+        if (password_verify($password, $user['password'])) {
             $_SESSION['userID'] = $user['userID'];
             $_SESSION['userType'] = $user['userType'];
             $_SESSION['fullname'] = $user['fullname'];
@@ -49,10 +88,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             }
             exit();
         } else {
-            $login_error = "Incorrect email or password. Please try again.";
+            $login_error = "Incorrect login ID or password. Please try again.";
         }
     } else {
-        $login_error = "Account '" . htmlspecialchars($email) . "' does not exist.";
+        $login_error = "Account does not exist.";
     }
 
     $stmt->close();
@@ -60,22 +99,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $fullname = trim($_POST['fullname'] ?? '');
+    $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['reg_email'] ?? '');
     $password = $_POST['reg_password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
     $phone = trim($_POST['phone'] ?? '');
+    $address = trim($_POST['address'] ?? '');
+    $state = trim($_POST['state'] ?? '');
+    $postcode = trim($_POST['postcode'] ?? '');
+
+    $normalized_phone = normalizeMalaysianPhone($phone);
 
     $reg_fullname = $fullname;
+    $reg_username = $username;
     $reg_email = $email;
     $reg_phone = $phone;
+    $reg_address = $address;
+    $reg_state = $state;
+    $reg_postcode = $postcode;
     $show_register_tab = true;
 
-    $username = 'provider_' . time();
-
-    if ($fullname === '' || $email === '' || $password === '') {
+    if (
+        $fullname === '' || $username === '' || $email === '' || $password === '' ||
+        $confirm_password === '' || $phone === '' || $address === '' ||
+        $state === '' || $postcode === ''
+    ) {
         $register_error = "Please fill in all required fields.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $register_error = "Please enter a valid email address.";
+    } elseif (!in_array($state, $allowed_states, true)) {
+        $register_error = "Please select a valid state in Peninsular Malaysia.";
+    } elseif (!preg_match('/^[A-Za-z0-9_]{3,30}$/', $username)) {
+        $register_error = "Username must be 3 to 30 characters and can only contain letters, numbers, and underscores.";
+    } elseif (!isValidMalaysianPhone($phone)) {
+        $register_error = "Please enter a valid Malaysian phone number.";
+    } elseif (!preg_match('/^[0-9]{5}$/', $postcode)) {
+        $register_error = "Postcode must be exactly 5 digits.";
     } elseif ($password !== $confirm_password) {
         $register_error = "Passwords do not match.";
     } elseif (strlen($password) < 8) {
@@ -87,37 +146,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     } elseif (!preg_match('/[0-9]/', $password)) {
         $register_error = "Password must contain at least one number.";
     } else {
-        $check_stmt = $conn->prepare("SELECT userID FROM tblusers WHERE email = ?");
-        $check_stmt->bind_param("s", $email);
+        $check_stmt = $conn->prepare("SELECT email, username, phone FROM tblusers WHERE email = ? OR username = ? OR phone = ?");
+        $check_stmt->bind_param("sss", $email, $username, $normalized_phone);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
 
-        if ($check_result && $check_result->num_rows > 0) {
+        $email_exists = false;
+        $username_exists = false;
+        $phone_exists = false;
+
+        if ($check_result) {
+            while ($row = $check_result->fetch_assoc()) {
+                if (strcasecmp($row['email'], $email) === 0) {
+                    $email_exists = true;
+                }
+                if (strcasecmp($row['username'], $username) === 0) {
+                    $username_exists = true;
+                }
+                if ($row['phone'] === $normalized_phone) {
+                    $phone_exists = true;
+                }
+            }
+        }
+
+        if ($email_exists) {
             $register_error = "Email address already registered. Please use a different email or sign in.";
+        } elseif ($username_exists) {
+            $register_error = "Username already taken. Please choose a different username.";
+        } elseif ($phone_exists) {
+            $register_error = "Phone number already registered. Please use a different phone number.";
         } else {
             $userType = 'provider';
             $createdAt = date("Y-m-d H:i:s");
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
             $insert_stmt = $conn->prepare("INSERT INTO tblusers (username, fullname, email, password, phone, userType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $insert_stmt->bind_param("sssssss", $username, $fullname, $email, $password, $phone, $userType, $createdAt);
+            $insert_stmt->bind_param("sssssss", $username, $fullname, $email, $hashed_password, $normalized_phone, $userType, $createdAt);
 
             if ($insert_stmt->execute()) {
                 $userID = $insert_stmt->insert_id;
 
-                $empty_address = '';
-                $empty_state = '';
-                $empty_postcode = '';
-
                 $provider_stmt = $conn->prepare("INSERT INTO tblprovider (providerID, address, state, postcode, point) VALUES (?, ?, ?, ?, 0)");
-                $provider_stmt->bind_param("isss", $userID, $empty_address, $empty_state, $empty_postcode);
+                $provider_stmt->bind_param("isss", $userID, $address, $state, $postcode);
                 $provider_stmt->execute();
                 $provider_stmt->close();
 
                 $register_success = "Registration successful! You can now sign in.";
                 $show_register_tab = false;
                 $reg_fullname = "";
+                $reg_username = "";
                 $reg_email = "";
                 $reg_phone = "";
+                $reg_address = "";
+                $reg_state = "";
+                $reg_postcode = "";
             } else {
                 $register_error = "Registration failed. Please try again.";
             }
@@ -140,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     <link rel="stylesheet" href="main/style/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14.32,100..900;1,14.32,100..900&display=swap" rel="stylesheet">
 
     <style>
         * {
@@ -345,8 +427,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             }
         }
 
+        .register-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
         .form-group {
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
         }
 
         .form-group label {
@@ -357,7 +449,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             margin-bottom: 0.4rem;
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 0.85rem 1rem;
             border: 1.5px solid var(--BlueGray);
@@ -368,7 +461,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             transition: all 0.2s ease;
         }
 
-        .form-group input:focus {
+        .register-grid .form-group input,
+        .register-grid .form-group select {
+            padding: 0.7rem 0.9rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
             outline: none;
             border-color: var(--MainBlue);
             box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.2);
@@ -465,6 +565,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             opacity: 0.7;
         }
 
+        @media (max-width: 768px) {
+            .register-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: auto;
+            }
+        }
+
         @media (max-width: 600px) {
             .auth-box::before {
                 font-size: 1.3rem;
@@ -527,8 +637,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
                 <div class="form-container <?php echo $show_register_tab ? '' : 'active'; ?>" id="loginForm">
                     <form method="POST" action="" id="loginFormSubmit">
                         <div class="form-group">
-                            <label>Email Address</label>
-                            <input type="email" name="email" id="login_email" placeholder="Enter your email" value="<?php echo htmlspecialchars($submitted_email); ?>" required>
+                            <label>Email / Username / Phone Number</label>
+                            <input type="text" name="login_input" id="login_input" placeholder="Enter your email, username, or phone number" value="<?php echo htmlspecialchars($submitted_login); ?>" required>
                         </div>
 
                         <div class="form-group">
@@ -550,30 +660,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 
                 <div class="form-container <?php echo $show_register_tab ? 'active' : ''; ?>" id="registerFormContainer">
                     <form method="POST" action="" id="registerFormSubmit">
-                        <div class="form-group">
-                            <label>Full Name *</label>
-                            <input type="text" name="fullname" id="reg_fullname" placeholder="Enter your full name" value="<?php echo htmlspecialchars($reg_fullname); ?>" required>
-                        </div>
+                        <div class="register-grid">
+                            <div class="form-group">
+                                <label>Full Name *</label>
+                                <input type="text" name="fullname" id="reg_fullname" placeholder="Enter your full name" value="<?php echo htmlspecialchars($reg_fullname); ?>" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label>Email Address *</label>
-                            <input type="email" name="reg_email" id="reg_email" placeholder="Enter your email" value="<?php echo htmlspecialchars($reg_email); ?>" required>
-                        </div>
+                            <div class="form-group">
+                                <label>Username *</label>
+                                <input type="text" name="username" id="reg_username" placeholder="Enter your username" value="<?php echo htmlspecialchars($reg_username); ?>" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" name="phone" id="reg_phone" placeholder="Optional" value="<?php echo htmlspecialchars($reg_phone); ?>">
-                        </div>
+                            <div class="form-group">
+                                <label>Email Address *</label>
+                                <input type="email" name="reg_email" id="reg_email" placeholder="Enter your email" value="<?php echo htmlspecialchars($reg_email); ?>" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label>Password *</label>
-                            <input type="password" name="reg_password" id="reg_password" placeholder="Create a password" required>
-                            <div class="password-hint" id="passwordHint"></div>
-                        </div>
+                            <div class="form-group">
+                                <label>Phone Number *</label>
+                                <input type="tel" name="phone" id="reg_phone" placeholder="(e.g.0123456789)" value="<?php echo htmlspecialchars($reg_phone); ?>" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label>Confirm Password *</label>
-                            <input type="password" name="confirm_password" id="reg_confirm_password" placeholder="Confirm your password" required>
+                            <div class="form-group full-width">
+                                <label>Address *</label>
+                                <input type="text" name="address" id="reg_address" placeholder="Enter your address, (e.g. No.12, Jalan ABC, Taman DEF)" value="<?php echo htmlspecialchars($reg_address); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>State *</label>
+                                <select name="state" id="reg_state" required>
+                                    <option value="">Select your state</option>
+                                    <?php foreach ($allowed_states as $allowed_state): ?>
+                                        <option value="<?php echo htmlspecialchars($allowed_state); ?>" <?php echo $reg_state === $allowed_state ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($allowed_state); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Postcode *</label>
+                                <input type="text" name="postcode" id="reg_postcode" placeholder="(e.g.56000)" value="<?php echo htmlspecialchars($reg_postcode); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Password *</label>
+                                <input type="password" name="reg_password" id="reg_password" placeholder="Create a password" required>
+                                <div class="password-hint" id="passwordHint"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Confirm Password *</label>
+                                <input type="password" name="confirm_password" id="reg_confirm_password" placeholder="Confirm your password" required>
+                            </div>
                         </div>
 
                         <?php if ($register_error): ?>
@@ -609,7 +748,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             const registerTab = document.getElementById('registerTab');
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerFormContainer');
-            const loginEmail = document.getElementById('login_email');
+            const loginInput = document.getElementById('login_input');
             const loginPassword = document.getElementById('login_password');
             const regPassword = document.getElementById('reg_password');
             const passwordHint = document.getElementById('passwordHint');
@@ -681,8 +820,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             loginTab.addEventListener('click', switchToLogin);
             registerTab.addEventListener('click', switchToRegister);
 
-            if (loginEmail) {
-                loginEmail.addEventListener('input', function() {
+            if (loginInput) {
+                loginInput.addEventListener('input', function() {
                     this.classList.remove('input-error');
                 });
             }
@@ -699,8 +838,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 
             if (registerFormSubmit) {
                 registerFormSubmit.addEventListener('submit', function(e) {
+                    const username = document.getElementById('reg_username').value.trim();
+                    const email = document.getElementById('reg_email').value.trim();
+                    const phone = document.getElementById('reg_phone').value.trim();
+                    const postcode = document.getElementById('reg_postcode').value.trim();
+                    const state = document.getElementById('reg_state').value;
                     const password = document.getElementById('reg_password').value;
                     const confirm = document.getElementById('reg_confirm_password').value;
+
+                    const malaysianPhoneRegex = /^(\+?60|0)1[0-9]{8,9}$/;
+
+                    if (username === '') {
+                        e.preventDefault();
+                        alert('Username is required.');
+                        document.getElementById('reg_username').classList.add('input-error');
+                        return;
+                    }
+
+                    if (!/^[A-Za-z0-9_]{3,30}$/.test(username)) {
+                        e.preventDefault();
+                        alert('Username must be 3 to 30 characters and can only contain letters, numbers, and underscores.');
+                        document.getElementById('reg_username').classList.add('input-error');
+                        return;
+                    }
+
+                    if (email === '') {
+                        e.preventDefault();
+                        alert('Email address is required.');
+                        document.getElementById('reg_email').classList.add('input-error');
+                        return;
+                    }
+
+                    if (phone === '') {
+                        e.preventDefault();
+                        alert('Phone number is required.');
+                        document.getElementById('reg_phone').classList.add('input-error');
+                        return;
+                    }
+
+                    if (!malaysianPhoneRegex.test(phone.replace(/[\s-]/g, ''))) {
+                        e.preventDefault();
+                        alert('Please enter a valid Malaysian phone number.');
+                        document.getElementById('reg_phone').classList.add('input-error');
+                        return;
+                    }
+
+                    if (state === '') {
+                        e.preventDefault();
+                        alert('Please select a state.');
+                        document.getElementById('reg_state').classList.add('input-error');
+                        return;
+                    }
+
+                    if (!/^[0-9]{5}$/.test(postcode)) {
+                        e.preventDefault();
+                        alert('Postcode must be exactly 5 digits.');
+                        document.getElementById('reg_postcode').classList.add('input-error');
+                        return;
+                    }
 
                     if (password !== confirm) {
                         e.preventDefault();
@@ -739,9 +934,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
                 });
             }
 
-            const regInputs = document.querySelectorAll('#reg_fullname, #reg_email, #reg_phone, #reg_password, #reg_confirm_password');
+            const regInputs = document.querySelectorAll(
+                '#reg_fullname, #reg_username, #reg_email, #reg_phone, #reg_address, #reg_state, #reg_postcode, #reg_password, #reg_confirm_password'
+            );
+
             regInputs.forEach(input => {
                 input.addEventListener('input', function() {
+                    this.classList.remove('input-error');
+                });
+
+                input.addEventListener('change', function() {
                     this.classList.remove('input-error');
                 });
             });

@@ -736,7 +736,6 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
                     <div class="audit-table-container">
                         <table class="audit-table">
                             <thead>
-                                32
                                     <th>Collection Centre</th>
                                     <th>Total Requests</th>
                                     <th>Total Weight (kg)</th>
