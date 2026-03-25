@@ -40,6 +40,128 @@
         $collector_license = 'N/A';
         $collector_status = 'N/A';
     }
+
+    // Fetch job details
+    $allJobsDetails = [];
+    $allRequestStats = [];
+    $allProviderStats = [];
+    $allItemsStats = [];
+
+    $sql = "SELECT * FROM tbljob INNER JOIN tblcollector ON tbljob.collectorID = tblcollector.collectorID WHERE tbljob.collectorID = '$collector_id'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                // echo "<script>console.log('DB Success - Item stats row: " . json_encode($row) . "');</script>";
+                $allJobsDetails[] = [
+                    'jobID' => $row['jobID'] ?? 'N/A',
+                    'requestID' => $row['requestID'] ?? 'N/A',
+                    'collectorID' => $row['collectorID'] ?? 'N/A',
+                    'completedAt' => $row['completedAt'] ?? 'N/A',
+                    'vehicleID' => $row['vehicleID'] ?? 'N/A',
+                    'scheduledDate' => $row['scheduledDate'] ?? 'N/A',
+                    'scheduledTime' => $row['scheduledTime'] ?? 'N/A',
+                    'estimatedEndTime' => $row['estimatedEndTime'] ?? 'N/A',
+                    'status' => $row['status'] ?? 'N/A',
+                    'rejectionReason' => $row['rejectionReason'] ?? 'N/A',
+                    'startedAt' => $row['startedAt'] ?? 'N/A'
+                ];
+            }
+        } else {
+            error_log("DB Notice - No records found for provider ID: $collector_id");
+        }
+    } else {
+        error_log("DB Error - Query failed: " . mysqli_error($conn));
+    }
+
+    $sql = "SELECT * FROM tblcollection_request cr JOIN tbljob j ON cr.requestID = j.requestID
+                                        JOIN tblcollector c ON j.collectorID = c.collectorID
+                                        JOIN tblitem i ON cr.requestID = i.requestID
+                                        JOIN tblitem_type it ON i.itemTypeID = it.itemTypeID 
+                                        WHERE c.collectorID = '$collector_id'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                // echo "<script>console.log('DB Success - Item stats row: " . json_encode($row) . "');</script>";
+                $allRequestStats[] = [	
+                    'requestID' => $row['requestID'] ?? 'N/A',
+                    'providerID' => $row['providerID'] ?? 'N/A',
+                    'pickupAddress' => $row['pickupAddress'] ?? 'N/A',
+                    'pickupState' => $row['pickupState'] ?? 'N/A',
+                    'pickupPostcode' => $row['pickupPostcode'] ?? 'N/A',
+                    'preferredDateTime' => $row['preferredDateTime'] ?? 'N/A',
+                    'status' => $row['status'] ?? 'N/A',
+                    'createdAt' => $row['createdAt'] ?? 'N/A',
+                    'rejectionReason' => $row['rejectionReason'] ?? 'N/A'
+                ];
+            }
+        } else {
+            error_log("DB Notice - No records found for provider ID: $collector_id");
+        }
+    } else {
+        error_log("DB Error - Query failed: " . mysqli_error($conn));
+    }
+
+    $providerIDs = [];
+    foreach ($allRequestStats as $request) {
+        if (!empty($request['providerID'])) {
+            $providerIDs[] = $request['providerID'];
+        }
+    }
+    $providerIDs = array_unique($providerIDs);
+    $providerIDsStr = implode("','", $providerIDs);
+    $sql = "SELECT * FROM tblprovider WHERE providerID IN ('$providerIDsStr')";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                // echo "<script>console.log('DB Success - Item stats row: " . json_encode($row) . "');</script>";
+                $allProviderStats[] = [
+                    'providerID' => $row['providerID'] ?? 'N/A',
+                    'address' => $row['address'] ?? 'N/A',
+                    'state' => $row['state'] ?? 'N/A',
+                    'postcode' => $row['postcode'] ?? 'N/A',
+                    'point' => $row['point'] ?? 'N/A'
+                ];
+            }
+        } else {
+            error_log("DB Notice - No provider records found for IDs: $providerIDsStr");
+        }
+    } else {
+        error_log("DB Error - Query failed: " . mysqli_error($conn));
+    }
+
+    $requestIDs = [];
+    foreach ($allRequestStats as $request) {
+        if (!empty($request['requestID'])) {
+            $requestIDs[] = $request['requestID'];
+        }
+    }
+    $requestIDs = array_unique($requestIDs);
+
+    if (!empty($requestIDs)) {
+        $requestIDsStr = implode("','", $requestIDs);
+    
+        $sql = "SELECT i.*, it.*
+                FROM tblitem i
+                JOIN tblitem_type it ON i.itemTypeID = it.itemTypeID
+                WHERE i.requestID IN ('$requestIDsStr')";
+    
+        $result = mysqli_query($conn, $sql);
+    
+        if ($result && mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $allItemsStats[] = [
+                    'itemID' => $row['itemID'],
+                    'requestID' => $row['requestID'],
+                    'status' => $row['status'],
+                    'weight' => $row['weight'],
+                    'name' => $row['name']
+                ];
+            }
+        }
+    }
 ?>
 
 <!DOCTYPE html>
@@ -359,7 +481,7 @@
                     <div class="stat-icon blue">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     </div>
-                    <div><div class="stat-value">24</div><div class="stat-label">Total Jobs</div></div>
+                    <div><div class="stat-value"><?php echo count($allJobsDetails); ?></div><div class="stat-label">Total Jobs</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon green">
@@ -477,131 +599,177 @@
         <!-- USERS + ITEMS -->
         <div class="two-col">
 
-            <!-- USERS ASSIGNED -->
-            <div>
-                <div class="section-heading">
-                    <h3>
-                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                        Users Assigned
-                    </h3>
-                    <a href="#" id="usersToggleBtn" onclick="toggleUsers(event)">
-                        <svg id="usersToggleIcon" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-                        <span id="usersToggleText">View All</span>
-                    </a>
-                </div>
-                <div class="c-card">
-                    <div class="c-card-body">
-                        <div class="user-item">
-                            <div class="user-av" style="background:linear-gradient(135deg,hsl(225,70%,35%),hsl(225,80%,55%))">AZ</div>
-                            <div class="user-info"><div class="user-name">Ahmad Zaki</div><div class="user-addr">12 Jalan Mawar, PJ</div></div>
-                            <span class="pill pill-collected">Collected</span>
-                        </div>
-                        <div class="user-item">
-                            <div class="user-av" style="background:linear-gradient(135deg,hsl(260,60%,30%),hsl(260,55%,52%))">SN</div>
-                            <div class="user-info"><div class="user-name">Siti Nora</div><div class="user-addr">5 Lorong Dahlia, PJ</div></div>
-                            <span class="pill pill-pending">Pending</span>
-                        </div>
-                        <div class="user-item" id="usersLastVisible">
-                            <div class="user-av" style="background:linear-gradient(135deg,hsl(185,55%,28%),hsl(185,50%,48%))">LW</div>
-                            <div class="user-info"><div class="user-name">Lim Wei Jie</div><div class="user-addr">88 Jalan Kenanga, PJ</div></div>
-                            <span class="pill pill-collected">Collected</span>
-                        </div>
-                        <div class="extra-users-wrap" id="extraUsersWrap">
-                            <div class="user-item">
-                                <div class="user-av" style="background:linear-gradient(135deg,hsl(15,65%,30%),hsl(15,60%,50%))">MR</div>
-                                <div class="user-info"><div class="user-name">Muthu Raj</div><div class="user-addr">3 Jalan Teratai, PJ</div></div>
-                                <span class="pill pill-scheduled">Scheduled</span>
-                            </div>
-                            <div class="user-item">
-                                <div class="user-av" style="background:linear-gradient(135deg,hsl(340,60%,30%),hsl(340,55%,52%))">NA</div>
-                                <div class="user-info"><div class="user-name">Nurul Ain</div><div class="user-addr">27 Jalan Anggerik, PJ</div></div>
-                                <span class="pill pill-scheduled">Scheduled</span>
-                            </div>
-                            <div class="user-item">
-                                <div class="user-av" style="background:linear-gradient(135deg,hsl(50,65%,30%),hsl(50,60%,50%))">KH</div>
-                                <div class="user-info"><div class="user-name">Kavitha Harish</div><div class="user-addr">9 Jalan Cempaka, PJ</div></div>
-                                <span class="pill pill-pending">Pending</span>
-                            </div>
-                            <div class="user-item">
-                                <div class="user-av" style="background:linear-gradient(135deg,hsl(200,65%,30%),hsl(200,60%,50%))">RY</div>
-                                <div class="user-info"><div class="user-name">Raj Yusof</div><div class="user-addr">14 Lorong Bayu, PJ</div></div>
-                                <span class="pill pill-collected">Collected</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- USERS ASSIGNED -->
+        <div>
+            <div class="section-heading">
+                <h3>
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                    Users Assigned
+                </h3>
+                <a href="#" id="usersToggleBtn" onclick="toggleUsers(event)">
+                    <svg id="usersToggleIcon" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                    <span id="usersToggleText">View All</span>
+                </a>
             </div>
 
-            <!-- ITEMS COLLECTED -->
-            <div>
-                <div class="section-heading">
-                    <h3>
-                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-                        Items Collected
-                    </h3>
-                    <a href="#" id="itemsToggleBtn" onclick="toggleItems(event)">
-                        <svg id="itemsToggleIcon" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-                        <span id="itemsToggleText">View All</span>
-                    </a>
+            <div class="c-card">
+                <div class="c-card-body">
+
+                    <?php
+                    $count = 0;
+
+                    foreach ($allRequestStats as $request) {
+
+                        // Match provider info
+                        $providerData = null;
+                        foreach ($allProviderStats as $provider) {
+                            if ($provider['providerID'] == $request['providerID']) {
+                                $providerData = $provider;
+                                break;
+                            }
+                        }
+
+                        // Skip if no provider found
+                        if (!$providerData) continue;
+
+                        $name = "User ID: " . $request['providerID']; 
+                        $initials = getInitials($name);
+
+                        $address = $providerData['address'] . ", " . $providerData['state'];
+
+                        $status = strtolower($request['status']);
+
+                        // Status class
+                        $statusClass = "pill-pending";
+                        if ($status === "completed") $statusClass = "pill-collected";
+                        elseif ($status === "scheduled") $statusClass = "pill-scheduled";
+
+                        // Show only first 3 initially
+                        if ($count == 3) {
+                            echo '<div class="extra-users-wrap" id="extraUsersWrap">';
+                        }
+
+                        ?>
+
+                        <div class="user-item">
+                            <div class="user-av" style="background:linear-gradient(135deg,hsl(<?= rand(0,360) ?>,60%,40%),hsl(<?= rand(0,360) ?>,70%,60%))">
+                                <?= $initials ?>
+                            </div>
+
+                            <div class="user-info">
+                                <div class="user-name"><?= htmlspecialchars($name) ?></div>
+                                <div class="user-addr"><?= htmlspecialchars($address) ?></div>
+                            </div>
+
+                            <span class="pill <?= $statusClass ?>">
+                                <?= ucfirst($status) ?>
+                            </span>
+                        </div>
+
+                        <?php
+                        $count++;
+                    }
+
+                    // Close extra users div if needed
+                    if ($count > 3) {
+                        echo '</div>';
+                    }
+                    ?>
+
                 </div>
-                <div class="c-card">
-                    <div class="c-card-body">
-                        <table class="items-table">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>From</th>
-                                    <th>Qty</th>
-                                    <th>Status</th>
+            </div>
+        </div>
+
+        <!-- ITEMS COLLECTED -->
+        <div>
+            <div class="section-heading">
+                <h3>
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                    Items Collected
+                </h3>
+                <a href="#" id="itemsToggleBtn" onclick="toggleItems(event)">
+                    <svg id="itemsToggleIcon" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    <span id="itemsToggleText">View All</span>
+                </a>
+            </div>
+            <div class="c-card">
+                <div class="c-card-body">
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Item Type</th>
+                                <th>Item ID</th>
+                                <th>Item Weight</th>
+                                <th>Item Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $count = 0;
+
+                            foreach ($allItemsStats as $item) {
+
+                                // OPTIONAL: skip if somehow invalid (extra safety)
+                                if (!in_array($item['requestID'], $requestIDs)) {
+                                    continue;
+                                }
+
+                                // Temporary name (replace later if you join provider name)
+                                $itemID = $item['itemID'];
+
+                                $status = strtolower($item['status']);
+
+                                // Map status → UI class
+                                $statusClass = "pill-pending";
+                                $statusText = "Pending";
+
+                                if ($status === "completed") {
+                                    $statusClass = "pill-collected";
+                                    $statusText = "Done";
+                                } elseif ($status === "scheduled") {
+                                    $statusClass = "pill-scheduled";
+                                    $statusText = "Scheduled";
+                                }
+
+                                // Show only first 4, rest hidden
+                                $extraClass = ($count >= 4) ? "item-extra" : "";
+
+                            ?>
+                                <tr class="<?= $extraClass ?>">
+                                    <td>
+                                        <span class="item-dot" style="background:hsl(<?= rand(0,360) ?>,60%,50%)"></span>
+                                        <?= htmlspecialchars($item['name']) ?>
+                                    </td>
+
+                                    <td class="td-muted">
+                                        <?= htmlspecialchars($itemID) ?>
+                                    </td>
+
+                                    <td>
+                                        <?= htmlspecialchars($item['weight']) ?>
+                                    </td>
+
+                                    <td>
+                                        <span class="pill <?= $statusClass ?>">
+                                            <?= $statusText ?>
+                                        </span>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><span class="item-dot" style="background:var(--MainBlue)"></span>Laptop</td>
-                                    <td class="td-muted">Ahmad Zaki</td><td>2</td>
-                                    <td><span class="pill pill-collected">Done</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="item-dot" style="background:hsl(145,50%,42%)"></span>Phone</td>
-                                    <td class="td-muted">Ahmad Zaki</td><td>1</td>
-                                    <td><span class="pill pill-collected">Done</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="item-dot" style="background:hsl(40,80%,48%)"></span>TV</td>
-                                    <td class="td-muted">Siti Nora</td><td>1</td>
-                                    <td><span class="pill pill-pending">Pending</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="item-dot" style="background:hsl(260,52%,52%)"></span>Printer</td>
-                                    <td class="td-muted">Lim Wei Jie</td><td>1</td>
-                                    <td><span class="pill pill-collected">Done</span></td>
-                                </tr>
-                                <tr class="item-extra">
-                                    <td><span class="item-dot" style="background:hsl(185,55%,40%)"></span>Monitor</td>
-                                    <td class="td-muted">Lim Wei Jie</td><td>2</td>
-                                    <td><span class="pill pill-collected">Done</span></td>
-                                </tr>
-                                <tr class="item-extra">
-                                    <td><span class="item-dot" style="background:hsl(15,60%,48%)"></span>Keyboard</td>
-                                    <td class="td-muted">Muthu Raj</td><td>3</td>
-                                    <td><span class="pill pill-scheduled">Scheduled</span></td>
-                                </tr>
-                                <tr class="item-extra">
-                                    <td><span class="item-dot" style="background:hsl(50,70%,45%)"></span>Tablet</td>
-                                    <td class="td-muted">Nurul Ain</td><td>1</td>
-                                    <td><span class="pill pill-pending">Pending</span></td>
-                                </tr>
-                                <tr class="item-extra">
-                                    <td><span class="item-dot" style="background:hsl(200,60%,45%)"></span>Router</td>
-                                    <td class="td-muted">Raj Yusof</td><td>2</td>
-                                    <td><span class="pill pill-collected">Done</span></td>
-                                </tr>
+                            <?php
+                                $count++;
+                            }
+                            ?>
                             </tbody>
-                        </table>
-                    </div>
+                    </table>
                 </div>
             </div>
-
         </div>
 
     </main>

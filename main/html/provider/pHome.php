@@ -67,7 +67,7 @@
     if ($result) {
         if (mysqli_num_rows($result) > 0) {
             while ($row = mysqli_fetch_assoc($result)) {
-                echo "<script>console.log('DB Success - Item stats row: " . json_encode($row) . "');</script>";
+                // echo "<script>console.log('DB Success - Item stats row: " . json_encode($row) . "');</script>";
                 $allItemsStats[] = [
                     'requestID' => $row['requestID'] ?? 'N/A',
                     'pickupAddress' => $row['pickupAddress'] ?? 'N/A',
