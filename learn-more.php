@@ -1,3 +1,37 @@
+<?php
+session_start();
+include("main/php/dbConn.php");
+
+if (!isset($conn) || $conn->connect_error) {
+    die("Database connection failed: " . ($conn->connect_error ?? 'Unknown error'));
+}
+
+$total_ewaste_kg = 0;
+$total_users = 0;
+$total_centres = 0;
+$total_co2_saved = 0;
+
+$weight_query = "SELECT SUM(weight) as total FROM tblitem WHERE status IN ('Collected', 'Received', 'Processed', 'Recycled')";
+$weight_result = $conn->query($weight_query);
+if ($weight_result && $row = $weight_result->fetch_assoc()) {
+    $total_ewaste_kg = round($row['total'] ?? 0, 2);
+}
+
+$users_query = "SELECT COUNT(*) as total FROM tblusers WHERE userType = 'provider'";
+$users_result = $conn->query($users_query);
+if ($users_result && $row = $users_result->fetch_assoc()) {
+    $total_users = $row['total'];
+}
+
+$centres_query = "SELECT COUNT(*) as total FROM tblcentre WHERE status = 'Active'";
+$centres_result = $conn->query($centres_query);
+if ($centres_result && $row = $centres_result->fetch_assoc()) {
+    $total_centres = $row['total'];
+}
+
+$co2_per_kg = 0.5;
+$total_co2_saved = round($total_ewaste_kg * $co2_per_kg, 0);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -303,7 +337,6 @@
             color: var(--text-color);
         }
 
-        /* Dark mode button - exactly like template position */
         .c-navbar-more {
             display: flex;
             align-items: center;
@@ -325,7 +358,6 @@
             height: auto;
         }
 
-        /* Mobile dark mode button */
         .c-navbar-more-mobile {
             display: none;
         }
@@ -389,9 +421,7 @@
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
     
-    <!-- Logo & Dark Mode Only -->
     <header>
-        <!-- Logo + Name -->
         <section class="c-logo-section">
             <a href="index.html" class="c-logo-link">
                 <img src="main/assets/images/logo.png" alt="Logo" class="c-logo">
@@ -399,33 +429,26 @@
             </a>
         </section>
 
-        <!-- Dark Mode Only (Desktop/Tablet) - exactly like template position -->
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
                 <img src="main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
         </section>
 
-        <!-- Dark Mode Only (Mobile) -->
         <section class="c-navbar-more-mobile">
             <button id="themeToggleMobile">
                 <img src="main/assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
         </section>
-        
     </header>
     <hr>
 
-
-    <!-- Main Content -->
     <main>
-        <!-- Hero section -->
         <section class="learn-hero">
             <h1>Our Mission</h1>
             <p>Transforming e-waste into valuable resources through technology, transparency, and community action.</p>
         </section>
 
-        <!-- Why recycle section -->
         <section class="section">
             <h2 class="section-title">Why Recycle E-Waste?</h2>
             <div class="why-grid">
@@ -447,7 +470,6 @@
             </div>
         </section>
 
-        <!-- How it works -->
         <section class="section">
             <h2 class="section-title center">How It Works</h2>
             <div class="process-steps">
@@ -469,30 +491,28 @@
             </div>
         </section>
 
-        <!-- Impact stats -->
         <section class="section">
             <h2 class="section-title center">Our Impact</h2>
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-number">5,000+</div>
+                    <div class="stat-number"><?php echo number_format($total_ewaste_kg, 0); ?>+</div>
                     <div class="stat-label">kg E-Waste Collected</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">1,200+</div>
-                    <div class="stat-label">Happy Recyclers</div>
+                    <div class="stat-number"><?php echo $total_users; ?>+</div>
+                    <div class="stat-label">Active Recyclers</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">15</div>
+                    <div class="stat-number"><?php echo $total_centres; ?></div>
                     <div class="stat-label">Partner Centres</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">3,500+</div>
+                    <div class="stat-number"><?php echo number_format($total_co2_saved, 0); ?>+</div>
                     <div class="stat-label">kg CO₂ Saved</div>
                 </div>
             </div>
         </section>
 
-        <!-- CTA section -->
         <section class="cta-section">
             <h2>Ready to Make a Difference?</h2>
             <p>Join our community of responsible recyclers today. Together, we can build a cleaner, greener future.</p>
@@ -518,7 +538,6 @@
     </footer>
 
     <script>
-        // Theme toggle functionality
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggleDesktop = document.getElementById('themeToggleDesktop');
             const themeToggleMobile = document.getElementById('themeToggleMobile');
