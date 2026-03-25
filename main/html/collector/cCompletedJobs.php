@@ -353,7 +353,7 @@ $historyJson = json_encode($historyData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX
         <section class="c-footer-links-section">
             <div>
                 <b>My Jobs</b><br>
-                <a href="../../html/collector/cMyJobs.html">My Jobs</a><br>
+                <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
                 <a href="../../html/collector/cInProgress.php">In Progess</a><br>
                 <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
             </div>
