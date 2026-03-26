@@ -9,25 +9,23 @@ function sanitize($val) {
     return htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
 }
 
-function mapJobStatus($jobStatus, $requestStatus) {
+function mapJobStatus($jobStatus) {
     $jobStatus = strtolower(trim((string)$jobStatus));
-    $requestStatus = strtolower(trim((string)$requestStatus));
 
-    if ($jobStatus === 'pending') return 'pending';
-    if ($jobStatus === 'scheduled') return 'accepted';
-    if ($jobStatus === 'rejected') return 'rejected';
-    if ($jobStatus === 'cancelled') return 'cancelled';
-    if ($jobStatus === 'ongoing') return 'ongoing';
-    if ($jobStatus === 'delayed') return 'delayed';
-    if ($jobStatus === 'completed' && $requestStatus === 'collected') return 'pickedup';
-    if ($jobStatus === 'completed') return 'completed';
-    return 'pending';
+    if ($jobStatus === 'pending') return 'Pending';
+    if ($jobStatus === 'scheduled') return 'Scheduled';
+    if ($jobStatus === 'ongoing') return 'Ongoing';
+    if ($jobStatus === 'completed') return 'Completed';
+    if ($jobStatus === 'rejected') return 'Rejected';
+    if ($jobStatus === 'cancelled') return 'Cancelled';
+
+    return 'Pending';
 }
 
 function mapStage($status) {
-    if (in_array($status, ['pending', 'accepted', 'rejected'], true)) return 'pre-execution';
-    if (in_array($status, ['ongoing', 'delayed', 'pickedup'], true)) return 'execution';
-    if (in_array($status, ['completed', 'cancelled'], true)) return 'resolution';
+    if (in_array($status, ['Pending', 'Scheduled', 'Rejected'], true)) return 'pre-execution';
+    if ($status === 'Ongoing') return 'execution';
+    if (in_array($status, ['Completed', 'Cancelled'], true)) return 'resolution';
     return 'pre-execution';
 }
 
@@ -137,7 +135,7 @@ if ($result) {
     
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $displayStatus = mapJobStatus($row['jobStatus'], $row['requestStatus']);
+            $displayStatus = mapJobStatus($row['jobStatus']);
             $reasonText = $row['jobRejectionReason'] ?: $row['requestRejectionReason'] ?: '';
             $requestID = (int)$row['requestID'];
             $jobID = (int)$row['jobID'];
@@ -184,7 +182,8 @@ if ($result) {
                     'dropoff' => $dropoff,
                     'description' => $item['description'] ?: 'No description provided',
                     'status' => $item['itemStatus'],
-                    'image' => $item['image']
+                    'image' => $item['image'] ?: '',
+                    'imagePath' => !empty($item['image']) ? '../../uploads/' . $item['image'] : ''
                 ];
             }
             $itemStmt->close();
@@ -288,7 +287,7 @@ $debugJson = json_encode($debug_info);
     <div id="cover" class="" onclick="hideMenu()"></div>
     <header>
         <section class="c-logo-section">
-            <a href="../../html/admin/aHome.html" class="c-logo-link">
+            <a href="../../html/admin/aHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -300,28 +299,28 @@ $debugJson = json_encode($debug_info);
                 <div class="c-navbar-side-items">
                     <section class="c-navbar-side-more">
                         <button id="themeToggleMobile"><img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon"></button>
-                        <a href="../../html/common/Setting.html"><img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM"></a>
+                        <a href="../../html/common/Setting.php"><img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM"></a>
                     </section>
-                    <a href="../../html/admin/aHome.html">Home</a>
+                    <a href="../../html/admin/aHome.php">Home</a>
                     <a href="../../html/admin/aRequests.php">Requests</a>
                     <a href="../../html/admin/aJobs.php">Jobs</a>
-                    <a href="../../html/admin/aIssue.html">Issue</a>
-                    <a href="../../html/admin/aOperations.html">Operations</a>
-                    <a href="../../html/admin/aReport.html">Report</a>
+                    <a href="../../html/admin/aIssue.php">Issue</a>
+                    <a href="../../html/admin/aOperations.php">Operations</a>
+                    <a href="../../html/admin/aReport.php">Report</a>
                 </div>
             </div>
         </nav>
         <nav class="c-navbar-desktop">
-            <a href="../../html/admin/aHome.html">Home</a>
+            <a href="../../html/admin/aHome.php">Home</a>
             <a href="../../html/admin/aRequests.php">Requests</a>
             <a href="../../html/admin/aJobs.php">Jobs</a>
-            <a href="../../html/admin/aIssue.html">Issue</a>
-            <a href="../../html/admin/aOperations.html">Operations</a>
-            <a href="../../html/admin/aReport.html">Report</a>
+            <a href="../../html/admin/aIssue.php">Issue</a>
+            <a href="../../html/admin/aOperations.php">Operations</a>
+            <a href="../../html/admin/aReport.php">Report</a>
         </nav>
         <section class="c-navbar-more">
             <button id="themeToggleDesktop"><img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon"></button>
-            <a href="../../html/common/Setting.html"><img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg"></a>
+            <a href="../../html/common/Setting.php"><img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg"></a>
         </section>
     </header>
     <hr>
@@ -343,13 +342,12 @@ $debugJson = json_encode($debug_info);
                             </button>
                             <div class="filter-dropdown-content" id="filterDropdownContent">
                                 <a href="#" data-filter="all" class="active-filter"><i class="fas fa-list"></i> All Jobs</a>
-                                <a href="#" data-filter="pending"><i class="far fa-clock"></i> Pending</a>
-                                <a href="#" data-filter="accepted"><i class="fas fa-check-circle"></i> Accepted</a>
-                                <a href="#" data-filter="rejected"><i class="fas fa-times-circle"></i> Rejected</a>
-                                <a href="#" data-filter="ongoing"><i class="fas fa-sync-alt"></i> Ongoing</a>
-                                <a href="#" data-filter="pickedup"><i class="fas fa-box"></i> Picked up</a>
-                                <a href="#" data-filter="completed"><i class="fas fa-check-double"></i> Completed</a>
-                                <a href="#" data-filter="cancelled"><i class="fas fa-ban"></i> Cancelled</a>
+                                <a href="#" data-filter="Pending"><i class="far fa-clock"></i> Pending</a>
+                                <a href="#" data-filter="Scheduled"><i class="fas fa-calendar-check"></i> Scheduled</a>
+                                <a href="#" data-filter="Rejected"><i class="fas fa-times-circle"></i> Rejected</a>
+                                <a href="#" data-filter="Ongoing"><i class="fas fa-sync-alt"></i> Ongoing</a>
+                                <a href="#" data-filter="Completed"><i class="fas fa-check-double"></i> Completed</a>
+                                <a href="#" data-filter="Cancelled"><i class="fas fa-ban"></i> Cancelled</a>
                             </div>
                         </div>
                         <div class="search-box">
@@ -413,7 +411,7 @@ $debugJson = json_encode($debug_info);
 
 <footer>
         <section class="c-footer-info-section">
-            <a href="../../html/admin/aHome.html">
+            <a href="../../html/admin/aHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -434,20 +432,20 @@ $debugJson = json_encode($debug_info);
                 <b>Management</b><br>
                 <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
                 <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
-                <a href="../../html/admin/aIssue.html">Issue</a><br>
+                <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
                 <b>System Operation</b><br>
-                <a href="../../html/admin/aProviders.html">Providers</a><br>
-                <a href="../../html/admin/aCollectors.html">Collectors</a><br>
-                <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
-                <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
-                <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
+                <a href="../../html/admin/aProviders.php">Providers</a><br>
+                <a href="../../html/admin/aCollectors.php">Collectors</a><br>
+                <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
+                <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
+                <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
             </div>
             <div>
                 <b>Proxy</b><br>
-                <a href="../../html/common/Profile.html">Edit Profile</a><br>
-                <a href="../../html/common/Setting.html">Setting</a>
+                <a href="../../html/common/Profile.php">Edit Profile</a><br>
+                <a href="../../html/common/Setting.php">Setting</a>
             </div>
         </section>
     </footer>
@@ -482,13 +480,11 @@ $debugJson = json_encode($debug_info);
                         </label>
                         <select id="issueType" name="issueType" required>
                             <option value="">-- Select Issue Type --</option>
-                            <option value="vehicle_breakdown">Vehicle Breakdown</option>
-                            <option value="traffic_delay">Traffic Delay</option>
-                            <option value="item_missing">Item Missing</option>
-                            <option value="address_problem">Address Problem</option>
-                            <option value="collector_unavailable">Collector Unavailable</option>
-                            <option value="weather_issue">Weather Issue</option>
-                            <option value="other">Other</option>
+                            <option value="Operational">Operational</option>
+                            <option value="Vehicle">Vehicle</option>
+                            <option value="Safety">Safety</option>
+                            <option value="Technical">Technical</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
 

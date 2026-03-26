@@ -21,17 +21,15 @@ function fmtStatus(status) {
     if (!status) return 'Unknown';
 
     const statusMap = {
-        pending: 'Pending',
-        accepted: 'Accepted',
-        rejected: 'Rejected',
-        ongoing: 'Ongoing',
-        delayed: 'Delayed',
-        pickedup: 'Picked Up',
-        completed: 'Completed',
-        cancelled: 'Cancelled'
+        Pending: 'Pending',
+        Scheduled: 'Scheduled',
+        Rejected: 'Rejected',
+        Ongoing: 'Ongoing',
+        Completed: 'Completed',
+        Cancelled: 'Cancelled'
     };
 
-    return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
+    return statusMap[status] || status;
 }
 
 function escapeHtml(str) {
@@ -42,6 +40,43 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+function openImageModal(imageSrc) {
+    let modal = document.getElementById('imageModal');
+
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'imageModal';
+        modal.innerHTML = `
+            <div class="image-modal-overlay">
+                <button type="button" class="image-modal-close">&times;</button>
+                <img class="image-modal-content" alt="Item image">
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('.image-modal-close').addEventListener('click', closeImageModal);
+
+        modal.querySelector('.image-modal-overlay').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+    }
+
+    const img = modal.querySelector('.image-modal-content');
+    img.src = imageSrc;
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = '';
 }
 
 function initializeElements() {
@@ -182,7 +217,7 @@ function setupEventListeners() {
 
     if (issueType) {
         issueType.addEventListener('change', function () {
-            if (this.value === 'other') {
+            if (this.value === 'Other') {
                 if (otherIssueGroup) otherIssueGroup.style.display = 'block';
                 if (otherIssueText) otherIssueText.setAttribute('required', true);
             } else {
@@ -201,7 +236,7 @@ function setupEventListeners() {
 
             let selectedIssue = issueType ? issueType.value : '';
 
-            if (selectedIssue === 'other') {
+            if (selectedIssue === 'Other') {
                 selectedIssue = otherIssueText ? otherIssueText.value.trim() : '';
             }
 
@@ -382,7 +417,7 @@ function renderJobCard(job) {
         <div class="job-card-modern" data-job-id="${escapeHtml(job.id)}">
             <div class="job-card-header-modern">
                 <span class="job-id-modern">${escapeHtml(job.id)}</span>
-                <span class="job-badge-modern ${escapeHtml(job.status || 'pending')}">${fmtStatus(job.status)}</span>
+                <span class="job-badge-modern ${escapeHtml(String(job.status || 'Pending').toLowerCase())}">${fmtStatus(job.status)}</span>
             </div>
             ${job.reasonText ? `<div class="job-reason" title="${escapeHtml(job.reasonText)}">${escapeHtml(job.reasonText)}</div>` : ''}
             <div class="job-provider-modern">${escapeHtml(job.providerName || 'N/A')}</div>
@@ -431,10 +466,10 @@ function renderStage(title, icon, jobs) {
     if (!jobs || !jobs.length) return '';
 
     const statusOrder = title === 'Pre-Execution'
-        ? ['pending', 'accepted', 'rejected']
+        ? ['Pending', 'Scheduled', 'Rejected']
         : title === 'Execution'
-            ? ['ongoing', 'delayed', 'pickedup']
-            : ['completed', 'cancelled'];
+            ? ['Ongoing']
+            : ['Completed', 'Cancelled'];
 
     return `
         <div class="timeline-stage">
@@ -504,7 +539,7 @@ function showJobDetail(jobId) {
 
     if (detailJobStatus) {
         detailJobStatus.textContent = fmtStatus(job.status);
-        detailJobStatus.className = `detail-status-modern ${job.status || ''}`;
+        detailJobStatus.className = `detail-status-modern ${String(job.status || '').toLowerCase()}`;
     }
 
     if (detailRequestId) detailRequestId.textContent = job.requestID || 'N/A';
@@ -521,9 +556,9 @@ function showJobDetail(jobId) {
     const items = job.fullData.items || [];
     if (detailItemsCount) detailItemsCount.textContent = items.length;
 
-if (detailItemsList) {
-    if (items.length) {
-        detailItemsList.innerHTML = items.map((item, index) => `
+    if (detailItemsList) {
+        if (items.length) {
+            detailItemsList.innerHTML = items.map((item, index) => `
 <div class="job-detail-item-card collapsible-item ${index === 0 ? 'open' : ''}">
     <button type="button" class="job-detail-item-summary">
         <div class="job-detail-item-summary-left">
@@ -538,7 +573,6 @@ if (detailItemsList) {
     </button>
 
     <div class="job-detail-item-body">
-        <!-- ITEM NAME -->
         <div class="job-detail-item-name">
             <i class="fas fa-box"></i>
             ${escapeHtml(item.name || 'Unknown Item')}
@@ -559,20 +593,19 @@ if (detailItemsList) {
                 </div>
             </div>
 
-            <!-- SINGLE VIEW IMAGE BUTTON - POSITIONED FAR LEFT -->
             <div class="job-detail-item-image-wrapper">
-                ${item.image
-                    ? `<a href="../../uploads/${encodeURIComponent(item.image)}" target="_blank" class="view-image-btn">
-                        <i class="fas fa-image"></i> View Image
-                       </a>`
-                    : `<span class="no-images">
-                        <i class="fas fa-image"></i> No image
-                       </span>`
+                ${
+                    item.imagePath
+                        ? `<button type="button" class="view-image-btn" data-image-path="${escapeHtml(item.imagePath)}">
+                                <i class="fas fa-image"></i> View Image
+                           </button>`
+                        : `<span class="no-images">
+                                <i class="fas fa-image"></i> No image
+                           </span>`
                 }
             </div>
         </div>
 
-        <!-- DROP OFF LOCATION - SEPARATE SECTION, NOT WITH IMAGE BUTTON -->
         <div class="job-detail-item-details">
             <div class="job-detail-item-detail">
                 <span class="detail-label">Drop-off Location</span>
@@ -591,6 +624,18 @@ if (detailItemsList) {
                     const card = this.closest('.collapsible-item');
                     if (card) {
                         card.classList.toggle('open');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.view-image-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const imagePath = this.dataset.imagePath;
+                    if (imagePath) {
+                        openImageModal(imagePath);
                     }
                 });
             });
@@ -633,7 +678,7 @@ if (detailItemsList) {
         detailActionButtons.innerHTML = '';
         const normalizedStatus = String(job.status || '').toLowerCase().trim();
 
-        if (normalizedStatus === 'delayed') {
+        if (normalizedStatus === 'ongoing') {
             detailActionButtons.innerHTML = `
                 <button class="btn-modern-outline" id="reportIssueBtn" type="button">
                     <i class="fas fa-flag"></i> Report Issue

@@ -1994,3 +1994,40 @@ body.dark-mode .detail-status-modern.pending,
         border-radius: 20px;
     }
 }
+
+#imageModal {
+    display: none;
+    position: fixed;
+    z-index: 11000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.image-modal-overlay {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.image-modal-content {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 10px;
+}
+
+.image-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    font-size: 40px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+}

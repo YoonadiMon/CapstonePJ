@@ -543,7 +543,7 @@ if ($timelineResult) {
     <header>
         <!-- Logo + Name -->
         <section class="c-logo-section">
-            <a href="../../html/admin/aHome.html" class="c-logo-link">
+            <a href="../../html/admin/aHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -560,35 +560,35 @@ if ($timelineResult) {
                         <button id="themeToggleMobile">
                             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                         </button>
-                        <a href="../../html/common/Setting.html">
+                        <a href="../../html/common/Setting.php">
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
 
-                    <a href="../../html/admin/aHome.html">Home</a>
+                    <a href="../../html/admin/aHome.php">Home</a>
                     <a href="../../html/admin/aRequests.php">Requests</a>
                     <a href="../../html/admin/aJobs.php">Jobs</a>
-                    <a href="../../html/admin/aIssue.html">Issue</a>
+                    <a href="../../html/admin/aIssue.php">Issue</a>
                     <a href="../../html/admin/aOperations.php" class="active">Operations</a>
-                    <a href="../../html/admin/aReport.html">Report</a>
+                    <a href="../../html/admin/aReport.php">Report</a>
                 </div>
             </div>
         </nav>
 
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
-            <a href="../../html/admin/aHome.html">Home</a>
+            <a href="../../html/admin/aHome.php">Home</a>
             <a href="../../html/admin/aRequests.php">Requests</a>
             <a href="../../html/admin/aJobs.php">Jobs</a>
-            <a href="../../html/admin/aIssue.html">Issue</a>
+            <a href="../../html/admin/aIssue.php">Issue</a>
             <a href="../../html/admin/aOperations.php" class="active">Operations</a>
-            <a href="../../html/admin/aReport.html">Report</a>
+            <a href="../../html/admin/aReport.php">Report</a>
         </nav>          
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
                 <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
-            <a href="../../html/common/Setting.html">
+            <a href="../../html/common/Setting.php">
                 <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
             </a>
         </section>
@@ -746,7 +746,7 @@ if ($timelineResult) {
     <footer>
         <!-- Column 1 -->
         <section class="c-footer-info-section">
-            <a href="../../html/admin/aHome.html">
+            <a href="../../html/admin/aHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -765,22 +765,22 @@ if ($timelineResult) {
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aCollectionRequests.html">Collection Requests</a><br>
-                <a href="../../html/admin/aJobs.html">Collection Jobs</a><br>
-                <a href="../../html/admin/aIssue.html">Issue</a><br>
+                <a href="../../html/admin/aCollectionRequests.php">Collection Requests</a><br>
+                <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
+                <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
                 <b>System Operation</b><br>
-                <a href="../../html/admin/aProviders.html">Providers</a><br>
-                <a href="../../html/admin/aCollectors.html">Collectors</a><br>
-                <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
-                <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
-                <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
+                <a href="../../html/admin/aProviders.php">Providers</a><br>
+                <a href="../../html/admin/aCollectors.php">Collectors</a><br>
+                <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
+                <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
+                <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
             </div>
             <div>
                 <b>Proxy</b><br>
-                <a href="../../html/common/Profile.html">Edit Profile</a><br>
-                <a href="../../html/common/Setting.html">Setting</a>
+                <a href="../../html/common/Profile.php">Edit Profile</a><br>
+                <a href="../../html/common/Setting.php">Setting</a>
             </div>
         </section>
     </footer>
