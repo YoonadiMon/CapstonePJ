@@ -446,7 +446,6 @@ if ($hasJob) {
     transition: box-shadow 0.25s, border-color 0.25s;
 }
 
-
 .issue-card:last-child { margin-bottom: 0; }
 
 .issue-card:hover { box-shadow: var(--shadow-hover); }
@@ -629,6 +628,42 @@ if ($hasJob) {
     color: hsl(42, 80%, 55%);
 }
 
+/* ─── RED GHOST BUTTON (like cancel but red) ───────────────────────── */
+.btn-red-ghost {
+    background: transparent;
+    color: var(--StatusRed);
+    border: 1.5px solid var(--StatusRed);
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: 'Inter', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-red-ghost:hover {
+    background: var(--StatusRedLight);
+    transform: translateY(-1px);
+}
+
+.btn-red-ghost:active {
+    transform: translateY(0);
+}
+
+.btn-red-ghost:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.dark-mode .btn-red-ghost:hover {
+    background: hsl(0, 50%, 18%);
+}
+
 /* ─── DISABLED BUTTON OVERRIDE ───────────────────────────────────────── */
 .btn-complete:disabled { opacity: 0.6; cursor: not-allowed; background: var(--text-muted); }
 .btn-danger:disabled   { opacity: 0.6; cursor: not-allowed; }
@@ -671,7 +706,7 @@ if ($hasJob) {
 <div class="popup-overlay" id="reportPopup">
     <div class="popup" style="text-align:left; max-width:500px;">
         <h3 style="text-align:center; margin-bottom:6px;">Report an Issue</h3>
-        <p style="text-align:center; margin-bottom:18px; color:var(--StatusYellow); font-size:13px; font-weight:600;">
+        <p style="text-align:center; margin-bottom:18px; color:var(--StatusRed); font-size:13px; font-weight:600;">
             ⚠️ Reporting an issue will notify the admin. The complete button will be disabled until the issue is resolved.
         </p>
 
@@ -710,7 +745,7 @@ if ($hasJob) {
 
         <div class="popup-actions">
             <button class="btn btn-ghost" onclick="closePopup('reportPopup')">Cancel</button>
-            <button class="btn btn-warning" onclick="submitReport()">Submit Report</button>
+            <button class="btn-red-ghost" onclick="submitReport()">Submit Report</button>
         </div>
     </div>
 </div>
@@ -1686,7 +1721,7 @@ async function submitReport() {
     if (!description) { showToast('⚠️ Please provide a description.');   return; }
 
     // Disable the submit button to prevent double submission
-    const submitBtn = document.querySelector('#reportPopup .btn-warning');
+    const submitBtn = document.querySelector('#reportPopup .btn-red-ghost');
     const originalText = submitBtn ? submitBtn.textContent : '';
     if (submitBtn) {
         submitBtn.disabled = true;

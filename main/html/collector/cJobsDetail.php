@@ -466,10 +466,10 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
                 <a href="../../html/collector/cInProgress.php">In Progress</a><br>
                 <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
             </div>
-            <div>
+            <!-- <div>
                 <b>Support</b><br>
                 <a href="../../html/collector/cReportIssues.html">Report Issue</a>
-            </div>
+            </div> -->
             <div>
                 <b>Proxy</b><br>
                 <a href="../../html/common/About.html">About</a><br>
