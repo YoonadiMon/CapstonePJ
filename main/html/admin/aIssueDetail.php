@@ -30,6 +30,30 @@ function logActivity($conn, $userID, $type, $action, $description, $requestID = 
     $stmt->close();
 }
 
+// --- Helper functions for validation ---
+function isCollectorActive($conn, $collectorID) {
+    $res = $conn->query("SELECT status FROM tblcollector WHERE collectorID = $collectorID");
+    $row = $res->fetch_assoc();
+    return $row && $row['status'] === 'active';
+}
+
+function isVehicleAvailable($conn, $vehicleID) {
+    $res = $conn->query("SELECT status FROM tblvehicle WHERE vehicleID = $vehicleID");
+    $row = $res->fetch_assoc();
+    return $row && $row['status'] === 'Available';
+}
+
+function centreAcceptsItemType($conn, $itemTypeID, $centreID) {
+    // Get item type name
+    $res = $conn->query("SELECT name FROM tblitem_type WHERE itemTypeID = $itemTypeID");
+    $typeName = $res->fetch_assoc()['name'] ?? '';
+    // Exception: "Other Electronics" can be assigned to any centre
+    if (strtolower($typeName) === 'other electronics') return true;
+    $check = $conn->query("SELECT 1 FROM tblcentre_accepted_type WHERE centreID = $centreID AND itemTypeID = $itemTypeID LIMIT 1");
+    return $check->num_rows > 0;
+}
+// --- End helper functions ---
+
 // Get issue ID from URL 
 $issueID = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -118,6 +142,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
 
+        // Check collector active
+        if (!isCollectorActive($conn, $newCollectorID)) {
+            $_SESSION['errorMsg'] = 'Selected collector is not active.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
         // Fetch job date
         $jRow = $conn->query("SELECT scheduledDate, scheduledTime, estimatedEndTime, vehicleID, requestID FROM tbljob WHERE jobID=$jobID")->fetch_assoc();
         if (!$jRow) {
@@ -131,14 +161,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $vehicleID = (int)$jRow['vehicleID'];
         $requestID = (int)$jRow['requestID'];
 
-        // Check collector availability (±0 day — same day block)
+        // Check collector availability (±1 day)
         $escapedDate = $conn->real_escape_string($date);
+        $dateObj     = new DateTime($date);
+        $esc1        = $conn->real_escape_string((clone $dateObj)->modify('-1 day')->format('Y-m-d'));
+        $esc2        = $conn->real_escape_string((clone $dateObj)->modify('+1 day')->format('Y-m-d'));
         $conflict = $conn->query("
             SELECT 1 FROM tbljob
             WHERE collectorID = $newCollectorID
-              AND scheduledDate = '$escapedDate'
-              AND status IN ('Pending','Scheduled','Ongoing')
-              AND jobID != $jobID
+            AND scheduledDate BETWEEN '$esc1' AND '$esc2'
+            AND status IN ('Pending','Scheduled','Ongoing')
+            AND jobID != $jobID
             LIMIT 1
         ")->num_rows > 0;
 
@@ -178,6 +211,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
 
+        // Check vehicle available
+        if (!isVehicleAvailable($conn, $newVehicleID)) {
+            $_SESSION['errorMsg'] = 'Selected vehicle is not available.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
         $jRow = $conn->query("SELECT scheduledDate, scheduledTime, estimatedEndTime, collectorID, requestID FROM tbljob WHERE jobID=$jobID")->fetch_assoc();
         if (!$jRow) {
             $_SESSION['errorMsg'] = 'Job not found.';
@@ -191,13 +230,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $requestID   = (int)$jRow['requestID'];
         $escapedDate = $conn->real_escape_string($date);
 
-        // Check vehicle availability
+        $dateObj2 = new DateTime($date);
+        $esc1v    = $conn->real_escape_string((clone $dateObj2)->modify('-1 day')->format('Y-m-d'));
+        $esc2v    = $conn->real_escape_string((clone $dateObj2)->modify('+1 day')->format('Y-m-d'));
         $conflict = $conn->query("
             SELECT 1 FROM tbljob
             WHERE vehicleID = $newVehicleID
-              AND scheduledDate = '$escapedDate'
-              AND status IN ('Pending','Scheduled','Ongoing')
-              AND jobID != $jobID
+            AND scheduledDate BETWEEN '$esc1v' AND '$esc2v'
+            AND status IN ('Pending','Scheduled','Ongoing')
+            AND jobID != $jobID
             LIMIT 1
         ")->num_rows > 0;
 
@@ -253,6 +294,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['errorMsg'] = 'A new collector and vehicle are required.';
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
+
+        // Check collector active
+        if (!isCollectorActive($conn, $newCollectorID)) {
+            $_SESSION['errorMsg'] = 'Selected collector is not active.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        // Check vehicle available
+        if (!isVehicleAvailable($conn, $newVehicleID)) {
+            $_SESSION['errorMsg'] = 'Selected vehicle is not available.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
         
         if (!empty($newDate) && $newDate < date('Y-m-d')) {
             $_SESSION['errorMsg'] = 'Scheduled date cannot be in the past.';
@@ -271,23 +324,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $endTime    = $jRow['estimatedEndTime'];
         $escapedDate = $conn->real_escape_string($schedDate);
 
-        // Check collector availability on new date
+        $dateObjD = new DateTime($schedDate);
+        $esc1d    = $conn->real_escape_string((clone $dateObjD)->modify('-1 day')->format('Y-m-d'));
+        $esc2d    = $conn->real_escape_string((clone $dateObjD)->modify('+1 day')->format('Y-m-d'));
+
         $cConflict = $conn->query("
             SELECT 1 FROM tbljob
             WHERE collectorID = $newCollectorID
-              AND scheduledDate = '$escapedDate'
-              AND status IN ('Pending','Scheduled','Ongoing')
-              AND jobID != $jobID
+            AND scheduledDate BETWEEN '$esc1d' AND '$esc2d'
+            AND status IN ('Pending','Scheduled','Ongoing')
+            AND jobID != $jobID
             LIMIT 1
         ")->num_rows > 0;
 
-        // Check vehicle availability on new date
         $vConflict = $conn->query("
             SELECT 1 FROM tbljob
             WHERE vehicleID = $newVehicleID
-              AND scheduledDate = '$escapedDate'
-              AND status IN ('Pending','Scheduled','Ongoing')
-              AND jobID != $jobID
+            AND scheduledDate BETWEEN '$esc1d' AND '$esc2d'
+            AND status IN ('Pending','Scheduled','Ongoing')
+            AND jobID != $jobID
             LIMIT 1
         ")->num_rows > 0;
 
@@ -371,6 +426,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $origVehID   = (int)$jRow['vehicleID'];
         $escapedDate = $conn->real_escape_string($newDate);
 
+        // Check collector active if changed
+        if ($newCollectorID !== $origCollID && !isCollectorActive($conn, $newCollectorID)) {
+            $_SESSION['errorMsg'] = 'Selected collector is not active.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        // Check vehicle available if changed
+        if ($newVehicleID !== $origVehID && !isVehicleAvailable($conn, $newVehicleID)) {
+            $_SESSION['errorMsg'] = 'Selected vehicle is not available.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
         // Check collector conflict on new date (only if changed)
         if ($newCollectorID !== $origCollID) {
             $cConflict = $conn->query("
@@ -429,6 +496,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $itemID   = (int)$itemID;
                 $centreID = (int)$centreID;
                 if ($itemID > 0 && $centreID > 0) {
+                    // Optional: check centre acceptance for pending items (can be done here)
                     $conn->query("UPDATE tblitem SET centreID = $centreID WHERE itemID = $itemID AND status = 'Pending'");
                 }
             }
@@ -508,6 +576,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (strtotime($newDateTime) < time()) {
             $_SESSION['errorMsg'] = 'Preferred date and time cannot be in the past.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        // Check collector active
+        if (!isCollectorActive($conn, $newCollectorID)) {
+            $_SESSION['errorMsg'] = 'Selected collector is not active.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        // Check vehicle available
+        if (!isVehicleAvailable($conn, $newVehicleID)) {
+            $_SESSION['errorMsg'] = 'Selected vehicle is not available.';
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
 
@@ -604,6 +684,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $itemID   = (int)$itemID;
                 $centreID = (int)$centreID;
                 if ($itemID <= 0 || $centreID <= 0) continue;
+
+                // Get item type ID and verify centre accepts it
+                $itemRow = $conn->query("SELECT itemTypeID FROM tblitem WHERE itemID = $itemID")->fetch_assoc();
+                if ($itemRow) {
+                    $itemTypeID = (int)$itemRow['itemTypeID'];
+                    if (!centreAcceptsItemType($conn, $itemTypeID, $centreID)) {
+                        throw new Exception("Centre does not accept this item type.");
+                    }
+                }
+
                 $conn->query("UPDATE tblitem SET centreID = $centreID WHERE itemID = $itemID AND status = 'Collected'");
 
                 // Fetch names for log
@@ -664,6 +754,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($targetCollectorID <= 0 || $linkedJobID <= 0 || $linkedNewCollector <= 0) {
             $_SESSION['errorMsg'] = 'A replacement collector must be selected before suspending.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        // Check replacement collector active
+        if (!isCollectorActive($conn, $linkedNewCollector)) {
+            $_SESSION['errorMsg'] = 'Selected replacement collector is not active.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        // Check replacement vehicle if provided
+        if ($linkedNewVehicle > 0 && !isVehicleAvailable($conn, $linkedNewVehicle)) {
+            $_SESSION['errorMsg'] = 'Selected replacement vehicle is not available.';
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
 
@@ -937,11 +1039,14 @@ if ($reqRow) {
     usort($activeCentres, fn($a, $b) => $a['_distance'] - $b['_distance']);
 }
 
-// Available collectors on job date (no job ±0 same day)
+// Available collectors on job date (no job ±1 same day)
 $availCollectors = [];
 if ($jobRow) {
-    $jDate = $conn->real_escape_string($jobRow['scheduledDate']);
-    $jID   = (int)$jobRow['jobID'];
+    $jID     = (int)$jobRow['jobID'];
+    $dateObj = new DateTime($jobRow['scheduledDate']);
+    $esc1    = $conn->real_escape_string((clone $dateObj)->modify('-1 day')->format('Y-m-d'));
+    $esc2    = $conn->real_escape_string((clone $dateObj)->modify('+1 day')->format('Y-m-d'));
+    $escDate = $conn->real_escape_string($jobRow['scheduledDate']);
     $res   = $conn->query("
         SELECT c.collectorID, u.fullname, u.phone
         FROM tblcollector c
@@ -949,11 +1054,11 @@ if ($jobRow) {
         WHERE c.status = 'active'
           AND c.collectorID != {$jobRow['collectorID']}
           AND c.collectorID NOT IN (
-              SELECT collectorID FROM tbljob
-              WHERE scheduledDate = '$jDate'
-                AND status IN ('Pending','Scheduled','Ongoing')
-                AND jobID != $jID
-          )
+            SELECT collectorID FROM tbljob
+            WHERE scheduledDate BETWEEN '$esc1' AND '$esc2'
+            AND status IN ('Pending','Scheduled','Ongoing')
+            AND jobID != $jID
+        )
         ORDER BY u.fullname
     ");
     while ($r = $res->fetch_assoc()) $availCollectors[] = $r;

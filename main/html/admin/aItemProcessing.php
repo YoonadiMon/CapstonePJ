@@ -32,24 +32,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $itemID    = (int)$_POST['itemID'];
     $newStatus = sanitize($_POST['newStatus']);
 
-    $adminAllowed = ['Processed', 'Recycled'];
-    $final        = ['Processed', 'Recycled', 'Cancelled'];
+    $adminAllowed     = ['Processed', 'Recycled'];
+    $collectedAllowed = ['Cancelled'];
+    $final            = ['Processed', 'Recycled', 'Cancelled'];
 
-    if (in_array($newStatus, $adminAllowed)) {
-        $checkStmt = $conn->prepare("SELECT status, requestID FROM tblitem WHERE itemID = ?");
-        $checkStmt->bind_param('i', $itemID);
-        $checkStmt->execute();
-        $checkRes = $checkStmt->get_result()->fetch_assoc();
-        $checkStmt->close();
+    $checkStmt = $conn->prepare("SELECT status, requestID FROM tblitem WHERE itemID = ?");
+    $checkStmt->bind_param('i', $itemID);
+    $checkStmt->execute();
+    $checkRes = $checkStmt->get_result()->fetch_assoc();
+    $checkStmt->close();
 
-        if ($checkRes && $checkRes['status'] === 'Received') {
-            $requestID = (int)$checkRes['requestID'];
+    if ($checkRes) {
+        $currentStatus = $checkRes['status'];
+        $requestID     = (int)$checkRes['requestID'];
+        $validTransition = false;
 
+        if ($currentStatus === 'Received' && in_array($newStatus, $adminAllowed)) {
+            $validTransition = true;
+        } elseif ($currentStatus === 'Collected' && in_array($newStatus, $collectedAllowed)) {
+            $validTransition = true;
+        }
+
+        if ($validTransition) {
+            // Perform update
             $updStmt = $conn->prepare("UPDATE tblitem SET status = ? WHERE itemID = ?");
             $updStmt->bind_param('si', $newStatus, $itemID);
             $updStmt->execute();
             $updStmt->close();
 
+            // Log the change
             $itemNameStmt = $conn->prepare("SELECT it.description, itype.name FROM tblitem it JOIN tblitem_type itype ON it.itemTypeID = itype.itemTypeID WHERE it.itemID = ?");
             $itemNameStmt->bind_param('i', $itemID);
             $itemNameStmt->execute();
@@ -60,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $logDesc = "Item $itemLabel (ID: $itemID) - Status changed to $newStatus";
             logActivity($conn, $userID, 'Item', 'Status Change', $logDesc, $requestID);
 
+            // Check if request is now fully processed
             if (in_array($newStatus, $final)) {
                 $pendingStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM tblitem WHERE requestID = ? AND status NOT IN ('Processed','Recycled','Cancelled')");
                 $pendingStmt->bind_param('i', $requestID);
@@ -80,11 +92,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $message     = 'Item status updated successfully.';
             $messageType = 'success';
         } else {
-            $message     = 'Status can only be changed when the item is Received.';
+            $message     = "Invalid status change from $currentStatus to $newStatus.";
             $messageType = 'error';
         }
     } else {
-        $message     = 'Invalid status. Admin can only set items to Processed or Recycled.';
+        $message     = 'Item not found.';
         $messageType = 'error';
     }
 }
@@ -1314,10 +1326,23 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
                                                 <option value="Recycled">Recycled</option>
                                             </select>
                                             <button type="submit" class="btn-save-status">
-                                                <img src="../../assets/images/check-icon.svg" alt="">
+                                                <img src="../../assets/images/check-icon-white.svg" alt="">
                                                 Save
                                             </button>
                                         </form>
+                                        <?php elseif ($item['itemStatus'] === 'Collected'): ?>
+                                            <form method="POST" class="status-change-form" onsubmit="return handleStatusSubmit(event, this, <?= $item['itemID'] ?>, '<?= sanitize($item['description']) ?>')">
+                                                <input type="hidden" name="action" value="update_status">
+                                                <input type="hidden" name="itemID" value="<?= $item['itemID'] ?>">
+                                                <span class="status-change-label">Change Status:</span>
+                                                <select name="newStatus" class="status-select" id="sel-<?= $item['itemID'] ?>">
+                                                    <option value="Cancelled">Cancelled</option>
+                                                </select>
+                                                <button type="submit" class="btn-save-status">
+                                                    <img src="../../assets/images/check-icon-white.svg" alt="">
+                                                    Save
+                                                </button>
+                                            </form>
                                         <?php else: ?>
                                         <span class="finalised-note">
                                             Status is <strong><?= sanitize($item['itemStatus']) ?></strong> - managed by the system. Available once item is Received.
@@ -1398,8 +1423,9 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
 
         function toggleDetail(id) {
             const row = document.getElementById('detail-' + id);
-            if (!row) return;
-            row.classList.toggle('open');
+            if (row) {
+                row.classList.toggle('open');
+            }
         }
 
         function handleStatusSubmit(event, form, itemID, itemName) {
@@ -1414,8 +1440,11 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
                 body.innerHTML = 'You are about to mark <strong>' + itemName + '</strong> as <strong>' + newStatus + '</strong>. This action is final and cannot be undone.';
                 document.getElementById('confirmModal').classList.add('open');
                 document.getElementById('confirmModalBtn').onclick = function () {
+                    const formToSubmit = pendingForm;
                     closeConfirmModal();
-                    pendingForm.submit();
+                    if (formToSubmit) {
+                        formToSubmit.submit();
+                    }
                 };
             } else {
                 form.submit();
