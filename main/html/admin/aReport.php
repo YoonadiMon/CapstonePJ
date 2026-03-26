@@ -614,7 +614,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
                     <a href="../../html/admin/aHome.php">Home</a>
                     <a href="../../html/admin/aRequests.php">Requests</a>
                     <a href="../../html/admin/aJobs.php">Jobs</a>
-                    <a href="../../html/admin/aIssue.html">Issue</a>
+                    <a href="../../html/admin/aIssue.php">Issue</a>
                     <a href="../../html/admin/aOperations.html">Operations</a>
                     <a href="../../html/admin/aReport.php">Report</a>
                 </div>
@@ -625,7 +625,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
             <a href="../../html/admin/aHome.php">Home</a>
             <a href="../../html/admin/aRequests.php">Requests</a>
             <a href="../../html/admin/aJobs.php">Jobs</a>
-            <a href="../../html/admin/aIssue.html">Issue</a>
+            <a href="../../html/admin/aIssue.php">Issue</a>
             <a href="../../html/admin/aOperations.html">Operations</a>
             <a href="../../html/admin/aReport.php">Report</a>
         </nav>
@@ -929,7 +929,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
                 <b>Management</b><br>
                 <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
                 <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
-                <a href="../../html/admin/aIssue.html">Issue</a><br>
+                <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
                 <b>System Operation</b><br>

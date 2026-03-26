@@ -543,7 +543,7 @@ switch($userType) {
                         <a href="../../html/admin/aHome.php">Home</a>
                         <a href="../../html/admin/aRequests.php">Requests</a>
                         <a href="../../html/admin/aJobs.php">Jobs</a>
-                        <a href="../../html/admin/aIssue.html">Issue</a>
+                        <a href="../../html/admin/aIssue.php">Issue</a>
                         <a href="../../html/admin/aOperations.html">Operations</a>
                         <a href="../../html/admin/aReport.php">Report</a>
                     <?php endif; ?>
@@ -569,7 +569,7 @@ switch($userType) {
                 <a href="../../html/admin/aHome.php">Home</a>
                 <a href="../../html/admin/aRequests.php">Requests</a>
                 <a href="../../html/admin/aJobs.php">Jobs</a>
-                <a href="../../html/admin/aIssue.html">Issue</a>
+                <a href="../../html/admin/aIssue.php">Issue</a>
                 <a href="../../html/admin/aOperations.html">Operations</a>
                 <a href="../../html/admin/aReport.php">Report</a>
             <?php endif; ?>
