@@ -933,7 +933,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
             </div>
             <div>
                 <b>System Operation</b><br>
-                <a href="../../html/admin/aProviders.html">Providers</a><br>
+                <a href="../../html/admin/aProviders.php">Providers</a><br>
                 <a href="../../html/admin/aCollectors.html">Collectors</a><br>
                 <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
                 <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
