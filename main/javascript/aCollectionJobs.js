@@ -4,7 +4,7 @@ let routeLayer = null;
 let selectedCollectorId = null;
 let tilesLayer = null;
 
-const collectionJobsData = window.DB_COLLECTION_JOBS || {
+const collectionJobsData = window.collectionJobsData || {
     handoverJobs: [],
     delayedJobs: [],
     pendingDropoffJobs: [],
@@ -26,6 +26,110 @@ let mapLayersVisible = true;
 document.addEventListener('DOMContentLoaded', function () {
     initMap();
     loadAllData();
+
+    const reportIssueModal = document.getElementById('reportIssueModal');
+    const reportIssueForm = document.getElementById('reportIssueForm');
+    const closeReportIssueModalBtn = document.getElementById('closeReportIssueModal');
+    const cancelReportIssueBtn = document.getElementById('cancelReportIssueBtn');
+    const issueType = document.getElementById('issueType');
+    const otherIssueGroup = document.getElementById('otherIssueGroup');
+    const otherIssueText = document.getElementById('otherIssueText');
+
+    if (closeReportIssueModalBtn) {
+        closeReportIssueModalBtn.addEventListener('click', closeReportIssueModal);
+    }
+
+    if (cancelReportIssueBtn) {
+        cancelReportIssueBtn.addEventListener('click', closeReportIssueModal);
+    }
+
+    if (reportIssueModal) {
+        reportIssueModal.addEventListener('click', function (e) {
+            if (e.target === reportIssueModal) {
+                closeReportIssueModal();
+            }
+        });
+    }
+
+    document.querySelectorAll('.priority-option input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            document.querySelectorAll('.priority-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            const parent = this.closest('.priority-option');
+            if (parent) {
+                parent.classList.add('selected');
+            }
+        });
+    });
+
+    if (issueType) {
+        issueType.addEventListener('change', function () {
+            if (this.value === 'Other') {
+                if (otherIssueGroup) otherIssueGroup.style.display = 'block';
+                if (otherIssueText) otherIssueText.setAttribute('required', true);
+            } else {
+                if (otherIssueGroup) otherIssueGroup.style.display = 'none';
+                if (otherIssueText) {
+                    otherIssueText.removeAttribute('required');
+                    otherIssueText.value = '';
+                }
+            }
+        });
+    }
+
+    if (reportIssueForm) {
+        reportIssueForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const issueJobId = document.getElementById('issueJobId');
+            const issueRequestId = document.getElementById('issueRequestId');
+            const issueDescription = document.getElementById('issueDescription');
+
+            let selectedIssue = issueType ? issueType.value : '';
+            if (selectedIssue === 'Other') {
+                selectedIssue = otherIssueText ? otherIssueText.value.trim() : '';
+            }
+
+            const selectedPriority = document.querySelector('input[name="priority"]:checked');
+
+            const formData = {
+                jobId: issueJobId ? issueJobId.value : '',
+                requestId: issueRequestId ? issueRequestId.value : '',
+                issueType: selectedIssue,
+                priority: selectedPriority ? selectedPriority.value : '',
+                description: issueDescription ? issueDescription.value.trim() : ''
+            };
+
+            if (!formData.issueType || !formData.priority || !formData.description) {
+                alert('Please complete all fields.');
+                return;
+            }
+
+            console.log('Issue form submitted:', formData);
+            alert('Issue reported successfully.');
+            closeReportIssueModal();
+        });
+    }
+
+    document.getElementById('assignHandoverForm')?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        alert(`Handover assigned for ${document.getElementById('handoverJobId').value}`);
+        closeAssignHandoverModal();
+    });
+
+    document.getElementById('reassignJobForm')?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        alert(`Job reassigned for ${document.getElementById('reassignJobId').value}`);
+        closeReassignJobModal();
+    });
+
+    document.getElementById('reassignCentreForm')?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        alert(`Collection centre reassigned for ${document.getElementById('reassignCentreJobId').value}`);
+        closeReassignCentreModal();
+    });
 });
 
 function loadAllData() {
@@ -72,8 +176,8 @@ function displayHandoverJobs(jobs) {
                 <span class="item-reason">${escapeHtml(job.reason || '-')}</span>
             </div>
             <div class="item-actions">
-                <button class="btn-icon" onclick="assignHandover('${escapeJs(job.id || '')}')" title="Assign handover">
-                    <i class="fas fa-user-plus"></i>
+                <button class="btn-icon" onclick="goToIssuePage('${escapeJs(job.jobID || '')}')" title="Go to issue page">
+                    <i class="fas fa-exclamation-circle"></i>
                 </button>
                 <button class="btn-icon" onclick="viewJobDetails('${escapeJs(job.id || '')}')" title="View details">
                     <i class="fas fa-eye"></i>
@@ -117,11 +221,11 @@ function displayDelayedJobs(jobs) {
                 <span class="item-reason">${escapeHtml(job.reason || '-')}${job.delay ? ` (${escapeHtml(job.delay)})` : ''}</span>
             </div>
             <div class="item-actions">
-                <button class="btn-icon" onclick="notifyCollector('${escapeJs(job.id || '')}')" title="Notify collector">
-                    <i class="fas fa-bell"></i>
+                <button class="btn-icon" onclick="openReportIssueModal('${escapeJs(job.id || '')}')" title="Report issue">
+                    <i class="fas fa-flag"></i>
                 </button>
-                <button class="btn-icon" onclick="reassignJob('${escapeJs(job.id || '')}')" title="Reassign">
-                    <i class="fas fa-route"></i>
+                <button class="btn-icon" onclick="viewJobDetails('${escapeJs(job.id || '')}')" title="View details">
+                    <i class="fas fa-eye"></i>
                 </button>
             </div>
         </div>
@@ -151,7 +255,7 @@ function displayPendingDropoffJobs(jobs) {
         if (pendingDropoffCount) pendingDropoffCount.textContent = '0';
         if (itemsInTransit) itemsInTransit.textContent = '0';
         if (affectedCollectors) affectedCollectors.textContent = '0';
-        if (centresAvailable) centresAvailable.textContent = '0';
+        if (centresAvailable) centresAvailable.textContent = collectionJobsData.centresAvailable || 0;
         return;
     }
 
@@ -180,7 +284,7 @@ function displayPendingDropoffJobs(jobs) {
                 </div>
                 <div class="dropoff-detail">
                     <span class="dropoff-detail-label">Items</span>
-                    <span class="dropoff-detail-value">${escapeHtml(job.items || '0 items')}</span>
+                    <span class="dropoff-detail-value">${escapeHtml(job.items || '-')}</span>
                 </div>
                 <div class="dropoff-detail">
                     <span class="dropoff-detail-label">Original Centre</span>
@@ -196,12 +300,12 @@ function displayPendingDropoffJobs(jobs) {
                 <span>${escapeHtml(job.failReason || '-')}</span>
             </div>
             <div class="dropoff-actions">
-                <button class="btn-reassign-centre" onclick="reassignCentre('${escapeJs(job.id || '')}')">
-                    <i class="fas fa-map-marker-alt"></i>
-                    Reassign Centre
+                <button class="btn-reassign-centre" onclick="goToIssuePage('${escapeJs(job.jobID || '')}')">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Go to Issue
                 </button>
-                <button class="btn-icon" onclick="contactCollector('${escapeJs(job.id || '')}')" title="Contact collector">
-                    <i class="fas fa-phone"></i>
+                <button class="btn-icon" onclick="viewFailedDropoffDetails('${escapeJs(job.id || '')}')" title="View details">
+                    <i class="fas fa-eye"></i>
                 </button>
             </div>
         </div>
@@ -217,7 +321,7 @@ function getCollectorsData() {
 function loadActiveCollectors() {
     const collectorList = document.getElementById('activeCollectorList');
     const collectorCount = document.getElementById('activeCollectorCount');
-    const collectors = getCollectorsData().filter(c => c.status !== 'offline');
+    const collectors = getCollectorsData().filter(c => c.jobStatus === 'Ongoing');
 
     if (!collectorList) return;
     if (collectorCount) collectorCount.textContent = collectors.length;
@@ -261,180 +365,153 @@ function loadQuickStats() {
 }
 
 function updateCounts() {
-    const handoverCount = (collectionJobsData.handoverJobs || []).length;
-    const delayedCount = (collectionJobsData.delayedJobs || []).length;
-    const pendingCount = (collectionJobsData.pendingDropoffJobs || []).length;
-    const activeCount = getCollectorsData().filter(c => c.status !== 'offline').length;
-
-    const panelHandoverCount = document.getElementById('panelHandoverCount');
-    const panelDelayedCount = document.getElementById('panelDelayedCount');
+    const handoverCount = document.getElementById('panelHandoverCount');
+    const delayedCount = document.getElementById('panelDelayedCount');
     const pendingDropoffCount = document.getElementById('pendingDropoffCount');
     const activeCollectorCount = document.getElementById('activeCollectorCount');
 
-    if (panelHandoverCount) panelHandoverCount.textContent = handoverCount;
-    if (panelDelayedCount) panelDelayedCount.textContent = delayedCount;
-    if (pendingDropoffCount) pendingDropoffCount.textContent = pendingCount;
-    if (activeCollectorCount) activeCollectorCount.textContent = activeCount;
+    if (handoverCount) handoverCount.textContent = (collectionJobsData.handoverJobs || []).length;
+    if (delayedCount) delayedCount.textContent = (collectionJobsData.delayedJobs || []).length;
+    if (pendingDropoffCount) pendingDropoffCount.textContent = (collectionJobsData.pendingDropoffJobs || []).length;
+    if (activeCollectorCount) {
+        activeCollectorCount.textContent = getCollectorsData().filter(c => c.jobStatus === 'Ongoing').length;
+    }
 }
 
 function initMap() {
-    const mapElement = document.getElementById('actualMap');
-    const mapPlaceholder = document.getElementById('mapPlaceholder');
+    const mapEl = document.getElementById('actualMap');
+    const placeholderEl = document.getElementById('mapPlaceholder');
 
-    if (!mapElement || typeof L === 'undefined') return;
+    if (!mapEl || typeof L === 'undefined') return;
 
-    map = L.map('actualMap').setView([3.1390, 101.6869], 10);
+    if (map) {
+        updateMapMarkers();
+        return;
+    }
+
+    if (placeholderEl) placeholderEl.style.display = 'none';
+    mapEl.style.display = 'block';
+
+    map = L.map('actualMap', { zoomControl: true }).setView([3.1390, 101.6869], 11);
+    map.attributionControl.setPrefix('');
 
     tilesLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+        maxZoom: 19
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
     routeLayer = L.layerGroup().addTo(map);
 
-    if (mapPlaceholder) mapPlaceholder.style.display = 'none';
-    mapElement.style.display = 'block';
-
-    setTimeout(() => {
-        map.invalidateSize();
-    }, 300);
+    map.on('move zoom', function () {
+        positionEtaBubble();
+    });
 }
 
-async function updateMapMarkers() {
-    if (!map || !markersLayer || !routeLayer) return;
+function updateMapMarkers() {
+    if (!map || !markersLayer) return;
 
     markersLayer.clearLayers();
-    routeLayer.clearLayers();
 
-    const collectors = getCollectorsData().filter(c => c.jobId && c.pickupAddress && c.centreAddress);
+    const collectors = getCollectorsData().filter(c => c.jobStatus === 'Ongoing');
 
-    if (!collectors.length) {
-        hideRouteInfo();
-        return;
-    }
+    if (!collectors.length) return;
 
-    const allBounds = [];
+    collectors.forEach((collector, index) => {
+        const fallbackLat = 3.10 + (index * 0.02);
+        const fallbackLng = 101.60 + (index * 0.02);
 
-    for (const collector of collectors) {
-        const pickupCoords = await geocodeAddress(collector.pickupAddress);
-        const centreCoords = await geocodeAddress(collector.centreAddress);
+        const lat = fallbackLat;
+        const lng = fallbackLng;
 
-        if (!pickupCoords || !centreCoords) {
-            continue;
-        }
-
-        collector.pickupCoords = pickupCoords;
-        collector.centreCoords = centreCoords;
-
-        const pickupMarker = L.marker([pickupCoords.lat, pickupCoords.lng]).bindPopup(`
-            <strong>${escapeHtml(collector.jobId || '')}</strong><br>
-            Pickup<br>
-            ${escapeHtml(collector.pickupLabel || collector.pickupAddress || '-')}
+        const marker = L.marker([lat, lng]).addTo(markersLayer);
+        marker.bindPopup(`
+            <strong>${escapeHtml(collector.name || '-')}</strong><br>
+            ${escapeHtml(collector.vehicle || '-')}<br>
+            ${escapeHtml(collector.jobId || 'No active job')}
         `);
+    });
 
-        const centreMarker = L.marker([centreCoords.lat, centreCoords.lng]).bindPopup(`
-            <strong>${escapeHtml(collector.jobId || '')}</strong><br>
-            Centre: ${escapeHtml(collector.centreName || '-') }<br>
-            ${escapeHtml(collector.centreLabel || collector.centreAddress || '-')}
-        `);
-
-        pickupMarker.addTo(markersLayer);
-        centreMarker.addTo(markersLayer);
-
-        allBounds.push([pickupCoords.lat, pickupCoords.lng]);
-        allBounds.push([centreCoords.lat, centreCoords.lng]);
-
-        const isSelected = selectedCollectorId === collector.id;
-
-        L.polyline(
-            [
-                [pickupCoords.lat, pickupCoords.lng],
-                [centreCoords.lat, centreCoords.lng]
-            ],
-            {
-                weight: isSelected ? 6 : 4,
-                opacity: isSelected ? 0.95 : 0.6
-            }
-        ).addTo(routeLayer);
-
-        if (isSelected) {
-            updateRouteInfo(collector, pickupCoords, centreCoords);
+    if (!selectedCollectorId) {
+        const group = new L.featureGroup(markersLayer.getLayers());
+        if (group.getLayers().length) {
+            map.fitBounds(group.getBounds().pad(0.2));
         }
     }
+}
 
-    if (!selectedCollectorId && collectors.length) {
-        selectedCollectorId = collectors[0].id;
-        const selected = collectors[0];
-        if (selected.pickupCoords && selected.centreCoords) {
-            updateRouteInfo(selected, selected.pickupCoords, selected.centreCoords);
-        }
-        loadActiveCollectors();
-    }
+function notifyCollector(jobId) {
+    alert(`Notification sent for job ${jobId}`);
+}
 
-    if (allBounds.length) {
-        map.fitBounds(allBounds, { padding: [40, 40] });
-    }
+function contactCollector(jobId) {
+    alert(`Contacting collector for job ${jobId}`);
 }
 
 function selectCollector(collectorId) {
     selectedCollectorId = collectorId;
     loadActiveCollectors();
-    updateMapMarkers();
+    showCollectorRouteOnMap(collectorId);
 }
 
-function updateRouteInfo(collector, pickupCoords, centreCoords) {
+function showCollectorRouteOnMap(collectorId) {
+    if (!map) return;
+
+    selectedCollectorId = collectorId;
+
+    if (routeLayer) {
+        routeLayer.clearLayers();
+    }
+
+    const collector = getCollectorsData().find(c => c.id === collectorId);
+    if (!collector) return;
+
     const routeInfoBox = document.getElementById('routeInfoBox');
     const routeCollectorName = document.getElementById('routeCollectorName');
     const routeCurrentLocation = document.getElementById('routeCurrentLocation');
     const routeEta = document.getElementById('routeEta');
-    const etaBubble = document.getElementById('etaBubble');
-    const etaBubbleText = document.getElementById('etaBubbleText');
 
-    const km = calculateDistanceKm(
-        pickupCoords.lat,
-        pickupCoords.lng,
-        centreCoords.lat,
-        centreCoords.lng
-    );
-
-    const estimatedMinutes = Math.max(5, Math.round(km * 4));
-
-    if (routeCollectorName) {
-        routeCollectorName.textContent = collector.name || 'Collector';
-    }
-
-    if (routeCurrentLocation) {
-        routeCurrentLocation.textContent = `Pickup: ${collector.pickupLabel || '-'}`;
-    }
-
-    if (routeEta) {
-        routeEta.textContent = `ETA to collection centre: ${estimatedMinutes} min`;
-    }
-
-    if (etaBubbleText) {
-        etaBubbleText.textContent = `ETA: ${estimatedMinutes} min`;
-    }
-
+    if (routeCollectorName) routeCollectorName.textContent = collector.name || '-';
+    if (routeCurrentLocation) routeCurrentLocation.textContent = `Current location: ${collector.currentRoad || '-'}`;
+    if (routeEta) routeEta.textContent = `ETA to collection centre: En route`;
     if (routeInfoBox) routeInfoBox.style.display = 'block';
-    if (etaBubble) etaBubble.style.display = 'block';
-}
 
-function hideRouteInfo() {
-    const routeInfoBox = document.getElementById('routeInfoBox');
-    const etaBubble = document.getElementById('etaBubble');
+    const fallbackLat = 3.12;
+    const fallbackLng = 101.65;
 
-    if (routeInfoBox) routeInfoBox.style.display = 'none';
-    if (etaBubble) etaBubble.style.display = 'none';
+    const marker = L.marker([fallbackLat, fallbackLng]).addTo(routeLayer);
+    marker.bindPopup(`<strong>${escapeHtml(collector.name || '-')}</strong>`).openPopup();
+
+    map.setView([fallbackLat, fallbackLng], 13);
+    showEtaBubble(fallbackLat, fallbackLng, 'ETA: En route');
 }
 
 function centerMapOnAll() {
+    selectedCollectorId = null;
+
+    if (routeLayer) {
+        routeLayer.clearLayers();
+    }
+
+    const routeInfoBox = document.getElementById('routeInfoBox');
+    if (routeInfoBox) routeInfoBox.style.display = 'none';
+
+    hideEtaBubble();
+    loadActiveCollectors();
     updateMapMarkers();
+}
+
+function zoomToFit() {
+    if (selectedCollectorId) {
+        showCollectorRouteOnMap(selectedCollectorId);
+    } else {
+        centerMapOnAll();
+    }
 }
 
 function toggleMapLayers() {
     if (!map || !tilesLayer) return;
 
-    if (mapLayersVisible) {
+    if (map.hasLayer(tilesLayer)) {
         map.removeLayer(tilesLayer);
     } else {
         map.addLayer(tilesLayer);
@@ -443,229 +520,234 @@ function toggleMapLayers() {
     mapLayersVisible = !mapLayersVisible;
 }
 
-function zoomToFit() {
-    updateMapMarkers();
+function showEtaBubble(lat, lng, text) {
+    const etaBubble = document.getElementById('etaBubble');
+    const etaBubbleText = document.getElementById('etaBubbleText');
+
+    if (!etaBubble || !map) return;
+
+    if (etaBubbleText) etaBubbleText.textContent = text;
+    etaBubble.dataset.lat = lat;
+    etaBubble.dataset.lng = lng;
+    etaBubble.style.display = 'flex';
+
+    positionEtaBubble();
 }
 
-async function geocodeAddress(address) {
-    if (!address) return null;
+function positionEtaBubble() {
+    const etaBubble = document.getElementById('etaBubble');
+    const mapContainer = document.getElementById('mapContainer');
 
-    const key = address.trim().toLowerCase();
-    if (geocodeCache[key]) {
-        return geocodeCache[key];
+    if (!etaBubble || !mapContainer || etaBubble.style.display === 'none') return;
+    if (!etaBubble.dataset.lat || !etaBubble.dataset.lng || !map) return;
+
+    const lat = parseFloat(etaBubble.dataset.lat);
+    const lng = parseFloat(etaBubble.dataset.lng);
+    const point = map.latLngToContainerPoint([lat, lng]);
+
+    etaBubble.style.left = `${point.x}px`;
+    etaBubble.style.top = `${point.y - 12}px`;
+}
+
+function hideEtaBubble() {
+    const etaBubble = document.getElementById('etaBubble');
+    if (etaBubble) etaBubble.style.display = 'none';
+}
+
+function getDelayedJobById(jobId) {
+    return (collectionJobsData.delayedLookup || {})[jobId] || null;
+}
+
+function openReportIssueModal(jobId) {
+    const job = getDelayedJobById(jobId);
+    const modal = document.getElementById('reportIssueModal');
+    const form = document.getElementById('reportIssueForm');
+    const issueJobId = document.getElementById('issueJobId');
+    const issueRequestId = document.getElementById('issueRequestId');
+    const otherIssueGroup = document.getElementById('otherIssueGroup');
+    const otherIssueText = document.getElementById('otherIssueText');
+
+    if (!job || !modal || !form) return;
+
+    form.reset();
+
+    document.querySelectorAll('.priority-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+
+    if (otherIssueGroup) otherIssueGroup.style.display = 'none';
+    if (otherIssueText) {
+        otherIssueText.removeAttribute('required');
+        otherIssueText.value = '';
     }
 
-    try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
-        const response = await fetch(url, {
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+    if (issueJobId) issueJobId.value = job.id || '';
+    if (issueRequestId) {
+        issueRequestId.value = job.requestID ? `REQ${String(job.requestID).padStart(3, '0')}` : '';
+    }
 
-        if (!response.ok) {
-            return null;
-        }
+    modal.classList.add('active');
+}
 
-        const data = await response.json();
+function closeReportIssueModal() {
+    const modal = document.getElementById('reportIssueModal');
+    const form = document.getElementById('reportIssueForm');
+    const otherIssueGroup = document.getElementById('otherIssueGroup');
+    const otherIssueText = document.getElementById('otherIssueText');
 
-        if (!Array.isArray(data) || !data.length) {
-            return null;
-        }
+    if (modal) modal.classList.remove('active');
+    if (form) form.reset();
 
-        const coords = {
-            lat: parseFloat(data[0].lat),
-            lng: parseFloat(data[0].lon)
-        };
+    document.querySelectorAll('.priority-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
 
-        geocodeCache[key] = coords;
-        return coords;
-    } catch (error) {
-        console.error('Geocoding failed for address:', address, error);
-        return null;
+    if (otherIssueGroup) otherIssueGroup.style.display = 'none';
+    if (otherIssueText) {
+        otherIssueText.removeAttribute('required');
+        otherIssueText.value = '';
     }
 }
 
-function calculateDistanceKm(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = toRadians(lat2 - lat1);
-    const dLon = toRadians(lon2 - lon1);
-
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
-
-function toRadians(value) {
-    return value * (Math.PI / 180);
-}
-
-/* -----------------------------
-   Modal actions
------------------------------- */
 function assignHandover(jobId) {
     const job = (collectionJobsData.handoverLookup || {})[jobId];
     if (!job) return;
 
-    setInputValue('handoverJobId', job.id || '');
-    setInputValue('handoverCurrentCollector', job.collector || '');
-    setInputValue('handoverReason', job.reason || '');
-    setInputValue('handoverNewCollector', '');
-    setInputValue('handoverVehicle', '');
-    setInputValue('handoverPriority', 'High');
-    setTextareaValue('handoverAdminNotes', '');
+    document.getElementById('handoverJobId').value = job.id || '';
+    document.getElementById('handoverCurrentCollector').value = job.collector || '';
+    document.getElementById('handoverReason').value = job.reason || '';
+    document.getElementById('handoverNewCollector').value = '';
+    document.getElementById('handoverVehicle').value = '';
+    document.getElementById('handoverPriority').value = 'High';
+    document.getElementById('handoverAdminNotes').value = '';
 
-    showModal('assignHandoverModal');
+    document.getElementById('assignHandoverModal')?.classList.add('show');
 }
 
 function closeAssignHandoverModal() {
-    hideModal('assignHandoverModal');
+    document.getElementById('assignHandoverModal')?.classList.remove('show');
 }
 
 function viewJobDetails(jobId) {
     const job = (collectionJobsData.handoverLookup || {})[jobId] || (collectionJobsData.delayedLookup || {})[jobId];
     if (!job) return;
 
-    setText('detailsJobId', job.id || '-');
-    setText('detailsStatus', job.status || '-');
-    setText('detailsTime', job.time || '-');
-    setText('detailsLocation', job.location || '-');
-    setText('detailsCollector', job.collector || '-');
-    setText('detailsVehicle', job.vehicle || '-');
-    setText('detailsReason', job.reason || '-');
-    setTextareaValue('detailsAdminNotes', '');
+    document.getElementById('detailsJobId').textContent = job.id || '-';
+    document.getElementById('detailsStatus').textContent = job.status || '-';
+    document.getElementById('detailsTime').textContent = job.time || '-';
+    document.getElementById('detailsLocation').textContent = job.location || '-';
+    document.getElementById('detailsCollector').textContent = job.collector || '-';
+    document.getElementById('detailsVehicle').textContent = job.vehicle || '-';
+    document.getElementById('detailsReason').textContent = job.reason || '-';
+    document.getElementById('detailsAdminNotes').value = '';
 
-    showModal('jobDetailsModal');
+    document.getElementById('jobDetailsModal')?.classList.add('show');
 }
 
 function closeJobDetailsModal() {
-    hideModal('jobDetailsModal');
+    document.getElementById('jobDetailsModal')?.classList.remove('show');
 }
 
 function reassignJob(jobId) {
     const job = (collectionJobsData.delayedLookup || {})[jobId];
     if (!job) return;
 
-    setInputValue('reassignJobId', job.id || '');
-    setInputValue('reassignCurrentCollector', job.collector || '');
-    setInputValue('reassignDelayReason', `${job.reason || ''}${job.delay ? ' (' + job.delay + ')' : ''}`);
-    setInputValue('reassignNewCollector', '');
-    setInputValue('reassignNewVehicle', '');
-    setInputValue('reassignEta', '');
-    setTextareaValue('reassignRemarks', '');
+    document.getElementById('reassignJobId').value = job.id || '';
+    document.getElementById('reassignCurrentCollector').value = job.collector || '';
+    document.getElementById('reassignDelayReason').value = `${job.reason || '-'}${job.delay ? ` (${job.delay})` : ''}`;
+    document.getElementById('reassignNewCollector').value = '';
+    document.getElementById('reassignNewVehicle').value = '';
+    document.getElementById('reassignEta').value = '';
+    document.getElementById('reassignRemarks').value = '';
 
-    showModal('reassignJobModal');
+    document.getElementById('reassignJobModal')?.classList.add('show');
 }
 
 function closeReassignJobModal() {
-    hideModal('reassignJobModal');
+    document.getElementById('reassignJobModal')?.classList.remove('show');
 }
 
 function reassignCentre(jobId) {
     const job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
     if (!job) return;
 
-    setInputValue('reassignCentreJobId', job.id || '');
-    setInputValue('reassignCentreCollector', job.collector || '');
-    setInputValue('reassignCentreOriginal', job.originalCentre || '');
-    setInputValue('reassignCentreReason', job.failReason || '');
-    setInputValue('reassignCentreNew', '');
-    setInputValue('reassignCentrePriority', 'High');
-    setTextareaValue('reassignCentreInstructions', '');
-    setTextareaValue('reassignCentreRemarks', '');
+    document.getElementById('reassignCentreJobId').value = job.id || '';
+    document.getElementById('reassignCentreCollector').value = job.collector || '';
+    document.getElementById('reassignCentreOriginal').value = job.originalCentre || '';
+    document.getElementById('reassignCentreReason').value = job.failReason || '';
+    document.getElementById('reassignCentreNew').value = '';
+    document.getElementById('reassignCentrePriority').value = 'High';
+    document.getElementById('reassignCentreInstructions').value = '';
+    document.getElementById('reassignCentreRemarks').value = '';
 
-    showModal('reassignCentreModal');
+    document.getElementById('reassignCentreModal')?.classList.add('show');
 }
 
 function closeReassignCentreModal() {
-    hideModal('reassignCentreModal');
+    document.getElementById('reassignCentreModal')?.classList.remove('show');
 }
 
-/* -----------------------------
-   Temp button actions
------------------------------- */
-function notifyCollector(jobId) {
-    alert(`Notify collector for ${jobId}`);
+function viewFailedDropoffDetails(jobId) {
+    const job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
+    if (!job) return;
+
+    document.getElementById('detailsJobId').textContent = job.id || '-';
+    document.getElementById('detailsStatus').textContent = 'Failed Drop-off';
+    document.getElementById('detailsTime').textContent = job.time || '-';
+    document.getElementById('detailsLocation').textContent = job.originalCentre || '-';
+    document.getElementById('detailsCollector').textContent = job.collector || '-';
+    document.getElementById('detailsVehicle').textContent = '-';
+    document.getElementById('detailsReason').textContent = job.failReason || '-';
+    document.getElementById('detailsAdminNotes').value = '';
+
+    document.getElementById('jobDetailsModal')?.classList.add('show');
 }
 
-function contactCollector(jobId) {
-    alert(`Contact collector for ${jobId}`);
-}
-
-/* -----------------------------
-   Form submits
------------------------------- */
-document.addEventListener('submit', function (e) {
-    if (e.target && e.target.id === 'assignHandoverForm') {
-        e.preventDefault();
-        alert('Handover assigned successfully');
-        closeAssignHandoverModal();
-    }
-
-    if (e.target && e.target.id === 'reassignJobForm') {
-        e.preventDefault();
-        alert('Job reassigned successfully');
-        closeReassignJobModal();
-    }
-
-    if (e.target && e.target.id === 'reassignCentreForm') {
-        e.preventDefault();
-        alert('Collection centre reassigned successfully');
-        closeReassignCentreModal();
-    }
-});
-
-/* -----------------------------
-   Helpers
------------------------------- */
-function showModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.add('show');
-}
-
-function hideModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.remove('show');
-}
-
-function setInputValue(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.value = value;
-}
-
-function setTextareaValue(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.value = value;
-}
-
-function setText(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
+function goToIssuePage(jobId) {
+    if (!jobId) return;
+    window.location.href = `aIssue.php?jobID=${encodeURIComponent(jobId)}`;
 }
 
 function getInitials(name) {
-    return name
-        .split(' ')
-        .filter(Boolean)
-        .map(part => part[0])
-        .join('')
-        .substring(0, 2)
-        .toUpperCase();
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return 'NA';
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 function escapeHtml(value) {
-    return String(value)
+    return String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+        .replace(/'/g, '&#039;');
 }
 
 function escapeJs(value) {
-    return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r');
 }
+
+window.assignHandover = assignHandover;
+window.closeAssignHandoverModal = closeAssignHandoverModal;
+window.viewJobDetails = viewJobDetails;
+window.closeJobDetailsModal = closeJobDetailsModal;
+window.notifyCollector = notifyCollector;
+window.reassignJob = reassignJob;
+window.closeReassignJobModal = closeReassignJobModal;
+window.reassignCentre = reassignCentre;
+window.closeReassignCentreModal = closeReassignCentreModal;
+window.contactCollector = contactCollector;
+window.selectCollector = selectCollector;
+window.centerMapOnAll = centerMapOnAll;
+window.toggleMapLayers = toggleMapLayers;
+window.zoomToFit = zoomToFit;
+window.goToIssuePage = goToIssuePage;
+window.openReportIssueModal = openReportIssueModal;
+window.closeReportIssueModal = closeReportIssueModal;
+window.viewFailedDropoffDetails = viewFailedDropoffDetails;

@@ -9,10 +9,6 @@ let detailJobId, detailJobStatus, detailRequestId, detailProviderName, detailPro
 let detailProviderDate, detailCollector, detailVehicle, detailScheduled, detailTotalWeight;
 let detailItemsCount, detailItemsList, detailTimeline, detailActionButtons;
 
-let reportIssueModal, reportIssueForm, issueJobId, issueRequestId, issueType, issueDescription;
-let otherIssueGroup, otherIssueText;
-let closeReportIssueModalBtn, cancelReportIssueBtn;
-
 function getJobsData() {
     return Array.isArray(window.jobsData) ? window.jobsData : [];
 }
@@ -106,17 +102,6 @@ function initializeElements() {
     detailItemsList = document.getElementById('detailItemsList');
     detailTimeline = document.getElementById('detailTimeline');
     detailActionButtons = document.getElementById('detailActionButtons');
-
-    reportIssueModal = document.getElementById('reportIssueModal');
-    reportIssueForm = document.getElementById('reportIssueForm');
-    issueJobId = document.getElementById('issueJobId');
-    issueRequestId = document.getElementById('issueRequestId');
-    issueType = document.getElementById('issueType');
-    issueDescription = document.getElementById('issueDescription');
-    otherIssueGroup = document.getElementById('otherIssueGroup');
-    otherIssueText = document.getElementById('otherIssueText');
-    closeReportIssueModalBtn = document.getElementById('closeReportIssueModal');
-    cancelReportIssueBtn = document.getElementById('cancelReportIssueBtn');
 }
 
 function setupEventListeners() {
@@ -186,22 +171,6 @@ function setupEventListeners() {
         sortDescBtn.classList.add('active');
     }
 
-    if (closeReportIssueModalBtn) {
-        closeReportIssueModalBtn.addEventListener('click', closeReportIssueModal);
-    }
-
-    if (cancelReportIssueBtn) {
-        cancelReportIssueBtn.addEventListener('click', closeReportIssueModal);
-    }
-
-    if (reportIssueModal) {
-        reportIssueModal.addEventListener('click', function (e) {
-            if (e.target === reportIssueModal) {
-                closeReportIssueModal();
-            }
-        });
-    }
-
     document.querySelectorAll('.priority-option input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', function () {
             document.querySelectorAll('.priority-option').forEach(opt => {
@@ -259,63 +228,6 @@ function setupEventListeners() {
             alert('Issue reported successfully.');
             closeReportIssueModal();
         });
-    }
-}
-
-function openReportIssueModal(job) {
-    if (!job || !reportIssueModal) return;
-
-    currentSelectedJob = job;
-
-    if (reportIssueForm) {
-        reportIssueForm.reset();
-    }
-
-    document.querySelectorAll('.priority-option').forEach(opt => {
-        opt.classList.remove('selected');
-    });
-
-    if (otherIssueGroup) {
-        otherIssueGroup.style.display = 'none';
-    }
-
-    if (otherIssueText) {
-        otherIssueText.removeAttribute('required');
-        otherIssueText.value = '';
-    }
-
-    if (issueJobId) {
-        issueJobId.value = job.id || '';
-    }
-
-    if (issueRequestId) {
-        issueRequestId.value = job.requestID || '';
-    }
-
-    reportIssueModal.classList.add('active');
-}
-
-function closeReportIssueModal() {
-    if (!reportIssueModal) return;
-
-    reportIssueModal.classList.remove('active');
-    currentSelectedJob = null;
-
-    if (reportIssueForm) {
-        reportIssueForm.reset();
-    }
-
-    document.querySelectorAll('.priority-option').forEach(opt => {
-        opt.classList.remove('selected');
-    });
-
-    if (otherIssueGroup) {
-        otherIssueGroup.style.display = 'none';
-    }
-
-    if (otherIssueText) {
-        otherIssueText.removeAttribute('required');
-        otherIssueText.value = '';
     }
 }
 
@@ -675,24 +587,8 @@ function showJobDetail(jobId) {
     }
 
     if (detailActionButtons) {
-        detailActionButtons.innerHTML = '';
-        const normalizedStatus = String(job.status || '').toLowerCase().trim();
-
-        if (normalizedStatus === 'ongoing') {
-            detailActionButtons.innerHTML = `
-                <button class="btn-modern-outline" id="reportIssueBtn" type="button">
-                    <i class="fas fa-flag"></i> Report Issue
-                </button>
-            `;
-
-            const reportBtn = document.getElementById('reportIssueBtn');
-            if (reportBtn) {
-                reportBtn.addEventListener('click', function () {
-                    openReportIssueModal(job);
-                });
-            }
-        }
-    }
+    detailActionButtons.innerHTML = '';
+}
 
 //     const viewRequestBtn = document.getElementById('viewRequestBtn');
 //     if (viewRequestBtn) {

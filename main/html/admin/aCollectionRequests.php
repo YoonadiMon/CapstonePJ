@@ -147,10 +147,11 @@ while ($row = mysqli_fetch_assoc($result)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Collection Requests - AfterVolt</title>
-
+    
     <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
     <link rel="stylesheet" href="../../style/style.css">
-    <link rel="stylesheet" href="../../style/aCollectionRequests.css">
+    <link rel="stylesheet" href="../../style/aCollectionRequests.css?v=<?php echo time(); ?>">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -579,6 +580,6 @@ while ($row = mysqli_fetch_assoc($result)) {
     window.collectionRequestsData = <?php echo json_encode($collectionRequests, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     </script>
     <script src="../../javascript/mainScript.js"></script>
-    <script src="../../javascript/aCollectionRequests.js"></script>
+    <script src="../../javascript/aCollectionRequests.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

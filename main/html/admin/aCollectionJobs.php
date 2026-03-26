@@ -321,7 +321,7 @@ $activeCollectorsSql = "
     WHERE c.status IN ('active', 'on duty')
     ORDER BY
         CASE
-            WHEN j.status IN ('Pending', 'Scheduled', 'Ongoing') THEN 0
+            WHEN j.status = 'Ongoing' THEN 0
             ELSE 1
         END,
         u.fullname ASC
@@ -336,7 +336,7 @@ foreach ($activeCollectorRows as $row) {
         ? 'JOB' . str_pad((string)$row['jobID'], 3, '0', STR_PAD_LEFT)
         : null;
 
-    $hasActiveJob = in_array((string)$row['jobStatus'], ['Pending', 'Scheduled', 'Ongoing'], true);
+    $hasActiveJob = ((string)$row['jobStatus'] === 'Ongoing');
 
     $pickupAddressFull = buildAddress(
         $row['pickupAddress'] ?? '',
@@ -452,7 +452,6 @@ $jsData = [
     'centresAvailable' => count($centreRows)
 ];
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -699,72 +698,6 @@ $jsData = [
         </section>
     </footer>
 
-    <!-- Assign Handover Modal -->
-    <div class="modal-overlay" id="assignHandoverModal">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>Assign Handover</h3>
-                <button class="modal-close" onclick="closeAssignHandoverModal()">&times;</button>
-            </div>
-            <form id="assignHandoverForm" class="admin-form">
-                <div class="form-group">
-                    <label>Job ID</label>
-                    <input type="text" id="handoverJobId" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Current Collector</label>
-                    <input type="text" id="handoverCurrentCollector" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Reason for Handover</label>
-                    <input type="text" id="handoverReason" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Assign To Collector</label>
-                    <select id="handoverNewCollector" required>
-                        <option value="">Select collector</option>
-                        <option value="Ahmad Bin Yusof">Ahmad Bin Yusof</option>
-                        <option value="Mei Ling">Mei Ling</option>
-                        <option value="Mike Wilson">Mike Wilson</option>
-                        <option value="Jane Smith">Jane Smith</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Vehicle</label>
-                    <select id="handoverVehicle" required>
-                        <option value="">Select vehicle</option>
-                        <option value="Van ABC 123">Van ABC 123</option>
-                        <option value="Truck XYZ 789">Truck XYZ 789</option>
-                        <option value="Van DEF 456">Van DEF 456</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Priority</label>
-                    <select id="handoverPriority">
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Admin Notes</label>
-                    <textarea id="handoverAdminNotes" rows="3" placeholder="Add handover notes"></textarea>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="closeAssignHandoverModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Assign Handover</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- View Job Details Modal -->
     <div class="modal-overlay" id="jobDetailsModal">
         <div class="modal-box modal-box-lg">
@@ -801,138 +734,95 @@ $jsData = [
         </div>
     </div>
 
-    <!-- Reassign Job Modal -->
-    <div class="modal-overlay" id="reassignJobModal">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>Reassign Job</h3>
-                <button class="modal-close" onclick="closeReassignJobModal()">&times;</button>
-            </div>
-            <form id="reassignJobForm" class="admin-form">
-                <div class="form-group">
-                    <label>Job ID</label>
-                    <input type="text" id="reassignJobId" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Current Collector</label>
-                    <input type="text" id="reassignCurrentCollector" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Delay Reason</label>
-                    <input type="text" id="reassignDelayReason" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>New Collector</label>
-                    <select id="reassignNewCollector" required>
-                        <option value="">Select collector</option>
-                        <option value="Ahmad Bin Yusof">Ahmad Bin Yusof</option>
-                        <option value="Mei Ling">Mei Ling</option>
-                        <option value="Mike Wilson">Mike Wilson</option>
-                        <option value="Jane Smith">Jane Smith</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>New Vehicle</label>
-                    <select id="reassignNewVehicle" required>
-                        <option value="">Select vehicle</option>
-                        <option value="Van ABC 123">Van ABC 123</option>
-                        <option value="Truck XYZ 789">Truck XYZ 789</option>
-                        <option value="Van DEF 456">Van DEF 456</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Updated ETA</label>
-                    <input type="text" id="reassignEta" placeholder="e.g. 20 min">
-                </div>
-
-                <div class="form-group">
-                    <label>Admin Remarks</label>
-                    <textarea id="reassignRemarks" rows="3" placeholder="Reason for reassignment / instructions"></textarea>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="closeReassignJobModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Confirm Reassign</button>
-                </div>
-            </form>
+    <div class="report-issue-modal" id="reportIssueModal">
+    <div class="report-issue-content">
+        <div class="report-issue-header">
+            <h3><i class="fas fa-flag"></i> Report Issue</h3>
+            <button type="button" class="report-issue-close" id="closeReportIssueModal">&times;</button>
         </div>
-    </div>
 
-    <!-- Reassign Centre Modal -->
-    <div class="modal-overlay" id="reassignCentreModal">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>Reassign Collection Centre</h3>
-                <button class="modal-close" onclick="closeReassignCentreModal()">&times;</button>
+        <form id="reportIssueForm">
+            <div class="report-issue-body">
+                <div class="issue-form-group">
+                    <label for="issueJobId">
+                        <i class="fas fa-briefcase"></i> Job ID
+                    </label>
+                    <input type="text" id="issueJobId" name="jobId" readonly>
+                </div>
+
+                <div class="issue-form-group">
+                    <label for="issueRequestId">
+                        <i class="fas fa-file-alt"></i> Request ID
+                    </label>
+                    <input type="text" id="issueRequestId" name="requestId" readonly>
+                </div>
+
+                <div class="issue-form-group">
+                    <label for="issueType">
+                        <i class="fas fa-exclamation-circle"></i> Issue Type
+                    </label>
+                    <select id="issueType" name="issueType" required>
+                        <option value="">-- Select Issue Type --</option>
+                        <option value="Operational">Operational</option>
+                        <option value="Vehicle">Vehicle</option>
+                        <option value="Safety">Safety</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="issue-form-group" id="otherIssueGroup" style="display: none;">
+                    <label for="otherIssueText">
+                        <i class="fas fa-pen"></i> Specify Issue
+                    </label>
+                    <input type="text" id="otherIssueText" name="otherIssueText" placeholder="Type the issue here...">
+                </div>
+
+                <div class="issue-form-group">
+                    <label>
+                        <i class="fas fa-signal"></i> Priority
+                    </label>
+                    <div class="issue-priority">
+                        <label class="priority-option low">
+                            <input type="radio" name="priority" value="Low" required>
+                            Low
+                        </label>
+                        <label class="priority-option medium">
+                            <input type="radio" name="priority" value="Medium" required>
+                            Medium
+                        </label>
+                        <label class="priority-option high">
+                            <input type="radio" name="priority" value="High" required>
+                            High
+                        </label>
+                    </div>
+                </div>
+
+                <div class="issue-form-group">
+                    <label for="issueDescription">
+                        <i class="fas fa-pen"></i> Description
+                    </label>
+                    <textarea id="issueDescription" name="description" placeholder="Describe the issue..." required></textarea>
+                </div>
             </div>
 
-            <form id="reassignCentreForm" class="admin-form">
-                <div class="form-group">
-                    <label>Job ID</label>
-                    <input type="text" id="reassignCentreJobId" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Collector</label>
-                    <input type="text" id="reassignCentreCollector" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Original Centre</label>
-                    <input type="text" id="reassignCentreOriginal" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Failure Reason</label>
-                    <input type="text" id="reassignCentreReason" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>New Collection Centre</label>
-                    <select id="reassignCentreNew" required>
-                        <option value="">Select centre</option>
-                        <option value="Centre A">Centre A</option>
-                        <option value="Centre B">Centre B</option>
-                        <option value="Centre C">Centre C</option>
-                        <option value="Centre D">Centre D</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Priority</label>
-                    <select id="reassignCentrePriority">
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Instructions for Collector</label>
-                    <textarea id="reassignCentreInstructions" rows="3" placeholder="Example: Proceed to Centre C and confirm arrival with admin."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Admin Remarks</label>
-                    <textarea id="reassignCentreRemarks" rows="3" placeholder="Internal note for reassignment"></textarea>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="closeReassignCentreModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Confirm Reassign</button>
-                </div>
-            </form>
-        </div>
+            <div class="report-issue-footer">
+                <button type="button" class="btn-secondary" id="cancelReportIssueBtn">Cancel</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-paper-plane"></i> Submit Issue
+                </button>
+            </div>
+        </form>
     </div>
+</div>
+
+    <script>
+        window.collectionJobsData = <?php echo json_encode($jsData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    </script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <script src="/main/javascript/mainScript.js"></script>
-    <script src="/main/javascript/aCollectionJobs.js"></script>
+    <script src="/main/javascript/aCollectionJobs.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

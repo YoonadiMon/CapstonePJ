@@ -529,7 +529,7 @@ if ($timelineResult) {
     <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
 
     <link rel="stylesheet" href="../../style/style.css">
-    <link rel="stylesheet" href="../../style/aOperations.css">
+    <link rel="stylesheet" href="../../style/aOperations.css?v=<?php echo time(); ?>">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -802,6 +802,6 @@ if ($timelineResult) {
     console.log('recentAssignmentsData:', window.recentAssignmentsData);
     </script>
 
-    <script src="../../javascript/aOperations.js"></script>
+    <script src="../../javascript/aOperations.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>
