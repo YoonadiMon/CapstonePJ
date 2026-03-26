@@ -195,16 +195,22 @@ if ($result) {
                 WHERE (jobID = ? OR (requestID = ? AND jobID IS NULL))
                 ORDER BY dateTime ASC, logID ASC
             ");
+
             $timelineStmt->bind_param('ii', $jobID, $requestID);
             $timelineStmt->execute();
             $timelineRes = $timelineStmt->get_result();
+
             while ($log = $timelineRes->fetch_assoc()) {
+                $text = !empty($log['description'])
+                ? trim($log['description'])
+                : ucwords(str_replace('_', ' ', (string)$log['action']));
+                $text = preg_replace('/\s*\(ID:\s*\d+\)/i', '', $text);
+                $text = preg_replace('/\bcentre\s+/i', '', $text);
+                $text = preg_replace('/\bvehicle\b/i', 'Vehicle', $text);
                 $timeline[] = [
                     'time' => $log['dateTime'],
                     'icon' => mapTimelineIcon($log['type'], $log['action'], $log['description']),
-                    'text' => !empty($log['description'])
-                    ? trim($log['description'])
-                    : ucwords(str_replace('_', ' ', (string)$log['action']))
+                    'text' => $text
                 ];
             }
 
@@ -277,7 +283,7 @@ $debugJson = json_encode($debug_info);
     <title>Jobs - AfterVolt</title>
     <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
     <link rel="stylesheet" href="../../style/style.css">
-    <link rel="stylesheet" href="../../style/aJobs.css">
+    <link rel="stylesheet" href="../../style/aJobs.css?v=<?php echo time(); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
@@ -372,9 +378,9 @@ $debugJson = json_encode($debug_info);
                             <h2 id="detailJobId"></h2>
                             <span class="detail-status-modern" id="detailJobStatus"></span>
                         </div>
-                        <button class="detail-request-link-modern" id="viewRequestBtn" type="button">
+                        <!-- <button class="detail-request-link-modern" id="viewRequestBtn" type="button">
                             <i class="fas fa-external-link-alt"></i> View Request <span id="detailRequestId"></span>
-                        </button>
+                        </button> -->
                     </div>
                     <div class="info-grid-modern">
                         <div class="info-card-modern">
@@ -535,11 +541,11 @@ $debugJson = json_encode($debug_info);
 
     <div class="toast" id="toast"></div>
 
-    <script src="../../javascript/mainScript.js"></script>
+    <script src="../../javascript/mainScript.js?v=<?php echo time(); ?>"></script>
     <script>
        window.jobsData = <?php echo $jobsJson ?: '[]'; ?>;
     </script>
+    <script src="../../javascript/aJobs.js?v=<?php echo time(); ?>"></script>
 
-    <script src="../../javascript/aJobs.js"></script>
 </body>
 </html>

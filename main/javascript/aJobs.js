@@ -694,12 +694,12 @@ function showJobDetail(jobId) {
         }
     }
 
-    const viewRequestBtn = document.getElementById('viewRequestBtn');
-    if (viewRequestBtn) {
-        viewRequestBtn.onclick = function () {
-            window.location.href = `aRequests.php?request=${job.requestIDRaw || ''}`;
-        };
-    }
+//     const viewRequestBtn = document.getElementById('viewRequestBtn');
+//     if (viewRequestBtn) {
+//         viewRequestBtn.onclick = function () {
+//             window.location.href = `aRequests.php?request=${job.requestIDRaw || ''}`;
+//         };
+//     }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
