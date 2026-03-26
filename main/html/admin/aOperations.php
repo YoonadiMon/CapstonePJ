@@ -3,7 +3,7 @@ session_start();
 include("../../php/dbConn.php");
 
 // // check if user is logged in
-// include("../../php/sessionCheck.php");
+include("../../php/sessionCheck.php");
 
 function jsonResponse($success, $message, $extra = []) {
     header('Content-Type: application/json');
@@ -292,7 +292,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Approved requests waiting for assignment
-
 $requests = [];
 $requestSql = "
     SELECT 
@@ -321,7 +320,7 @@ $requestSql = "
         cr.pickupPostcode,
         cr.preferredDateTime,
         cr.status
-    ORDER BY cr.preferredDateTime ASC
+    ORDER BY cr.requestID DESC
 ";
 
 $requestResult = mysqli_query($conn, $requestSql);
@@ -569,7 +568,7 @@ if ($timelineResult) {
                     <a href="../../html/admin/aRequests.php">Requests</a>
                     <a href="../../html/admin/aJobs.php">Jobs</a>
                     <a href="../../html/admin/aIssue.php">Issue</a>
-                    <a href="../../html/admin/aOperations.php" class="active">Operations</a>
+                    <a href="../../html/admin/aOperations.php">Operations</a>
                     <a href="../../html/admin/aReport.php">Report</a>
                 </div>
             </div>
@@ -581,7 +580,7 @@ if ($timelineResult) {
             <a href="../../html/admin/aRequests.php">Requests</a>
             <a href="../../html/admin/aJobs.php">Jobs</a>
             <a href="../../html/admin/aIssue.php">Issue</a>
-            <a href="../../html/admin/aOperations.php" class="active">Operations</a>
+            <a href="../../html/admin/aOperations.php">Operations</a>
             <a href="../../html/admin/aReport.php">Report</a>
         </nav>          
         <section class="c-navbar-more">
@@ -621,13 +620,6 @@ if ($timelineResult) {
                 <!-- Request Cards Container -->
                 <div class="request-cards-container" id="requestCardsContainer">
                 </div>
-
-                <div class="pagination-controls">
-                    <button class="c-btn-small" disabled>◀ Previous</button>
-                    <span class="page-indicator">Page 1 of 3</span>
-                    <button class="c-btn-small">Next ▶</button>
-                </div>
-            </div>
 
             <div class="ops-assignment-panel" id="assignmentPanel">
                 <div class="panel-header">
@@ -728,16 +720,6 @@ if ($timelineResult) {
                 </div>
             </div>
         </div>
-
-        <!-- Bulk Operations Section 
-        <div class="bulk-ops-section">
-            <h3>Bulk operations</h3>
-            <div class="bulk-actions">
-                <button class="c-btn-secondary" id="assignMultipleBtn">Assign multiple (2 selected)</button>
-                <button class="c-btn-secondary" id="rescheduleSelectedBtn">Reschedule selected</button>
-                <button class="c-btn-secondary" id="exportScheduleBtn">📊 Export schedule</button>
-            </div>
-        </div> -->
     </main> 
     <hr>
 
@@ -765,7 +747,7 @@ if ($timelineResult) {
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aCollectionRequests.php">Collection Requests</a><br>
+                <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
                 <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
                 <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>

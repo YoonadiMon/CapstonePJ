@@ -259,31 +259,90 @@ document.addEventListener('DOMContentLoaded', function () {
         backToListBtn.addEventListener('click', showList);
     }
 
-    if (approveBtn) {
-        approveBtn.addEventListener('click', function () {
-            if (!currentRequest) return;
+if (approveBtn) {
+    approveBtn.addEventListener('click', async function () {
+        if (!currentRequest) return;
 
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '';
+        try {
+            const formData = new FormData();
+            formData.append('action', 'approve');
+            formData.append('requestID', currentRequest.dbID);
 
-            const actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            actionInput.value = 'approve';
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            });
 
-            const requestIdInput = document.createElement('input');
-            requestIdInput.type = 'hidden';
-            requestIdInput.name = 'requestID';
-            requestIdInput.value = currentRequest.dbID;
+            const text = await response.text();
 
-            form.appendChild(actionInput);
-            form.appendChild(requestIdInput);
+            // If PHP redirects, fetch may return redirected HTML.
+            // We only need to know approval succeeded, so treat a normal response as success.
+            if (!response.ok) {
+                throw new Error('Failed to approve request.');
+            }
 
-            document.body.appendChild(form);
-            form.submit();
-        });
-    }
+            // remove from current requests list immediately
+            if (Array.isArray(window.requestsData)) {
+                const index = window.requestsData.findIndex(r => String(r.id) === String(currentRequest.dbID));
+                if (index !== -1) {
+                    window.requestsData.splice(index, 1);
+                }
+            }
+
+            // refresh requests UI
+            filterRequests(true);
+
+            const approvedRequestId = currentRequest.dbID;
+
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'approve-modal-overlay';
+
+            modalOverlay.innerHTML = `
+                <div class="approve-modal-content">
+                    <div class="approve-modal-header">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>Request Approved</h3>
+                        <button type="button" class="approve-modal-close" id="closeApproveModal">&times;</button>
+                    </div>
+
+                    <div class="approve-modal-body">
+                        <p><strong>#REQ${String(approvedRequestId).padStart(3, '0')}</strong> has been approved successfully.</p>
+                        <p>Do you want to go to Operations to schedule it now?</p>
+                    </div>
+
+                    <div class="approve-modal-footer">
+                        <button class="btn btn-primary" id="goToOperationsBtn">
+                            <i class="fas fa-arrow-right"></i> Go to Scheduling
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modalOverlay);
+
+            const closeApproveModal = () => {
+                if (document.body.contains(modalOverlay)) {
+                    document.body.removeChild(modalOverlay);
+                }
+            };
+
+            document.getElementById('closeApproveModal')?.addEventListener('click', closeApproveModal);
+
+            document.getElementById('goToOperationsBtn')?.addEventListener('click', function () {
+                window.location.href = `../../html/admin/aOperations.php?requestID=${approvedRequestId}`;
+            });
+
+            modalOverlay.addEventListener('click', function (e) {
+                if (e.target === modalOverlay) {
+                    closeApproveModal();
+                }
+            });
+
+        } catch (error) {
+            alert(error.message || 'Failed to approve request.');
+        }
+    });
+}
 
     if (rejectBtn) {
         rejectBtn.addEventListener('click', function () {
