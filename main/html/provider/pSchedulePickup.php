@@ -649,690 +649,887 @@
     </style>
 </head>
 <body>
-    <?php
-    include("../../php/dbConn.php");
-    if(!isset($_SESSION)) {
-        session_start();
+<?php
+include("../../php/dbConn.php");
+if(!isset($_SESSION)) {
+    session_start();
+}
+include("../../php/sessionCheck.php");
+
+// Check if user is provider; only providers can access this page
+if ($_SESSION['userType'] !== 'provider') {
+    header("Location: ../../../index.html");
+    exit();
+}
+
+// Get active user info of current session
+$_SESSION['provider_id'] = $_SESSION['userID'];
+$provider_id = $_SESSION['provider_id'];
+$provider_name = $_SESSION['fullname'];
+$provider_email = $_SESSION['email'];
+$createdAt = $_SESSION['createdAt'];
+$lastlogin = $_SESSION['lastLogin'];
+
+// Fetch provider statistics
+$stats = [
+    'address' => 'N/A',
+    'state' => 'N/A',
+    'postcode' => 'N/A',
+    'point' => 0
+];
+
+$sql = "SELECT * FROM tblusers INNER JOIN tblprovider ON tblusers.userID = tblprovider.providerID WHERE tblusers.userID = '$provider_id'";
+$result = mysqli_query($conn, $sql);
+if ($result) {
+    $row = mysqli_fetch_assoc($result);
+    if ($row) {
+        $stats['address'] = $row['address'] ?? 'N/A';
+        $stats['state'] = $row['state'] ?? 'N/A';
+        $stats['postcode'] = $row['postcode'] ?? 'N/A';
+        $stats['point'] = $row['point'] ?? 0;
     }
-    include("../../php/sessionCheck.php");
+}
 
-    // Check if user is provider; only providers can access this page
-    if ($_SESSION['userType'] !== 'provider') {
-        header("Location: ../../../index.html");
-        exit();
+// Fetch item types for dropdown
+$itemTypes = [];
+$sql = "SELECT itemTypeID, name, recycle_points FROM tblitem_type ORDER BY name";
+$result = mysqli_query($conn, $sql);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $itemTypes[] = $row;
     }
+}
+?>
 
-    // Get active user info of current session
-    $_SESSION['provider_id'] = $_SESSION['userID'];
-    $provider_id = $_SESSION['provider_id'];
-    $provider_name = $_SESSION['fullname'];
-    $provider_email = $_SESSION['email'];
-    $createdAt = $_SESSION['createdAt'];
-    $lastlogin = $_SESSION['lastLogin'];
+<div id="cover" class="" onclick="hideMenu()"></div>
 
-    // Fetch provider statistics
-    $stats = [
-        'address' => 'N/A',
-        'state' => 'N/A',
-        'postcode' => 'N/A',
-        'point' => 0
-    ];
+<!-- Logo + Name & Navbar -->
+<header>
+    <!-- Logo + Name -->
+    <section class="c-logo-section">
+        <a href="../../html/provider/pHome.php" class="c-logo-link">
+            <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
+            <div class="c-text">AfterVolt</div>
+        </a>
+    </section>
 
-    $sql = "SELECT * FROM tblusers INNER JOIN tblprovider ON tblusers.userID = tblprovider.providerID WHERE tblusers.userID = '$provider_id'";
-    $result = mysqli_query($conn, $sql);
-    if ($result) {
-        $row = mysqli_fetch_assoc($result);
-        if ($row) {
-            $stats['address'] = $row['address'] ?? 'N/A';
-            $stats['state'] = $row['state'] ?? 'N/A';
-            $stats['postcode'] = $row['postcode'] ?? 'N/A';
-            $stats['point'] = $row['point'] ?? 0;
-        }
-    }
-
-    // Fetch item types for dropdown
-    $itemTypes = [];
-    $sql = "SELECT itemTypeID, name, recycle_points FROM tblitem_type ORDER BY name";
-    $result = mysqli_query($conn, $sql);
-    if ($result) {
-        while ($row = mysqli_fetch_assoc($result)) {
-            $itemTypes[] = $row;
-        }
-    }
-    ?>
-    
-    <div id="cover" class="" onclick="hideMenu()"></div>
-    
-    <!-- Logo + Name & Navbar -->
-    <header>
-        <!-- Logo + Name -->
-        <section class="c-logo-section">
-            <a href="../../html/provider/pHome.php" class="c-logo-link">
-                <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
-                <div class="c-text">AfterVolt</div>
-            </a>
-        </section>
-
-        <!-- Menu Links Mobile -->
-        <nav class="c-navbar-side">
-            <img src="../../assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
-            <div id="sidebarNav" class="c-navbar-side-menu">
-                <img src="../../assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
-                <div class="c-navbar-side-items">
-                    <section class="c-navbar-side-more">
-                        <button id="themeToggleMobile">
-                            <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
-                        </button>
-                        <a href="../../html/common/Setting.php">
-                            <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
-                        </a>
-                    </section>
-                    <a href="../../html/provider/pHome.php">Home</a>
-                    <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
-                    <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-                    <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-                    <a href="../../html/common/About.html">About</a>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Menu Links Desktop + Tablet -->
-        <nav class="c-navbar-desktop">
-            <a href="../../html/provider/pHome.php">Home</a>
-            <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
-            <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-            <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-            <a href="../../html/common/About.html">About</a>
-        </nav>
-        
-        <section class="c-navbar-more">
-            <button id="themeToggleDesktop">
-                <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
-            </button>
-            <a href="../../html/common/Setting.php">
-                <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
-            </a>
-        </section>
-    </header>
-    <hr>
-
-    <!-- Main Content -->
-    <main>
-        <!-- Back button -->
-        <div class="psp-back-row">
-            <a href="pHome.php" class="psp-back-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-                Back to Home
-            </a>
-        </div>
-
-        <!-- Page Header -->
-        <div class="psp-header">
-            <h1>Schedule E-Waste Pickup</h1>
-            <p>Fill in the details below to request a pickup. Your Green Points balance: <strong><?php echo $stats['point']; ?></strong></p>
-        </div>
-
-        <!-- Two-column layout -->
-        <div class="psp-layout">
-            <!-- LEFT: Form Column -->
-            <div class="psp-form-col">
-                <!-- Pickup Details Card -->
-                <div class="psp-card">
-                    <div class="psp-card-header">
-                        <span class="step-badge">1</span>
-                        <h2>Pickup Location</h2>
-                    </div>
-
-                    <div class="psp-form-grid">
-                        <div class="psp-form-group full-width">
-                            <label class="psp-form-label">Pickup Address</label>
-                            <input type="text" class="psp-form-control" id="pickupAddress" placeholder="Street address, building, unit no." value="<?php echo htmlspecialchars($stats['address']); ?>">
-                        </div>
-
-                        <div class="psp-form-group">
-                            <label class="psp-form-label">State</label>
-                            <select class="psp-form-control" id="pickupState">
-                                <option value="">Select State</option>
-                                <option value="Johor" <?php echo ($stats['state'] == 'Johor') ? 'selected' : ''; ?>>Johor</option>
-                                <option value="Kedah" <?php echo ($stats['state'] == 'Kedah') ? 'selected' : ''; ?>>Kedah</option>
-                                <option value="Kelantan" <?php echo ($stats['state'] == 'Kelantan') ? 'selected' : ''; ?>>Kelantan</option>
-                                <option value="Kuala Lumpur" <?php echo ($stats['state'] == 'Kuala Lumpur') ? 'selected' : ''; ?>>Kuala Lumpur</option>
-                                <option value="Labuan" <?php echo ($stats['state'] == 'Labuan') ? 'selected' : ''; ?>>Labuan</option>
-                                <option value="Melaka" <?php echo ($stats['state'] == 'Melaka') ? 'selected' : ''; ?>>Melaka</option>
-                                <option value="Negeri Sembilan" <?php echo ($stats['state'] == 'Negeri Sembilan') ? 'selected' : ''; ?>>Negeri Sembilan</option>
-                                <option value="Pahang" <?php echo ($stats['state'] == 'Pahang') ? 'selected' : ''; ?>>Pahang</option>
-                                <option value="Penang" <?php echo ($stats['state'] == 'Penang') ? 'selected' : ''; ?>>Penang</option>
-                                <option value="Perak" <?php echo ($stats['state'] == 'Perak') ? 'selected' : ''; ?>>Perak</option>
-                                <option value="Perlis" <?php echo ($stats['state'] == 'Perlis') ? 'selected' : ''; ?>>Perlis</option>
-                                <option value="Putrajaya" <?php echo ($stats['state'] == 'Putrajaya') ? 'selected' : ''; ?>>Putrajaya</option>
-                                <option value="Sabah" <?php echo ($stats['state'] == 'Sabah') ? 'selected' : ''; ?>>Sabah</option>
-                                <option value="Sarawak" <?php echo ($stats['state'] == 'Sarawak') ? 'selected' : ''; ?>>Sarawak</option>
-                                <option value="Selangor" <?php echo ($stats['state'] == 'Selangor') ? 'selected' : ''; ?>>Selangor</option>
-                                <option value="Terengganu" <?php echo ($stats['state'] == 'Terengganu') ? 'selected' : ''; ?>>Terengganu</option>
-                            </select>
-                        </div>
-
-                        <div class="psp-form-group">
-                            <label class="psp-form-label">Postcode</label>
-                            <input type="text" class="psp-form-control" id="pickupPostcode" placeholder="e.g., 47500" value="<?php echo htmlspecialchars($stats['postcode']); ?>">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Schedule Card -->
-                <div class="psp-card">
-                    <div class="psp-card-header">
-                        <span class="step-badge">2</span>
-                        <h2>Preferred Schedule</h2>
-                    </div>
-
-                    <div class="psp-datetime-grid">
-                        <div class="psp-form-group">
-                            <label class="psp-form-label">Preferred Date</label>
-                            <input type="date" class="psp-form-control" id="preferredDate" min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>" value="<?php echo date('Y-m-d', strtotime('+2 days')); ?>">
-                        </div>
-
-                        <div class="psp-form-group">
-                            <label class="psp-form-label">Preferred Time</label>
-                            <select class="psp-form-control" id="preferredTime">
-                                <option value="09:00:00">09:00 AM</option>
-                                <option value="10:00:00">10:00 AM</option>
-                                <option value="11:00:00">11:00 AM</option>
-                                <option value="14:00:00" selected>02:00 PM</option>
-                                <option value="15:00:00">03:00 PM</option>
-                                <option value="16:00:00">04:00 PM</option>
-                                <option value="17:00:00">05:00 PM</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="psp-form-group mt-2">
-                        <label class="psp-form-label">Special Instructions (Optional)</label>
-                        <textarea class="psp-form-control" id="specialInstructions" placeholder="Any special instructions for the collector? e.g., gate code, landmark, etc."></textarea>
-                    </div>
-                </div>
-
-                <!-- E-Waste Items Card -->
-                <div class="psp-card">
-                    <div class="psp-card-header">
-                        <span class="step-badge">3</span>
-                        <h2>E-Waste Items</h2>
-                    </div>
-
-                    <div class="psp-items-header">
-                        <span class="psp-form-label">Add items you want to recycle</span>
-                        <button class="psp-add-item-btn" onclick="addNewItem()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            Add Item
-                        </button>
-                    </div>
-
-                    <!-- Items Container -->
-                    <div id="itemsContainer">
-                        <!-- Items will be dynamically added here -->
-                    </div>
-
-                    <!-- Image Upload Section -->
-                    <div class="psp-form-group mt-3">
-                        <label class="psp-form-label">Upload Item Photos (Optional)</label>
-                        <div class="psp-image-upload" onclick="document.getElementById('imageInput').click()">
-                            <input type="file" id="imageInput" multiple accept="image/*" onchange="handleImageUpload(event)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="9" cy="9" r="2"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                            <p>Click to upload or drag and drop</p>
-                            <p style="font-size: 0.7rem;">PNG, JPG up to 5MB</p>
-                        </div>
-                        <div id="imagePreview" class="psp-image-preview"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT: Summary Column -->
-            <div class="psp-summary-col">
-                <div class="psp-summary-card">
-                    <div class="psp-summary-title">Pickup Summary</div>
-                    
-                    <div class="psp-summary-item">
-                        <span>Items Count</span>
-                        <span id="summaryItemsCount">0 items</span>
-                    </div>
-                    
-                    <div class="psp-summary-item">
-                        <span>Total Weight</span>
-                        <span id="summaryTotalWeight">0 kg</span>
-                    </div>
-                    
-                    <div class="psp-summary-item">
-                        <span>Pickup Date</span>
-                        <span id="summaryDate">Not set</span>
-                    </div>
-                    
-                    <div class="psp-summary-item">
-                        <span>Pickup Time</span>
-                        <span id="summaryTime">Not set</span>
-                    </div>
-                    
-                    <div class="psp-points-estimate">
-                        <div class="value" id="estimatedPoints">0</div>
-                        <div class="label">Estimated Green Points</div>
-                    </div>
-                    
-                    <button class="psp-submit-btn" onclick="submitPickupRequest(<?php echo $provider_id; ?>)" id="submitBtn">
-                        Submit Pickup Request
+    <!-- Menu Links Mobile -->
+    <nav class="c-navbar-side">
+        <img src="../../assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+        <div id="sidebarNav" class="c-navbar-side-menu">
+            <img src="../../assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
+            <div class="c-navbar-side-items">
+                <section class="c-navbar-side-more">
+                    <button id="themeToggleMobile">
+                        <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                     </button>
-                    
-                    <p class="text-danger mt-2" style="font-size: 0.8rem; text-align: center;">
-                        * Points are estimated based on item types and weight
-                    </p>
-                </div>
+                    <a href="../../html/common/Setting.php">
+                        <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                    </a>
+                </section>
+                <a href="../../html/provider/pHome.php">Home</a>
+                <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
+                <a href="../../html/provider/pMainPickup.php">My Pickup</a>
+                <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
+                <a href="../../html/common/About.html">About</a>
             </div>
         </div>
-    </main>
+    </nav>
 
-    <!-- Success Modal -->
-    <div class="psp-modal-overlay" id="successModal">
-        <div class="psp-modal">
-            <div class="psp-modal-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
-            <h3>Pickup Request Submitted!</h3>
-            <p>Your pickup request has been submitted successfully. Request ID: <strong id="requestIdDisplay">REQ001</strong></p>
-            <p style="font-size: 0.9rem;">Our collector will contact you within 24 hours to confirm the schedule.</p>
-            <button class="psp-modal-btn" onclick="redirectToHome()">View My Pickups</button>
-        </div>
+    <!-- Menu Links Desktop + Tablet -->
+    <nav class="c-navbar-desktop">
+        <a href="../../html/provider/pHome.php">Home</a>
+        <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
+        <a href="../../html/provider/pMainPickup.php">My Pickup</a>
+        <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
+        <a href="../../html/common/About.html">About</a>
+    </nav>
+    
+    <section class="c-navbar-more">
+        <button id="themeToggleDesktop">
+            <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+        </button>
+        <a href="../../html/common/Setting.php">
+            <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
+        </a>
+    </section>
+</header>
+<hr>
+
+<!-- Main Content -->
+<main>
+    <!-- Back button -->
+    <div class="psp-back-row">
+        <a href="pHome.php" class="psp-back-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Home
+        </a>
     </div>
 
-    <hr>
-    
-    <!-- Footer -->
-    <footer>
-        <!-- Column 1 -->
-        <section class="c-footer-info-section">
-            <a href="../../html/provider/pHome.php">
-                <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
-            </a>
-            <div class="c-text">AfterVolt</div>
+    <!-- Page Header -->
+    <div class="psp-header">
+        <h1>Schedule E-Waste Pickup</h1>
+        <p>Fill in the details below to request a pickup. Your Green Points balance: <strong><?php echo $stats['point']; ?></strong></p>
+    </div>
 
-            <div class="c-text c-text-center">
-                Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
-            </div>
-            <div class="c-text c-text-label">
-                +60 12 345 6789
-            </div>
-            <div class="c-text">
-                abc@gmail.com
-            </div>
-        </section>
-        
-        <!-- Column 2 -->
-        <section class="c-footer-links-section">
-            <div>
-                <b>Recycling</b><br>
-                <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a>
-            </div>
-            <div>
-                <b>My Activity</b><br>
-                <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br>
-                <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-            </div>
-            <div>
-                <b>Proxy</b><br>
-                <a href="../../html/common/About.html">About</a><br>
-                <a href="../../html/common/Profile.php">Edit Profile</a><br>
-                <a href="../../html/common/Setting.php">Setting</a>
-            </div>
-        </section>
-    </footer>
+    <!-- Two-column layout -->
+    <div class="psp-layout">
+        <!-- LEFT: Form Column -->
+        <div class="psp-form-col">
+            <!-- Pickup Details Card -->
+            <div class="psp-card">
+                <div class="psp-card-header">
+                    <span class="step-badge">1</span>
+                    <h2>Pickup Location</h2>
+                </div>
 
-    <script src="../../javascript/mainScript.js"></script>
-    <script>
-        // pSchedulePickup.js
-        
-        let itemCount = 0;
-        let items = [];
-        let uploadedImages = [];
-        
-        // E-waste types from database (populated from PHP)
-        const eWasteTypes = <?php echo json_encode($itemTypes); ?>;
-        
-        // Brand list
-        const brands = [
-            'Apple',
-            'Samsung',
-            'Dell',
-            'HP',
-            'Lenovo',
-            'Asus',
-            'Acer',
-            'Microsoft',
-            'Sony',
-            'LG',
-            'Panasonic',
-            'Canon',
-            'Epson',
-            'Other'
-        ];
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set minimum date for pickup (tomorrow)
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('preferredDate').min = tomorrow.toISOString().split('T')[0];
-            
-            // Add first item by default
-            addNewItem();
-        });
-        
-        function addNewItem() {
-            itemCount++;
-            const itemId = `item_${itemCount}`;
-            
-            // Build item type options with recycle points data
-            let typeOptions = '<option value="">Select Type</option>';
-            eWasteTypes.forEach(type => {
-                typeOptions += `<option value="${type.itemTypeID}" data-points="${type.recycle_points}">${type.name}</option>`;
-            });
-            
-            const itemHtml = `
-                <div class="psp-item-card" id="${itemId}">
-                    <div class="psp-item-header">
-                        <span class="psp-item-title">Item #${itemCount}</span>
-                        <button class="psp-remove-item" onclick="removeItem('${itemId}')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
+                <div class="psp-form-grid">
+                    <div class="psp-form-group full-width">
+                        <label class="psp-form-label">Pickup Address <span class="required-star">*</span></label>
+                        <input type="text" class="psp-form-control" id="pickupAddress" placeholder="Street address, building, unit no." value="<?php echo htmlspecialchars($stats['address']); ?>">
+                        <div class="error-message" id="addressError" style="display: none;"></div>
                     </div>
-                    <div class="psp-item-grid">
-                        <div class="psp-item-field">
-                            <label>Type</label>
-                            <select onchange="updateSummary()">
-                                ${typeOptions}
-                            </select>
-                        </div>
-                        <div class="psp-item-field">
-                            <label>Brand</label>
-                            <select onchange="updateSummary()">
-                                <option value="">Select</option>
-                                ${brands.map(brand => `<option value="${brand}">${brand}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="psp-item-field">
-                            <label>Model</label>
-                            <input type="text" placeholder="e.g., iPhone 12" onchange="updateSummary()">
-                        </div>
-                        <div class="psp-item-field">
-                            <label>Description</label>
-                            <input type="text" placeholder="Brief description" onchange="updateSummary()">
-                        </div>
-                        <div class="psp-item-field">
-                            <label>Weight (kg)</label>
-                            <input type="number" step="0.1" min="0" placeholder="0.0" onchange="updateSummary()">
-                        </div>
-                        <div class="psp-item-field">
-                            <label>Length (cm)</label>
-                            <input type="number" step="0.1" min="0" placeholder="0.0" onchange="updateSummary()">
-                        </div>
-                        <div class="psp-item-field">
-                            <label>Width (cm)</label>
-                            <input type="number" step="0.1" min="0" placeholder="0.0" onchange="updateSummary()">
-                        </div>
-                        <div class="psp-item-field">
-                            <label>Height (cm)</label>
-                            <input type="number" step="0.1" min="0" placeholder="0.0" onchange="updateSummary()">
-                        </div>
+
+                    <div class="psp-form-group">
+                        <label class="psp-form-label">State <span class="required-star">*</span></label>
+                        <select class="psp-form-control" id="pickupState">
+                            <option value="">Select State</option>
+                            <option value="Johor" <?php echo ($stats['state'] == 'Johor') ? 'selected' : ''; ?>>Johor</option>
+                            <option value="Kedah" <?php echo ($stats['state'] == 'Kedah') ? 'selected' : ''; ?>>Kedah</option>
+                            <option value="Kelantan" <?php echo ($stats['state'] == 'Kelantan') ? 'selected' : ''; ?>>Kelantan</option>
+                            <option value="Kuala Lumpur" <?php echo ($stats['state'] == 'Kuala Lumpur') ? 'selected' : ''; ?>>Kuala Lumpur</option>
+                            <option value="Labuan" <?php echo ($stats['state'] == 'Labuan') ? 'selected' : ''; ?>>Labuan</option>
+                            <option value="Melaka" <?php echo ($stats['state'] == 'Melaka') ? 'selected' : ''; ?>>Melaka</option>
+                            <option value="Negeri Sembilan" <?php echo ($stats['state'] == 'Negeri Sembilan') ? 'selected' : ''; ?>>Negeri Sembilan</option>
+                            <option value="Pahang" <?php echo ($stats['state'] == 'Pahang') ? 'selected' : ''; ?>>Pahang</option>
+                            <option value="Penang" <?php echo ($stats['state'] == 'Penang') ? 'selected' : ''; ?>>Penang</option>
+                            <option value="Perak" <?php echo ($stats['state'] == 'Perak') ? 'selected' : ''; ?>>Perak</option>
+                            <option value="Perlis" <?php echo ($stats['state'] == 'Perlis') ? 'selected' : ''; ?>>Perlis</option>
+                            <option value="Putrajaya" <?php echo ($stats['state'] == 'Putrajaya') ? 'selected' : ''; ?>>Putrajaya</option>
+                            <option value="Sabah" <?php echo ($stats['state'] == 'Sabah') ? 'selected' : ''; ?>>Sabah</option>
+                            <option value="Sarawak" <?php echo ($stats['state'] == 'Sarawak') ? 'selected' : ''; ?>>Sarawak</option>
+                            <option value="Selangor" <?php echo ($stats['state'] == 'Selangor') ? 'selected' : ''; ?>>Selangor</option>
+                            <option value="Terengganu" <?php echo ($stats['state'] == 'Terengganu') ? 'selected' : ''; ?>>Terengganu</option>
+                        </select>
+                        <div class="error-message" id="stateError" style="display: none;"></div>
+                    </div>
+
+                    <div class="psp-form-group">
+                        <label class="psp-form-label">Postcode <span class="required-star">*</span></label>
+                        <input type="text" class="psp-form-control" id="pickupPostcode" placeholder="e.g., 47500" value="<?php echo htmlspecialchars($stats['postcode']); ?>" maxlength="5">
+                        <div class="error-message" id="postcodeError" style="display: none;"></div>
                     </div>
                 </div>
-            `;
-            
-            document.getElementById('itemsContainer').insertAdjacentHTML('beforeend', itemHtml);
-            updateSummary();
-        }
-        
-        function removeItem(itemId) {
-            const itemElement = document.getElementById(itemId);
-            if (itemElement) {
-                itemElement.remove();
-                itemCount--;
+            </div>
+
+            <!-- Schedule Card -->
+            <div class="psp-card">
+                <div class="psp-card-header">
+                    <span class="step-badge">2</span>
+                    <h2>Preferred Schedule</h2>
+                </div>
+
+                <div class="psp-datetime-grid">
+                    <div class="psp-form-group">
+                        <label class="psp-form-label">Preferred Date <span class="required-star">*</span></label>
+                        <input type="date" class="psp-form-control" id="preferredDate" min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>" value="<?php echo date('Y-m-d', strtotime('+2 days')); ?>">
+                        <div class="error-message" id="dateError" style="display: none;"></div>
+                    </div>
+
+                    <div class="psp-form-group">
+                        <label class="psp-form-label">Preferred Time <span class="required-star">*</span></label>
+                        <select class="psp-form-control" id="preferredTime">
+                            <option value="09:00:00">09:00 AM</option>
+                            <option value="10:00:00">10:00 AM</option>
+                            <option value="11:00:00">11:00 AM</option>
+                            <option value="14:00:00" selected>02:00 PM</option>
+                            <option value="15:00:00">03:00 PM</option>
+                            <option value="16:00:00">04:00 PM</option>
+                            <option value="17:00:00">05:00 PM</option>
+                        </select>
+                        <div class="error-message" id="timeError" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="psp-form-group mt-2">
+                    <label class="psp-form-label">Special Instructions (Optional)</label>
+                    <textarea class="psp-form-control" id="specialInstructions" placeholder="Any special instructions for the collector? e.g., gate code, landmark, etc." maxlength="500"></textarea>
+                    <div class="char-counter" id="charCounter">0/500 characters</div>
+                </div>
+            </div>
+
+            <!-- E-Waste Items Card -->
+            <div class="psp-card">
+                <div class="psp-card-header">
+                    <span class="step-badge">3</span>
+                    <h2>E-Waste Items <span class="required-star">*</span></h2>
+                </div>
+
+                <div class="psp-items-header">
+                    <span class="psp-form-label">Add items you want to recycle (at least one item required)</span>
+                    <button type="button" class="psp-add-item-btn" onclick="addNewItem()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Item
+                    </button>
+                </div>
+
+                <!-- Items Container -->
+                <div id="itemsContainer">
+                    <!-- Items will be dynamically added here -->
+                </div>
+                <div class="error-message" id="itemsError" style="display: none; margin-top: 10px;"></div>
+
+                <!-- Image Upload Section -->
+                <div class="psp-form-group mt-3">
+                    <label class="psp-form-label">Upload Item Photos (Optional)</label>
+                    <div class="psp-image-upload" onclick="document.getElementById('imageInput').click()">
+                        <input type="file" id="imageInput" multiple accept="image/*" onchange="handleImageUpload(event)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="9" cy="9" r="2"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <p>Click to upload or drag and drop</p>
+                        <p style="font-size: 0.7rem;">PNG, JPG up to 5MB (Max 5 files)</p>
+                    </div>
+                    <div id="imagePreview" class="psp-image-preview"></div>
+                    <div class="error-message" id="imageError" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Summary Column -->
+        <div class="psp-summary-col">
+            <div class="psp-summary-card">
+                <div class="psp-summary-title">Pickup Summary</div>
                 
-                // Renumber remaining items
-                renumberItems();
-                updateSummary();
-            }
+                <div class="psp-summary-item">
+                    <span>Items Count</span>
+                    <span id="summaryItemsCount">0 items</span>
+                </div>
+                
+                <div class="psp-summary-item">
+                    <span>Total Weight</span>
+                    <span id="summaryTotalWeight">0 kg</span>
+                </div>
+                
+                <div class="psp-summary-item">
+                    <span>Pickup Date</span>
+                    <span id="summaryDate">Not set</span>
+                </div>
+                
+                <div class="psp-summary-item">
+                    <span>Pickup Time</span>
+                    <span id="summaryTime">Not set</span>
+                </div>
+                
+                <div class="psp-points-estimate">
+                    <div class="value" id="estimatedPoints">0</div>
+                    <div class="label">Estimated Green Points</div>
+                </div>
+                
+                <button class="psp-submit-btn" onclick="submitPickupRequest(<?php echo $provider_id; ?>)" id="submitBtn">
+                    Submit Pickup Request
+                </button>
+                
+                <p class="text-danger mt-2" style="font-size: 0.8rem; text-align: center;">
+                    * Points are estimated based on item types and weight
+                </p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Success Modal -->
+<div class="psp-modal-overlay" id="successModal">
+    <div class="psp-modal">
+        <div class="psp-modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <h3>Pickup Request Submitted!</h3>
+        <p>Your pickup request has been submitted successfully. Request ID: <strong id="requestIdDisplay">REQ001</strong></p>
+        <p style="font-size: 0.9rem;">Our collector will contact you within 24 hours to confirm the schedule.</p>
+        <button class="psp-modal-btn" onclick="redirectToHome()">View My Pickups</button>
+    </div>
+</div>
+
+<hr>
+
+<!-- Footer -->
+<footer>
+    <!-- Column 1 -->
+    <section class="c-footer-info-section">
+        <a href="../../html/provider/pHome.php">
+            <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
+        </a>
+        <div class="c-text">AfterVolt</div>
+
+        <div class="c-text c-text-center">
+            Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+        </div>
+        <div class="c-text c-text-label">
+            +60 12 345 6789
+        </div>
+        <div class="c-text">
+            abc@gmail.com
+        </div>
+    </section>
+    
+    <!-- Column 2 -->
+    <section class="c-footer-links-section">
+        <div>
+            <b>Recycling</b><br>
+            <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a>
+        </div>
+        <div>
+            <b>My Activity</b><br>
+            <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br>
+            <a href="../../html/provider/pMainPickup.php">My Pickup</a>
+        </div>
+        <div>
+            <b>Proxy</b><br>
+            <a href="../../html/common/About.html">About</a><br>
+            <a href="../../html/common/Profile.php">Edit Profile</a><br>
+            <a href="../../html/common/Setting.php">Setting</a>
+        </div>
+    </section>
+</footer>
+
+<script src="../../javascript/mainScript.js"></script>
+<script>
+    // pSchedulePickup.js with Enhanced Validations - COMPLETE VERSION
+    
+    let itemCount = 0;
+    let items = [];
+    let uploadedImages = [];
+    const MAX_IMAGES = 5;
+    
+    // E-waste types from database (populated from PHP)
+    const eWasteTypes = <?php echo json_encode($itemTypes); ?>;
+    
+    // Brand list
+    const brands = [
+        'Apple', 'Samsung', 'Dell', 'HP', 'Lenovo', 'Asus', 'Acer',
+        'Microsoft', 'Sony', 'LG', 'Panasonic', 'Canon', 'Epson', 'Other'
+    ];
+    
+    // Helper function to show field error
+    function showFieldError(fieldId, message) {
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            const inputField = document.getElementById(fieldId);
+            if (inputField) inputField.classList.add('error');
+        }
+    }
+    
+    function hideFieldError(fieldId) {
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+            const inputField = document.getElementById(fieldId);
+            if (inputField) inputField.classList.remove('error');
+        }
+    }
+    
+    function clearAllErrors() {
+        const errorFields = ['address', 'state', 'postcode', 'date', 'time', 'items', 'image'];
+        errorFields.forEach(field => hideFieldError(field));
+    }
+    
+    // Validate postcode format (Malaysian 5-digit)
+    function isValidPostcode(postcode) {
+        return /^\d{5}$/.test(postcode);
+    }
+    
+    // Validate date is not in the past and not more than 30 days ahead
+    function isValidPickupDate(dateStr) {
+        const selectedDate = new Date(dateStr);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const maxDate = new Date();
+        maxDate.setDate(maxDate.getDate() + 30);
+        
+        if (selectedDate < today) return false;
+        if (selectedDate > maxDate) return false;
+        return true;
+    }
+    
+    // Main validation function - validates all required fields including item details
+    function validateForm() {
+        clearAllErrors();
+        let isValid = true;
+        
+        // 1. Validate Address
+        const address = document.getElementById('pickupAddress').value.trim();
+        if (address === '') {
+            showFieldError('address', 'Pickup address is required');
+            isValid = false;
+        } else if (address.length < 5) {
+            showFieldError('address', 'Please enter a complete address (minimum 5 characters)');
+            isValid = false;
         }
         
-        function renumberItems() {
-            const itemCards = document.querySelectorAll('.psp-item-card');
-            itemCards.forEach((card, index) => {
-                const title = card.querySelector('.psp-item-title');
-                if (title) {
-                    title.textContent = `Item #${index + 1}`;
-                }
-            });
+        // 2. Validate State
+        const state = document.getElementById('pickupState').value;
+        if (state === '') {
+            showFieldError('state', 'Please select a state');
+            isValid = false;
         }
         
-        function handleImageUpload(event) {
-            const files = event.target.files;
-            const preview = document.getElementById('imagePreview');
+        // 3. Validate Postcode
+        const postcode = document.getElementById('pickupPostcode').value.trim();
+        if (postcode === '') {
+            showFieldError('postcode', 'Postcode is required');
+            isValid = false;
+        } else if (!isValidPostcode(postcode)) {
+            showFieldError('postcode', 'Please enter a valid 5-digit Malaysian postcode');
+            isValid = false;
+        }
+        
+        // 4. Validate Date
+        const date = document.getElementById('preferredDate').value;
+        if (!date) {
+            showFieldError('date', 'Please select a preferred pickup date');
+            isValid = false;
+        } else if (!isValidPickupDate(date)) {
+            showFieldError('date', 'Pickup date must be tomorrow or within the next 30 days');
+            isValid = false;
+        }
+        
+        // 5. Validate Time
+        const time = document.getElementById('preferredTime').value;
+        if (!time) {
+            showFieldError('time', 'Please select a preferred time');
+            isValid = false;
+        }
+        
+        // 6. Validate Items - Now checks all required fields: type, brand, model, description, weight, length, width, height
+        const itemCards = document.querySelectorAll('.psp-item-card');
+        if (itemCards.length === 0) {
+            showFieldError('items', 'Please add at least one e-waste item');
+            isValid = false;
+        } else {
+            let hasValidItem = false;
+            let firstErrorMsg = '';
             
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('File size must be less than 5MB');
-                    continue;
+            for (let idx = 0; idx < itemCards.length; idx++) {
+                const card = itemCards[idx];
+                const inputs = card.querySelectorAll('select, input');
+                
+                // Get all field values
+                const typeValue = inputs[0] ? inputs[0].value : '';
+                const brandValue = inputs[1] ? inputs[1].value : '';
+                const modelValue = inputs[2] ? inputs[2].value.trim() : '';
+                const descriptionValue = inputs[3] ? inputs[3].value.trim() : '';
+                const weightValue = inputs[4] ? parseFloat(inputs[4].value) : 0;
+                const lengthValue = inputs[5] ? parseFloat(inputs[5].value) : 0;
+                const widthValue = inputs[6] ? parseFloat(inputs[6].value) : 0;
+                const heightValue = inputs[7] ? parseFloat(inputs[7].value) : 0;
+                
+                // Check if this item has all required fields filled
+                let itemComplete = true;
+                let itemErrorMsg = '';
+                
+                if (!typeValue || typeValue === '') {
+                    itemComplete = false;
+                    itemErrorMsg = `Item #${idx + 1}: Please select an item type`;
+                } else if (!brandValue || brandValue === '') {
+                    itemComplete = false;
+                    itemErrorMsg = `Item #${idx + 1}: Please select a brand`;
+                } else if (!modelValue) {
+                    itemComplete = false;
+                    itemErrorMsg = `Item #${idx + 1}: Please enter the model`;
+                } else if (!descriptionValue) {
+                    itemComplete = false;
+                    itemErrorMsg = `Item #${idx + 1}: Please enter a brief description`;
+                } else if (!weightValue || weightValue <= 0) {
+                    itemComplete = false;
+                    itemErrorMsg = `Item #${idx + 1}: Weight must be greater than 0 kg`;
+                } else if (!lengthValue || lengthValue <= 0) {
+                    itemComplete = false;
+                    itemErrorMsg = `Item #${idx + 1}: Length must be greater than 0 cm`;
+                } else if (!widthValue || widthValue <= 0) {
+                    itemComplete = false;
+                    itemErrorMsg = `Item #${idx + 1}: Width must be greater than 0 cm`;
+                } else if (!heightValue || heightValue <= 0) {
+                    itemComplete = false;
+                    itemErrorMsg = `Item #${idx + 1}: Height must be greater than 0 cm`;
                 }
                 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imageId = 'img_' + Date.now() + '_' + i;
-                    uploadedImages.push({
-                        id: imageId,
-                        data: e.target.result,
-                        file: file
-                    });
-                    
-                    const imageHtml = `
-                        <div class="psp-image-preview-item" id="${imageId}">
-                            <img src="${e.target.result}" alt="Preview">
-                            <button onclick="removeImage('${imageId}')">✕</button>
-                        </div>
-                    `;
-                    preview.insertAdjacentHTML('beforeend', imageHtml);
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-        
-        function removeImage(imageId) {
-            const imageElement = document.getElementById(imageId);
-            if (imageElement) {
-                imageElement.remove();
-                uploadedImages = uploadedImages.filter(img => img.id !== imageId);
-            }
-        }
-        
-        function updateSummary() {
-            const itemCards = document.querySelectorAll('.psp-item-card');
-            let totalItems = 0;
-            let totalWeight = 0;
-            let estimatedPoints = 0;
-            
-            itemCards.forEach((card, index) => {
-                const typeSelect = card.querySelector('select:first-child');
-                const weightInput = card.querySelector('input[type="number"]:first-child');
-                
-                if (typeSelect && weightInput) {
-                    const selectedOption = typeSelect.options[typeSelect.selectedIndex];
-                    const typePoints = selectedOption ? parseInt(selectedOption.dataset.points || 0) : 0;
-                    const weight = parseFloat(weightInput.value) || 0;
-                    
-                    totalWeight += weight;
-                    
-                    // Calculate points: weight * recycle_points for the item type
-                    estimatedPoints += weight * typePoints;
+                if (itemComplete) {
+                    hasValidItem = true;
+                } else if (!firstErrorMsg) {
+                    firstErrorMsg = itemErrorMsg;
                 }
-            });
-            
-            // Update summary
-            document.getElementById('summaryItemsCount').textContent = itemCards.length + ' items';
-            document.getElementById('summaryTotalWeight').textContent = totalWeight.toFixed(1) + ' kg';
-            document.getElementById('estimatedPoints').textContent = Math.round(estimatedPoints);
-            
-            // Update date and time
-            const date = document.getElementById('preferredDate').value;
-            const time = document.getElementById('preferredTime').value;
-            
-            if (date) {
-                const formattedDate = new Date(date).toLocaleDateString('en-US', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                });
-                document.getElementById('summaryDate').textContent = formattedDate;
             }
             
-            if (time) {
-                document.getElementById('summaryTime').textContent = time.substring(0, 5);
-            }
-        }
-        
-        function submitPickupRequest(providerId) {
-            // Validate form
-            if (!validateForm()) {
-                return;
-            }
-            
-            // Disable submit button
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
-            
-            // Prepare data according to database schema
-            const requestData = {
-                providerID: providerId,
-                pickupAddress: document.getElementById('pickupAddress').value,
-                pickupState: document.getElementById('pickupState').value,
-                pickupPostcode: document.getElementById('pickupPostcode').value,
-                preferredDateTime: document.getElementById('preferredDate').value + ' ' + document.getElementById('preferredTime').value,
-                status: 'Pending',
-                specialInstructions: document.getElementById('specialInstructions').value,
-                items: collectItemData()
-            };
-            
-            // Send data to server
-            fetch('../../php/submitPickupRequest.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('requestIdDisplay').textContent = data.requestID;
-                    document.getElementById('successModal').style.display = 'flex';
+            if (!hasValidItem && itemCards.length > 0) {
+                if (firstErrorMsg) {
+                    showFieldError('items', firstErrorMsg);
                 } else {
-                    alert('Error submitting request: ' + data.message);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Submit Pickup Request';
+                    showFieldError('items', 'Please fill in all required fields for at least one item (Type, Brand, Model, Description, Weight, Length, Width, Height)');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while submitting the request');
+                isValid = false;
+            }
+        }
+        
+        // 7. Validate Images (max 5 files)
+        if (uploadedImages.length > MAX_IMAGES) {
+            showFieldError('image', `Maximum ${MAX_IMAGES} images allowed`);
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set minimum date for pickup (tomorrow)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dateInput = document.getElementById('preferredDate');
+        dateInput.min = tomorrow.toISOString().split('T')[0];
+        
+        // Add real-time validation listeners
+        document.getElementById('pickupAddress').addEventListener('input', () => hideFieldError('address'));
+        document.getElementById('pickupState').addEventListener('change', () => hideFieldError('state'));
+        document.getElementById('pickupPostcode').addEventListener('input', () => hideFieldError('postcode'));
+        document.getElementById('preferredDate').addEventListener('change', () => hideFieldError('date'));
+        document.getElementById('preferredTime').addEventListener('change', () => hideFieldError('time'));
+        
+        // Character counter for special instructions
+        const textarea = document.getElementById('specialInstructions');
+        const charCounter = document.getElementById('charCounter');
+        if (textarea && charCounter) {
+            textarea.addEventListener('input', function() {
+                const length = this.value.length;
+                charCounter.textContent = `${length}/500 characters`;
+                if (length > 500) {
+                    this.value = this.value.substring(0, 500);
+                    charCounter.textContent = `500/500 characters`;
+                }
+            });
+        }
+        
+        // Add first item by default
+        addNewItem();
+    });
+    
+    function addNewItem() {
+        itemCount++;
+        const itemId = `item_${itemCount}`;
+        
+        // Build item type options with recycle points data
+        let typeOptions = '<option value="">Select Type</option>';
+        eWasteTypes.forEach(type => {
+            typeOptions += `<option value="${type.itemTypeID}" data-points="${type.recycle_points}">${escapeHtml(type.name)}</option>`;
+        });
+        
+        const itemHtml = `
+            <div class="psp-item-card" id="${itemId}">
+                <div class="psp-item-header">
+                    <span class="psp-item-title">Item #${itemCount}</span>
+                    <button type="button" class="psp-remove-item" onclick="removeItem('${itemId}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="psp-item-grid">
+                    <div class="psp-item-field">
+                        <label>Type <span class="required-star">*</span></label>
+                        <select onchange="updateSummary(); hideFieldError('items')">
+                            ${typeOptions}
+                        </select>
+                    </div>
+                    <div class="psp-item-field">
+                        <label>Brand <span class="required-star">*</span></label>
+                        <select onchange="updateSummary(); hideFieldError('items')">
+                            <option value="">Select Brand</option>
+                            ${brands.map(brand => `<option value="${escapeHtml(brand)}">${escapeHtml(brand)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="psp-item-field">
+                        <label>Model <span class="required-star">*</span></label>
+                        <input type="text" placeholder="e.g., iPhone 12" onchange="updateSummary(); hideFieldError('items')" maxlength="100">
+                    </div>
+                    <div class="psp-item-field">
+                        <label>Description <span class="required-star">*</span></label>
+                        <input type="text" placeholder="Brief description (e.g., working condition, color)" onchange="updateSummary(); hideFieldError('items')" maxlength="200">
+                    </div>
+                    <div class="psp-item-field">
+                        <label>Weight (kg) <span class="required-star">*</span></label>
+                        <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
+                    </div>
+                    <div class="psp-item-field">
+                        <label>Length (cm) <span class="required-star">*</span></label>
+                        <input type="number" step="0.1" min="0.1" placeholder="0.0" onchange="updateSummary(); hideFieldError('items')">
+                    </div>
+                    <div class="psp-item-field">
+                        <label>Width (cm) <span class="required-star">*</span></label>
+                        <input type="number" step="0.1" min="0.1" placeholder="0.0" onchange="updateSummary(); hideFieldError('items')">
+                    </div>
+                    <div class="psp-item-field">
+                        <label>Height (cm) <span class="required-star">*</span></label>
+                        <input type="number" step="0.1" min="0.1" placeholder="0.0" onchange="updateSummary(); hideFieldError('items')">
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('itemsContainer').insertAdjacentHTML('beforeend', itemHtml);
+        updateSummary();
+        hideFieldError('items');
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    function removeItem(itemId) {
+        const itemElement = document.getElementById(itemId);
+        if (itemElement) {
+            itemElement.remove();
+            itemCount--;
+            renumberItems();
+            updateSummary();
+            hideFieldError('items');
+            // If no items left, show error
+            if (document.querySelectorAll('.psp-item-card').length === 0) {
+                showFieldError('items', 'Please add at least one e-waste item');
+            }
+        }
+    }
+    
+    function renumberItems() {
+        const itemCards = document.querySelectorAll('.psp-item-card');
+        itemCards.forEach((card, index) => {
+            const title = card.querySelector('.psp-item-title');
+            if (title) {
+                title.textContent = `Item #${index + 1}`;
+            }
+        });
+    }
+    
+    function handleImageUpload(event) {
+        const files = event.target.files;
+        const preview = document.getElementById('imagePreview');
+        const errorDiv = document.getElementById('imageError');
+        
+        if (uploadedImages.length + files.length > MAX_IMAGES) {
+            errorDiv.textContent = `Maximum ${MAX_IMAGES} images allowed. You can upload ${MAX_IMAGES - uploadedImages.length} more.`;
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        errorDiv.style.display = 'none';
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            
+            // Validate file type
+            if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                errorDiv.textContent = 'Only JPG and PNG images are allowed';
+                errorDiv.style.display = 'block';
+                continue;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                errorDiv.textContent = 'File size must be less than 5MB';
+                errorDiv.style.display = 'block';
+                continue;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageId = 'img_' + Date.now() + '_' + i;
+                uploadedImages.push({
+                    id: imageId,
+                    data: e.target.result,
+                    file: file
+                });
+                
+                const imageHtml = `
+                    <div class="psp-image-preview-item" id="${imageId}">
+                        <img src="${e.target.result}" alt="Preview">
+                        <button type="button" onclick="removeImage('${imageId}')">✕</button>
+                    </div>
+                `;
+                preview.insertAdjacentHTML('beforeend', imageHtml);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Clear input to allow re-upload of same files if needed
+        document.getElementById('imageInput').value = '';
+    }
+    
+    function removeImage(imageId) {
+        const imageElement = document.getElementById(imageId);
+        if (imageElement) {
+            imageElement.remove();
+            uploadedImages = uploadedImages.filter(img => img.id !== imageId);
+            document.getElementById('imageError').style.display = 'none';
+        }
+    }
+    
+    function updateSummary() {
+        const itemCards = document.querySelectorAll('.psp-item-card');
+        let totalWeight = 0;
+        let estimatedPoints = 0;
+        
+        itemCards.forEach(card => {
+            const typeSelect = card.querySelector('select:first-child');
+            const weightInput = card.querySelector('input[type="number"]');
+            
+            if (typeSelect && weightInput) {
+                const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+                const typePoints = selectedOption ? parseInt(selectedOption.dataset.points || 0) : 0;
+                const weight = parseFloat(weightInput.value) || 0;
+                
+                totalWeight += weight;
+                estimatedPoints += weight * typePoints;
+            }
+        });
+        
+        document.getElementById('summaryItemsCount').textContent = itemCards.length + ' items';
+        document.getElementById('summaryTotalWeight').textContent = totalWeight.toFixed(1) + ' kg';
+        document.getElementById('estimatedPoints').textContent = Math.round(estimatedPoints);
+        
+        const date = document.getElementById('preferredDate').value;
+        const time = document.getElementById('preferredTime').value;
+        
+        if (date) {
+            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                day: 'numeric', month: 'short', year: 'numeric'
+            });
+            document.getElementById('summaryDate').textContent = formattedDate;
+        } else {
+            document.getElementById('summaryDate').textContent = 'Not set';
+        }
+        
+        if (time) {
+            document.getElementById('summaryTime').textContent = time.substring(0, 5);
+        } else {
+            document.getElementById('summaryTime').textContent = 'Not set';
+        }
+    }
+    
+    function submitPickupRequest(providerId) {
+        // Run validation first
+        if (!validateForm()) {
+            // Scroll to first error
+            const firstError = document.querySelector('.error-message[style*="display: block"]');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+        
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        
+        const requestData = {
+            providerID: providerId,
+            pickupAddress: document.getElementById('pickupAddress').value.trim(),
+            pickupState: document.getElementById('pickupState').value,
+            pickupPostcode: document.getElementById('pickupPostcode').value.trim(),
+            preferredDateTime: document.getElementById('preferredDate').value + ' ' + document.getElementById('preferredTime').value,
+            status: 'Pending',
+            specialInstructions: document.getElementById('specialInstructions').value.trim(),
+            items: collectItemData()
+        };
+        
+        fetch('../../php/submitPickupRequest.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('requestIdDisplay').textContent = data.requestID;
+                document.getElementById('successModal').style.display = 'flex';
+            } else {
+                alert('Error submitting request: ' + data.message);
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Pickup Request';
-            });
-        }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while submitting the request. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Pickup Request';
+        });
+    }
+    
+    function collectItemData() {
+        const itemsList = [];
+        const itemCards = document.querySelectorAll('.psp-item-card');
         
-        function collectItemData() {
-            const items = [];
-            const itemCards = document.querySelectorAll('.psp-item-card');
+        itemCards.forEach(card => {
+            const inputs = card.querySelectorAll('select, input');
             
-            itemCards.forEach(card => {
-                const inputs = card.querySelectorAll('select, input');
-                
-                items.push({
-                    itemTypeID: inputs[0]?.value || null,
-                    brand: inputs[1]?.value || '',
-                    model: inputs[2]?.value || '',
-                    description: inputs[3]?.value || '',
-                    weight: parseFloat(inputs[4]?.value) || 0,
-                    length: parseFloat(inputs[5]?.value) || 0,
-                    width: parseFloat(inputs[6]?.value) || 0,
-                    height: parseFloat(inputs[7]?.value) || 0,
+            // Get all field values
+            const typeValue = inputs[0] ? inputs[0].value : '';
+            const brandValue = inputs[1] ? inputs[1].value : '';
+            const modelValue = inputs[2] ? inputs[2].value.trim() : '';
+            const descriptionValue = inputs[3] ? inputs[3].value.trim() : '';
+            const weightValue = inputs[4] ? parseFloat(inputs[4].value) : 0;
+            const lengthValue = inputs[5] ? parseFloat(inputs[5].value) : 0;
+            const widthValue = inputs[6] ? parseFloat(inputs[6].value) : 0;
+            const heightValue = inputs[7] ? parseFloat(inputs[7].value) : 0;
+            
+            // Only include items that have ALL required fields filled
+            if (typeValue && typeValue !== '' && 
+                brandValue && brandValue !== '' && 
+                modelValue && 
+                descriptionValue && 
+                weightValue > 0 && 
+                lengthValue > 0 && 
+                widthValue > 0 && 
+                heightValue > 0) {
+                itemsList.push({
+                    itemTypeID: typeValue,
+                    brand: brandValue,
+                    model: modelValue,
+                    description: descriptionValue,
+                    weight: weightValue,
+                    length: lengthValue,
+                    width: widthValue,
+                    height: heightValue,
                     status: 'Pending'
                 });
-            });
-            
-            return items;
-        }
+            }
+        });
         
-        function validateForm() {
-            // Validate address
-            if (!document.getElementById('pickupAddress').value) {
-                alert('Please enter pickup address');
-                return false;
-            }
-            
-            if (!document.getElementById('pickupState').value) {
-                alert('Please select state');
-                return false;
-            }
-            
-            if (!document.getElementById('pickupPostcode').value) {
-                alert('Please enter postcode');
-                return false;
-            }
-            
-            // Validate date
-            if (!document.getElementById('preferredDate').value) {
-                alert('Please select preferred date');
-                return false;
-            }
-            
-            // Validate items
-            const itemCards = document.querySelectorAll('.psp-item-card');
-            if (itemCards.length === 0) {
-                alert('Please add at least one item');
-                return false;
-            }
-            
-            let hasValidItem = false;
-            itemCards.forEach(card => {
-                const inputs = card.querySelectorAll('select, input');
-                if (inputs[0]?.value && inputs[4]?.value > 0) {
-                    hasValidItem = true;
-                }
-            });
-            
-            if (!hasValidItem) {
-                alert('Please fill in at least one item with type and weight');
-                return false;
-            }
-            
-            return true;
-        }
-        
-        function redirectToHome() {
-            window.location.href = 'pMainPickup.php';
-        }
-        
-        // Listen for form changes to update summary
-        document.getElementById('preferredDate').addEventListener('change', updateSummary);
-        document.getElementById('preferredTime').addEventListener('change', updateSummary);
-    </script>
+        return itemsList;
+    }
+    
+    function redirectToHome() {
+        window.location.href = 'pMainPickup.php';
+    }
+    
+    // Event listeners for summary updates
+    document.getElementById('preferredDate').addEventListener('change', updateSummary);
+    document.getElementById('preferredTime').addEventListener('change', updateSummary);
+</script>
 </body>
 </html>
