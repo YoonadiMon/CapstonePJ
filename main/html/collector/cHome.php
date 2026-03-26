@@ -7,7 +7,7 @@
 
     // Check if user is provide; only providers can access this page
     if ($_SESSION['userType'] !== 'collector') {
-        header("Location: ../../index.html");
+        header("Location: ../../../index.html");
         exit();
     }
 
