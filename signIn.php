@@ -28,7 +28,7 @@ $allowed_states = [
     'Pahang',
     'Perak',
     'Perlis',
-    'Pulau Pinang',
+    'Penang',
     'Selangor',
     'Terengganu',
     'Kuala Lumpur',
