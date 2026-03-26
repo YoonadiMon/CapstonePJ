@@ -59,7 +59,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                         <a href="../../html/admin/aJobs.php">Jobs</a>
                         <a href="../../html/admin/aIssue.html">Issue</a>
                         <a href="../../html/admin/aOperations.html">Operations</a>
-                        <a href="../../html/admin/aReport.html">Report</a>
+                        <a href="../../html/admin/aReport.php">Report</a>
                     
                     <?php elseif ($userType === 'collector'): ?>
                         <!-- Collector Mobile Menu -->
@@ -90,7 +90,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <a href="../../html/admin/aJobs.php">Jobs</a>
                 <a href="../../html/admin/aIssue.html">Issue</a>
                 <a href="../../html/admin/aOperations.html">Operations</a>
-                <a href="../../html/admin/aReport.html">Report</a>
+                <a href="../../html/admin/aReport.php">Report</a>
             
             <?php elseif ($userType === 'collector'): ?>
                 <!-- Collector Desktop Menu -->

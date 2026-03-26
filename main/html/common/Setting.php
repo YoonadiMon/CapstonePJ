@@ -532,7 +532,7 @@ switch($userType) {
                         <a href="../../html/admin/aJobs.php">Jobs</a>
                         <a href="../../html/admin/aIssue.html">Issue</a>
                         <a href="../../html/admin/aOperations.html">Operations</a>
-                        <a href="../../html/admin/aReport.html">Report</a>
+                        <a href="../../html/admin/aReport.php">Report</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -558,7 +558,7 @@ switch($userType) {
                 <a href="../../html/admin/aJobs.php">Jobs</a>
                 <a href="../../html/admin/aIssue.html">Issue</a>
                 <a href="../../html/admin/aOperations.html">Operations</a>
-                <a href="../../html/admin/aReport.html">Report</a>
+                <a href="../../html/admin/aReport.php">Report</a>
             <?php endif; ?>
         </nav>
         <section class="c-navbar-more">

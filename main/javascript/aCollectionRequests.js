@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             case 'completed':
                 buttons = `
-                    <button class="detail-btn primary" onclick="window.location.href='/main/html/admin/aReport.html?request=${request.id}'">
+                    <button class="detail-btn primary" onclick="window.location.href='/main/html/admin/aReport.php?request=${request.id}'">
                         <i class="fas fa-file-alt"></i> View Report
                     </button>
                     <button class="detail-btn secondary" onclick="viewCompletionDetails('${request.id}')">
