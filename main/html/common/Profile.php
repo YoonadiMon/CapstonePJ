@@ -1,10 +1,190 @@
+<?php
+session_start();
+include("../../php/dbConn.php");
+
+// Check if user is logged in
+if (!isset($_SESSION['userID'])) {
+    header("Location: ../../index.html");
+    exit();
+}
+
+// Get the actual logged-in user ID from session
+$userID = $_SESSION['userID'];
+$userType = $_SESSION['userType'];
+
+// Fetch current user data
+$userQuery = "SELECT userID, username, fullname, email, phone, userType FROM tblusers WHERE userID = ?";
+$stmt = $conn->prepare($userQuery);
+$stmt->bind_param("i", $userID);
+$stmt->execute();
+$userResult = $stmt->get_result();
+
+if ($userResult->num_rows === 0) {
+    // User not found in database, logout
+    session_destroy();
+    header("Location: ../../index.html");
+    exit();
+}
+
+$userData = $userResult->fetch_assoc();
+
+// Fetch additional role-specific data
+$roleData = [];
+if ($userData['userType'] == 'provider') {
+    $providerQuery = "SELECT address, state, postcode, point, suspended FROM tblprovider WHERE providerID = ?";
+    $stmt = $conn->prepare($providerQuery);
+    $stmt->bind_param("i", $userID);
+    $stmt->execute();
+    $providerResult = $stmt->get_result();
+    if ($providerResult->num_rows > 0) {
+        $roleData = $providerResult->fetch_assoc();
+    }
+} elseif ($userData['userType'] == 'collector') {
+    $collectorQuery = "SELECT licenseNum, status FROM tblcollector WHERE collectorID = ?";
+    $stmt = $conn->prepare($collectorQuery);
+    $stmt->bind_param("i", $userID);
+    $stmt->execute();
+    $collectorResult = $stmt->get_result();
+    if ($collectorResult->num_rows > 0) {
+        $roleData = $collectorResult->fetch_assoc();
+    }
+} elseif ($userData['userType'] == 'admin') {
+    // Admin might have additional data if needed
+    $adminQuery = "SELECT * FROM tbladmin WHERE adminID = ?";
+    $stmt = $conn->prepare($adminQuery);
+    $stmt->bind_param("i", $userID);
+    $stmt->execute();
+    $adminResult = $stmt->get_result();
+    if ($adminResult->num_rows > 0) {
+        $roleData = $adminResult->fetch_assoc();
+    }
+}
+
+// Handle profile update
+$message = "";
+$messageType = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
+    $fullname = trim($_POST['fullname']);
+    $email = trim($_POST['email']);
+    $phone = trim($_POST['phone']);
+    
+    // Validate inputs
+    $errors = [];
+    
+    if (empty($fullname)) {
+        $errors[] = "Full name is required";
+    }
+    
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Valid email is required";
+    }
+    
+    if (empty($phone)) {
+        $errors[] = "Phone number is required";
+    }
+    
+    // Check if email already exists for another user
+    $emailCheckQuery = "SELECT userID FROM tblusers WHERE email = ? AND userID != ?";
+    $emailCheckStmt = $conn->prepare($emailCheckQuery);
+    $emailCheckStmt->bind_param("si", $email, $userID);
+    $emailCheckStmt->execute();
+    $emailCheckResult = $emailCheckStmt->get_result();
+    
+    if ($emailCheckResult->num_rows > 0) {
+        $errors[] = "Email already in use by another account";
+    }
+    $emailCheckStmt->close();
+    
+    // Handle role-specific updates
+    if ($userData['userType'] == 'provider') {
+        $address = trim($_POST['address']);
+        $state = trim($_POST['state']);
+        $postcode = trim($_POST['postcode']);
+        
+        if (empty($address)) $errors[] = "Address is required";
+        if (empty($state)) $errors[] = "State is required";
+        if (empty($postcode)) $errors[] = "Postcode is required";
+    }
+    
+    if (empty($errors)) {
+        // Update main user table
+        $updateUserQuery = "UPDATE tblusers SET fullname = ?, email = ?, phone = ? WHERE userID = ?";
+        $updateStmt = $conn->prepare($updateUserQuery);
+        $updateStmt->bind_param("sssi", $fullname, $email, $phone, $userID);
+        
+        if ($updateStmt->execute()) {
+            // Update role-specific tables
+            $roleUpdateSuccess = true;
+            
+            if ($userData['userType'] == 'provider') {
+                $address = trim($_POST['address']);
+                $state = trim($_POST['state']);
+                $postcode = trim($_POST['postcode']);
+                
+                $updateProviderQuery = "UPDATE tblprovider SET address = ?, state = ?, postcode = ? WHERE providerID = ?";
+                $updateProviderStmt = $conn->prepare($updateProviderQuery);
+                $updateProviderStmt->bind_param("sssi", $address, $state, $postcode, $userID);
+                $roleUpdateSuccess = $updateProviderStmt->execute();
+                $updateProviderStmt->close();
+            }
+            
+            if ($roleUpdateSuccess) {
+                $message = "Profile updated successfully!";
+                $messageType = "success";
+                
+                // Refresh user data
+                $userData['fullname'] = $fullname;
+                $userData['email'] = $email;
+                $userData['phone'] = $phone;
+                
+                if ($userData['userType'] == 'provider') {
+                    $roleData['address'] = $address;
+                    $roleData['state'] = $state;
+                    $roleData['postcode'] = $postcode;
+                }
+            } else {
+                $message = "Error updating role-specific data. Please try again.";
+                $messageType = "error";
+            }
+        } else {
+            $message = "Error updating profile. Please try again.";
+            $messageType = "error";
+        }
+        $updateStmt->close();
+    } else {
+        $message = implode(", ", $errors);
+        $messageType = "error";
+    }
+}
+
+$stmt->close();
+$conn->close();
+
+// Determine home URL based on user type
+$homeUrl = "";
+switch($userType) {
+    case 'admin':
+        $homeUrl = "../../html/admin/aHome.html";
+        break;
+    case 'collector':
+        $homeUrl = "../../html/collector/cHome.php";
+        break;
+    case 'provider':
+        $homeUrl = "../../html/provider/pHome.php";
+        break;
+    default:
+        $homeUrl = "../../index.html";
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Edit Profile</title>
+    <title>Edit Profile - AfterVolt</title>
     <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
 
     <link rel="stylesheet" href="../../style/style.css">
@@ -14,7 +194,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
     <style>
-        /* ── PROFILE PAGE STYLES ─────────────────────────────────────────── */
+        /* Profile Page Styles */
         .profile-page-wrapper {
             max-width: 820px;
             margin: 2rem auto;
@@ -25,7 +205,6 @@
             margin-bottom: 1.25rem;
         }
 
-        /* ── BACK BUTTON ── */
         .back-btn {
             display: inline-flex;
             align-items: center;
@@ -74,6 +253,10 @@
 
         .profile-banner {
             height: 84px;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        }
+        .dark-mode .profile-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
         }
 
         .profile-top {
@@ -101,26 +284,10 @@
             font-weight: 700;
             color: #fff;
             flex-shrink: 0;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 2px 10px var(--shadow-color);
+            background: #93c5fd;
         }
-        .avatar:hover .avatar-overlay { opacity: 1; }
-        .avatar-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-            font-size: 0.62rem;
-            font-weight: 700;
-            color: white;
-            gap: 3px;
+        .dark-mode .avatar {
+            background: #1e3a8a;
         }
 
         .avatar-name-block { padding-bottom: 4px; }
@@ -146,13 +313,36 @@
             margin-top: 6px;
             border: 1.5px solid;
         }
-        .role-admin     { background: hsla(237,52%,93%,1); color: hsl(233, 85%, 63%); border-color: hsl(237,40%,75%); }
-        .role-collector { background: hsla(130,50%,92%,1); color: #2e7d32;          border-color: hsl(130,40%,70%); }
-        .role-provider  { background: hsla(260,50%,93%,1); color: #3d75e4;          border-color: hsl(260,40%,75%); }
-
-        .dark-mode .role-admin     { background: hsla(237,52%,20%,0.6); color: hsl(237,80%,80%); border-color: hsl(237,40%,45%); }
-        .dark-mode .role-collector { background: hsla(130,50%,15%,0.6); color: hsl(130,60%,70%); border-color: hsl(130,40%,35%); }
-        .dark-mode .role-provider  { background: hsla(260,50%,20%,0.6); color: hsl(260,80%,80%); border-color: hsl(260,40%,45%); }
+        .role-admin { 
+            background: hsla(237,52%,93%,1); 
+            color: hsl(233, 85%, 63%); 
+            border-color: hsl(237,40%,75%); 
+        }
+        .role-collector { 
+            background: hsla(130,50%,92%,1); 
+            color: #2e7d32;          
+            border-color: hsl(130,40%,70%); 
+        }
+        .role-provider { 
+            background: hsla(260,50%,93%,1); 
+            color: #3d75e4;          
+            border-color: hsl(260,40%,75%); 
+        }
+        .dark-mode .role-admin { 
+            background: hsla(237,52%,20%,0.6); 
+            color: hsl(237,80%,80%); 
+            border-color: hsl(237,40%,45%); 
+        }
+        .dark-mode .role-collector { 
+            background: hsla(130,50%,15%,0.6); 
+            color: hsl(130,60%,70%); 
+            border-color: hsl(130,40%,35%); 
+        }
+        .dark-mode .role-provider { 
+            background: hsla(260,50%,20%,0.6); 
+            color: hsl(260,80%,80%); 
+            border-color: hsl(260,40%,45%); 
+        }
 
         .locked-note {
             display: flex;
@@ -230,10 +420,6 @@
             cursor: not-allowed;
             border-color: transparent;
         }
-        .form-group input[readonly]:focus {
-            box-shadow: none;
-            border-color: transparent;
-        }
 
         /* Form Footer */
         .form-footer {
@@ -272,8 +458,42 @@
         .btn-save:hover { background: var(--DarkerMainBlue); }
 
         /* Toast */
-        @keyframes slideIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes slideOut { from { opacity:1; transform:translateY(0); }   to { opacity:0; transform:translateY(10px); } }
+        .c-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .c-toast.success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .c-toast.error {
+            background: #ef4444;
+            color: white;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; }
@@ -284,10 +504,10 @@
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
 
-    <!-- Logo + Name & Navbar — rendered dynamically per role -->
+    <!-- Logo + Name & Navbar -->
     <header>
         <section class="c-logo-section">
-            <a href="#" id="navLogoLink" class="c-logo-link">
+            <a href="<?php echo $homeUrl; ?>" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -303,27 +523,68 @@
                         <button id="themeToggleMobile">
                             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                         </button>
-                        <a href="../../html/common/Setting.html">
+                        <a href="../../html/common/Setting.php">
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <div id="mobileNavLinks"></div>
+                    <?php if ($userType == 'provider'): ?>
+                        <a href="../../html/provider/pHome.php">Home</a>
+                        <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
+                        <a href="../../html/provider/pMainPickup.php">My Pickup</a>
+                        <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
+                        <a href="../../html/common/About.html">About</a>
+                    <?php elseif ($userType == 'collector'): ?>
+                        <a href="../../html/collector/cHome.php">Home</a>
+                        <a href="../../html/collector/cMyJobs.php">My Jobs</a>
+                        <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
+                        <a href="../../html/collector/cCompletedJobs.php">History</a>
+                        <a href="../../html/common/About.html">About</a>
+                    <?php elseif ($userType == 'admin'): ?>
+                        <a href="../../html/admin/aHome.html">Home</a>
+                        <a href="../../html/admin/aRequests.php">Requests</a>
+                        <a href="../../html/admin/aJobs.php">Jobs</a>
+                        <a href="../../html/admin/aIssue.html">Issue</a>
+                        <a href="../../html/admin/aOperations.html">Operations</a>
+                        <a href="../../html/admin/aReport.html">Report</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </nav>
 
         <!-- Desktop Nav -->
-        <nav class="c-navbar-desktop" id="desktopNavLinks"></nav>
+        <nav class="c-navbar-desktop">
+            <?php if ($userType == 'provider'): ?>
+                <a href="../../html/provider/pHome.php">Home</a>
+                <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
+                <a href="../../html/provider/pMainPickup.php">My Pickup</a>
+                <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
+                <a href="../../html/common/About.html">About</a>
+            <?php elseif ($userType == 'collector'): ?>
+                <a href="../../html/collector/cHome.php">Home</a>
+                <a href="../../html/collector/cMyJobs.php">My Jobs</a>
+                <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
+                <a href="../../html/collector/cCompletedJobs.php">History</a>
+                <a href="../../html/common/About.html">About</a>
+            <?php elseif ($userType == 'admin'): ?>
+                <a href="../../html/admin/aHome.html">Home</a>
+                <a href="../../html/admin/aRequests.php">Requests</a>
+                <a href="../../html/admin/aJobs.php">Jobs</a>
+                <a href="../../html/admin/aIssue.html">Issue</a>
+                <a href="../../html/admin/aOperations.html">Operations</a>
+                <a href="../../html/admin/aReport.html">Report</a>
+            <?php endif; ?>
+        </nav>
 
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
                 <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
-            <a href="../../html/common/Setting.html">
+            <a href="../../html/common/Setting.php">
                 <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
             </a>
         </section>
     </header>
+
     <hr>
 
     <!-- Main Content -->
@@ -332,33 +593,48 @@
 
             <!-- PAGE HEADER -->
             <div class="page-header">
-                <a href="/main/html/common/Setting.html" class="back-btn">
+                <a href="Setting.php" class="back-btn">
                     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                         <path d="M19 12H5M12 5l-7 7 7 7"/>
                     </svg>
                     Back to Settings
                 </a>
                 <h1>Edit Profile</h1>
-                <p id="pageSubtitle">Update your profile information</p>
+                <p>Update your profile information</p>
             </div>
 
             <div class="profile-card">
-                <div class="profile-banner" id="profileBanner"></div>
+                <div class="profile-banner"></div>
 
                 <div class="profile-top">
                     <div class="avatar-wrap">
-                        <div class="avatar" id="avatarDisplay" onclick="document.getElementById('photoInput').click()" title="Change photo">
+                        <div class="avatar" id="avatarDisplay">
                             <span id="avatarInitials"></span>
-                            <div class="avatar-overlay">
-                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                Edit
-                            </div>
                         </div>
-                        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoChange(event)">
                         <div class="avatar-name-block">
-                            <div class="full-name" id="displayName"></div>
-                            <div class="user-email" id="displayEmail"></div>
-                            <div id="roleBadge" class="role-badge"></div>
+                            <div class="full-name"><?php echo htmlspecialchars($userData['fullname']); ?></div>
+                            <div class="user-email"><?php echo htmlspecialchars($userData['email']); ?></div>
+                            <div id="roleBadge" class="role-badge role-<?php echo $userType; ?>">
+                                <?php 
+                                $roleIcon = '';
+                                $roleLabel = '';
+                                switch($userType) {
+                                    case 'admin':
+                                        $roleIcon = '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+                                        $roleLabel = 'Admin';
+                                        break;
+                                    case 'collector':
+                                        $roleIcon = '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+                                        $roleLabel = 'Collector';
+                                        break;
+                                    case 'provider':
+                                        $roleIcon = '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+                                        $roleLabel = 'Provider';
+                                        break;
+                                }
+                                echo $roleIcon . ' ' . $roleLabel;
+                                ?>
+                            </div>
                             <div class="locked-note">
                                 <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                                 Role is assigned by the system and cannot be changed
@@ -368,12 +644,86 @@
                 </div>
 
                 <hr class="card-divider">
-                <div id="profileForm"></div>
+                
+                <form method="POST" action="" id="profileForm">
+                    <div class="form-section">
+                        <div class="section-title">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Personal Information
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full">
+                                <label>Full Name</label>
+                                <input type="text" name="fullname" value="<?php echo htmlspecialchars($userData['fullname']); ?>" required />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" name="email" value="<?php echo htmlspecialchars($userData['email']); ?>" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" name="phone" value="<?php echo htmlspecialchars($userData['phone']); ?>" required />
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="form-footer">
-                    <button class="btn-cancel" onclick="cancelChanges()">Cancel</button>
-                    <button class="btn-save" onclick="saveChanges()">Save Changes</button>
-                </div>
+                    <?php if ($userType == 'provider'): ?>
+                    <div class="form-section">
+                        <div class="section-title">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            Address Information
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full">
+                                <label>Address</label>
+                                <input type="text" name="address" value="<?php echo htmlspecialchars($roleData['address'] ?? ''); ?>" required />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>State</label>
+                                <input type="text" name="state" value="<?php echo htmlspecialchars($roleData['state'] ?? ''); ?>" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Postcode</label>
+                                <input type="text" name="postcode" value="<?php echo htmlspecialchars($roleData['postcode'] ?? ''); ?>" required />
+                            </div>
+                        </div>
+                        <?php if (isset($roleData['point'])): ?>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Recycling Points</label>
+                                <input type="text" value="<?php echo htmlspecialchars($roleData['point']); ?>" readonly />
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php elseif ($userType == 'collector'): ?>
+                    <div class="form-section">
+                        <div class="section-title">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                            Collector Details
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>License Number</label>
+                                <input type="text" value="<?php echo htmlspecialchars($roleData['licenseNum'] ?? ''); ?>" readonly />
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <input type="text" value="<?php echo htmlspecialchars($roleData['status'] ?? ''); ?>" readonly />
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="form-footer">
+                        <button type="button" class="btn-cancel" onclick="window.location.href='Setting.php'">Cancel</button>
+                        <button type="submit" name="update_profile" class="btn-save">Save Changes</button>
+                    </div>
+                </form>
             </div>
         </div>
     </main>
@@ -383,7 +733,7 @@
     <!-- Footer -->
     <footer>
         <section class="c-footer-info-section">
-            <a href="#" id="footerLogoLink">
+            <a href="<?php echo $homeUrl; ?>">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -393,333 +743,70 @@
             <div class="c-text c-text-label">+60 12 345 6789</div>
             <div class="c-text">abc@gmail.com</div>
         </section>
-        <section class="c-footer-links-section" id="footerLinks"></section>
+        <section class="c-footer-links-section">
+            <?php if ($userType == 'provider'): ?>
+                <div><b>Quick Links</b><br>
+                    <a href="../../html/provider/pHome.php">Home</a><br>
+                    <a href="../../html/common/About.html">About</a>
+                </div>
+                <div><b>Account</b><br>
+                    <a href="Profile.php">Edit Profile</a><br>
+                    <a href="Setting.php">Settings</a>
+                </div>
+            <?php elseif ($userType == 'collector'): ?>
+                <div><b>My Jobs</b><br>
+                    <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
+                    <a href="../../html/collector/cInProgress.php">In Progress</a><br>
+                    <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
+                </div>
+                <div><b>Proxy</b><br>
+                    <a href="../../html/common/About.html">About</a><br>
+                    <a href="Profile.php">Edit Profile</a><br>
+                    <a href="Setting.php">Setting</a>
+                </div>
+            <?php elseif ($userType == 'admin'): ?>
+                <div><b>Management</b><br>
+                    <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
+                    <a href="../../html/admin/aJobs.php">Collection Jobs</a>
+                </div>
+                <div><b>Proxy</b><br>
+                    <a href="Profile.php">Edit Profile</a><br>
+                    <a href="Setting.php">Setting</a>
+                </div>
+            <?php endif; ?>
+        </section>
     </footer>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="../../javascript/mainScript.js"></script>
+    <script src="../../javascript/mainScript.js"></script>
     <script>
-        // ── USER DATA ──────────────────────────────────────────────────────
-        const USERS = [
-            {
-                id: 'admin1', role: 'admin',
-                firstName: 'Sarah', lastName: 'Lim',
-                email: 'sarah.lim@aftervolt.com', phone: '+6 012 111 2233',
-                department: 'Operations', staffId: 'ADM-001',
-                bgGradient: 'linear-gradient(135deg, hsl(200, 90%, 80%) 0%, hsl(180, 85%, 75%) 100%)'
-            },
-            {
-                id: 'col1', role: 'collector',
-                firstName: 'Rajan', lastName: 'Kumar',
-                email: 'rajan.k@aftervolt.com', phone: '+6 019 334 5566',
-                vehicleId: 'VEH-042', licenseNo: 'GCK 1234', area: 'Petaling Jaya',
-                bgGradient: 'linear-gradient(135deg, hsl(130,55%,85%) 0%, hsl(150,50%,78%) 100%)'
-            },
-            {
-                id: 'prov1', role: 'provider',
-                firstName: 'Wei', lastName: 'Chen',
-                email: 'wei.chen@greencycle.com', phone: '+6 03 7890 1234',
-                companyName: 'GreenCycle Sdn Bhd', regNo: 'RC-20193847',
-                address: 'No. 12, Jalan Recycling, Shah Alam',
-                bgGradient: 'linear-gradient(135deg, hsl(260,60%,88%) 0%, hsl(280,55%,82%) 100%)'
-            }
-        ];
-
-        const ROLE_CONFIG = {
-            admin: {
-                label: 'Admin',
-                badgeClass: 'role-admin',
-                subtitle: 'Manage your administrator profile',
-                homeUrl: '../../html/admin/aHome.html',
-                icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-                navLinks: [
-                    { label: 'Home',       href: '../../html/admin/aHome.html' },
-                    { label: 'Requests',   href: '../../html/admin/aRequests.html' },
-                    { label: 'Jobs',       href: '../../html/admin/aJobs.html' },
-                    { label: 'Issue',      href: '../../html/admin/aIssue.html' },
-                    { label: 'Operations', href: '../../html/admin/aOperations.html' },
-                    { label: 'Report',     href: '../../html/admin/aReport.html' }
-                ],
-                footerLinks: `
-                    <div><b>Management</b><br>
-                        <a href="../../html/admin/aRequests.html">Collection Requests</a><br>
-                        <a href="../../html/admin/aJobs.html">Collection Jobs</a><br>
-                        <a href="../../html/admin/aIssue.html">Issue</a>
-                    </div>
-                    <div><b>System Operation</b><br>
-                        <a href="../../html/admin/aProviders.html">Providers</a><br>
-                        <a href="../../html/admin/aCollectors.html">Collectors</a><br>
-                        <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
-                        <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
-                        <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
-                    </div>
-                    <div><b>Proxy</b><br>
-                        <a href="../../html/common/Profile.html">Edit Profile</a><br>
-                        <a href="../../html/common/Setting.html">Setting</a>
-                    </div>`
-            },
-            collector: {
-                label: 'Collector',
-                badgeClass: 'role-collector',
-                subtitle: 'Manage your collector profile',
-                homeUrl: '../../html/collector/cHome.php',
-                icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
-                navLinks: [
-                    { label: 'Home',         href: '../../html/collector/cHome.php' },
-                    { label: 'My Jobs',      href: '../../html/collector/cMyJobs.php' },
-                    { label: 'Ongoing Jobs', href: '../../html/collector/cInProgress.php' },
-                    { label: 'History',      href: '../../html/collector/cCompletedJobs.php' },
-                    { label: 'About',        href: '../../html/common/About.html' }
-                ],
-                footerLinks: `
-                    <div><b>My Jobs</b><br>
-                        <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
-                        <a href="../../html/collector/cInProgress.php">In Progress</a><br>
-                        <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
-                    </div>
-                    <div><b>Support</b><br>
-                        <a href="../../html/collector/cReportIssues.html">Report Issue</a>
-                    </div>
-                    <div><b>Proxy</b><br>
-                        <a href="../../html/common/About.html">About</a><br>
-                        <a href="../../html/common/Profile.html">Edit Profile</a><br>
-                        <a href="../../html/common/Setting.html">Setting</a>
-                    </div>`
-            },
-            provider: {
-                label: 'Provider',
-                badgeClass: 'role-provider',
-                subtitle: 'Manage your provider profile',
-                homeUrl: '../../html/provider/pHome.php',
-                icon: `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
-                navLinks: [
-                    { label: 'Home',             href: '../../html/provider/pHome.php' },
-                    { label: 'Schedule Pickup',  href: '../../html/provider/pSchedulePickup.php' },
-                    { label: 'My Pickup',        href: '../../html/provider/pMainPickup.php' },
-                    { label: 'E-waste Guide',    href: '../../html/provider/pEwasteGuide.php' },
-                    { label: 'About',            href: '../../html/common/About.html' }
-                ],
-                footerLinks: `
-                    <div><b>Recycling</b><br>
-                        <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a>
-                    </div>
-                    <div><b>My Activity</b><br>
-                        <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br>
-                        <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-                    </div>
-                    <div><b>Proxy</b><br>
-                        <a href="../../html/common/About.html">About</a><br>
-                        <a href="../../html/common/Profile.html">Edit Profile</a><br>
-                        <a href="../../html/common/Setting.html">Setting</a>
-                    </div>`
-            }
-        };
-
-        let currentUser = null;
-        let originalValues = {};
-
-        function getUserFromUrl() {
-            const params = new URLSearchParams(window.location.search);
-            const userId = params.get('user');
-            return USERS.find(u => u.id === userId) || USERS[0];
+        // Display toast message if there's a PHP message
+        <?php if ($message): ?>
+        showToast('<?php echo addslashes($message); ?>', '<?php echo $messageType; ?>');
+        <?php endif; ?>
+        
+        // Set avatar initials
+        const fullname = "<?php echo htmlspecialchars($userData['fullname']); ?>";
+        const nameParts = fullname.split(' ');
+        let initials = '';
+        if (nameParts.length >= 2) {
+            initials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+        } else if (nameParts.length === 1) {
+            initials = nameParts[0][0].toUpperCase();
         }
-
-        function buildNav(role) {
-            const cfg = ROLE_CONFIG[role];
-            const links = cfg.navLinks.map(l => `<a href="${l.href}">${l.label}</a>`).join('');
-            document.getElementById('desktopNavLinks').innerHTML = links;
-            document.getElementById('mobileNavLinks').innerHTML  = links;
-            document.getElementById('navLogoLink').href    = cfg.homeUrl;
-            document.getElementById('footerLogoLink').href = cfg.homeUrl;
-            document.getElementById('footerLinks').innerHTML = cfg.footerLinks;
-        }
-
-        function buildForm(user) {
-            const common = `
-                <div class="form-section">
-                    <div class="section-title">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        Personal Information
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label>First Name</label><input type="text" id="firstName" value="${user.firstName}" /></div>
-                        <div class="form-group"><label>Last Name</label><input type="text" id="lastName" value="${user.lastName}" /></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Email Address</label><input type="email" id="email" value="${user.email}" /></div>
-                        <div class="form-group"><label>Phone</label><input type="tel" id="phone" value="${user.phone}" /></div>
-                    </div>
-                </div>`;
-
-            let roleSection = '';
-
-            if (user.role === 'admin') roleSection = `
-                <div class="form-section">
-                    <div class="section-title">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        Admin Details
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Department</label><input type="text" id="department" value="${user.department}" /></div>
-                        <div class="form-group"><label>Staff ID</label><input type="text" value="${user.staffId}" readonly /></div>
-                    </div>
-                </div>`;
-
-            if (user.role === 'collector') roleSection = `
-                <div class="form-section">
-                    <div class="section-title">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                        Collector Details
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Vehicle ID</label><input type="text" value="${user.vehicleId}" readonly /></div>
-                        <div class="form-group"><label>License No.</label><input type="text" value="${user.licenseNo}" readonly /></div>
-                    </div>
-                </div>`;
-
-            if (user.role === 'provider') roleSection = `
-                <div class="form-section">
-                    <div class="section-title">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        Company Details
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Company Name</label><input type="text" id="companyName" value="${user.companyName}" /></div>
-                        <div class="form-group"><label>Registration No.</label><input type="text" value="${user.regNo}" readonly /></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group full"><label>Business Address</label><input type="text" id="address" value="${user.address}" /></div>
-                    </div>
-                </div>`;
-
-            return common + roleSection;
-        }
-
-        function renderProfile(user) {
-            const cfg = ROLE_CONFIG[user.role];
-            const initials = (user.firstName[0] + user.lastName[0]).toUpperCase();
-
-            const banner = document.getElementById('profileBanner');
-            const av     = document.getElementById('avatarDisplay');
-            const initialsEl = document.getElementById('avatarInitials');
-
-            if (document.body.classList.contains('dark-mode')) {
-                banner.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)';
-                av.style.background = '#1e3a8a';
-                initialsEl.style.color = '#ffffff';
-            } else {
-                banner.style.background = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)';
-                av.style.background = '#93c5fd';
-                initialsEl.style.color = '#1e293b';
-            }
-            av.style.backgroundImage = '';
-
-            initialsEl.textContent = initials;
-            document.getElementById('displayName').textContent  = user.firstName + ' ' + user.lastName;
-            document.getElementById('displayEmail').textContent = user.email;
-
-            const badge = document.getElementById('roleBadge');
-            badge.className = 'role-badge ' + cfg.badgeClass;
-            badge.innerHTML = cfg.icon + ' ' + cfg.label;
-
-            document.getElementById('pageSubtitle').textContent = cfg.subtitle;
-            document.getElementById('profileForm').innerHTML    = buildForm(user);
-
-            storeOriginals();
-        }
-
-        const themeObserver = new MutationObserver(() => renderProfile(currentUser));
-        themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-
-        function storeOriginals() {
-            originalValues = {};
-            ['firstName','lastName','email','phone','department','area','companyName','address'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) originalValues[id] = el.value;
-            });
-        }
-
-        function saveChanges() {
-            const first = document.getElementById('firstName')?.value.trim();
-            const last  = document.getElementById('lastName')?.value.trim();
-            const email = document.getElementById('email')?.value.trim();
-            if (!first || !last) { showToast('Name fields cannot be empty.', 'error'); return; }
-            if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) { showToast('Please enter a valid email.', 'error'); return; }
-
-            currentUser.firstName = first;
-            currentUser.lastName  = last;
-            currentUser.email     = email;
-            currentUser.phone     = document.getElementById('phone')?.value.trim() || currentUser.phone;
-            if (document.getElementById('department'))  currentUser.department  = document.getElementById('department').value;
-            if (document.getElementById('companyName')) currentUser.companyName = document.getElementById('companyName').value;
-            if (document.getElementById('address'))     currentUser.address     = document.getElementById('address').value;
-
-            document.getElementById('displayName').textContent  = first + ' ' + last;
-            document.getElementById('displayEmail').textContent = email;
-            document.getElementById('avatarInitials').textContent = (first[0] + last[0]).toUpperCase();
-            storeOriginals();
-            saveToStorage();
-            showToast('Profile saved successfully!', 'success');
-        }
-
-        function cancelChanges() {
-            Object.keys(originalValues).forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = originalValues[id];
-            });
-            showToast('Changes discarded.', 'info');
-        }
-
-        function handlePhotoChange(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            if (file.size > 2 * 1024 * 1024) { showToast('File exceeds 2MB limit.', 'error'); return; }
-            const reader = new FileReader();
-            reader.onload = e => {
-                const av = document.getElementById('avatarDisplay');
-                av.style.backgroundImage = `url(${e.target.result})`;
-                av.style.backgroundSize = 'cover';
-                av.style.backgroundPosition = 'center';
-                document.getElementById('avatarInitials').textContent = '';
-            };
-            reader.readAsDataURL(file);
-        }
-
+        document.getElementById('avatarInitials').textContent = initials;
+        
+        // Toast function
         function showToast(message, type = 'success') {
-            document.querySelector('.toast')?.remove();
-            const colors = { success: 'hsl(145,50%,40%)', error: 'hsl(0,65%,52%)', info: 'hsl(225,100%,40%)' };
-            const icons  = { success: '✓', error: '✕', info: 'ℹ' };
+            const existingToast = document.querySelector('.c-toast');
+            if (existingToast) existingToast.remove();
+            
             const t = document.createElement('div');
-            t.className = 'toast';
-            t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${colors[type]};color:white;padding:10px 18px;border-radius:24px;font-size:0.82rem;font-family:'Inter',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;animation:slideIn .25s ease;`;
-            t.innerHTML = `<span style="font-weight:700">${icons[type]}</span> ${message}`;
+            t.className = `c-toast ${type}`;
+            const icon = type === 'success' ? '✓' : '✕';
+            t.innerHTML = `<span style="font-weight:700">${icon}</span> ${message}`;
             document.body.appendChild(t);
-            setTimeout(() => {
-                t.style.animation = 'slideOut .25s ease forwards';
-                setTimeout(() => t.remove(), 250);
-            }, 3000);
+            setTimeout(() => t.remove(), 3000);
         }
-
-        function saveToStorage() {
-            localStorage.setItem('aftervolt_users', JSON.stringify(USERS));
-        }
-
-        function loadFromStorage() {
-            const saved = localStorage.getItem('aftervolt_users');
-            if (!saved) return;
-            try {
-                const parsed = JSON.parse(saved);
-                parsed.forEach(savedUser => {
-                    const user = USERS.find(u => u.id === savedUser.id);
-                    if (user) Object.assign(user, savedUser);
-                });
-            } catch(e) {}
-        }
-
-        // ── INIT ──────────────────────────────────────────────────────────
-        loadFromStorage();
-        currentUser = getUserFromUrl();
-        buildNav(currentUser.role);
-        renderProfile(currentUser);
     </script>
 </body>
 </html>
