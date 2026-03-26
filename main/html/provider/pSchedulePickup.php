@@ -1004,7 +1004,7 @@ if ($result) {
 
 <script src="../../javascript/mainScript.js"></script>
 <script>
-    // pSchedulePickup.js with Enhanced Validations - COMPLETE VERSION
+    // pSchedulePickup.js with Enhanced Validations - COMPLETE VERSION WITH FIXED SUMMARY
     
     let itemCount = 0;
     let items = [];
@@ -1202,8 +1202,14 @@ if ($result) {
         document.getElementById('pickupAddress').addEventListener('input', () => hideFieldError('address'));
         document.getElementById('pickupState').addEventListener('change', () => hideFieldError('state'));
         document.getElementById('pickupPostcode').addEventListener('input', () => hideFieldError('postcode'));
-        document.getElementById('preferredDate').addEventListener('change', () => hideFieldError('date'));
-        document.getElementById('preferredTime').addEventListener('change', () => hideFieldError('time'));
+        document.getElementById('preferredDate').addEventListener('change', () => {
+            hideFieldError('date');
+            updateSummary();
+        });
+        document.getElementById('preferredTime').addEventListener('change', () => {
+            hideFieldError('time');
+            updateSummary();
+        });
         
         // Character counter for special instructions
         const textarea = document.getElementById('specialInstructions');
@@ -1260,11 +1266,11 @@ if ($result) {
                     </div>
                     <div class="psp-item-field">
                         <label>Model <span class="required-star">*</span></label>
-                        <input type="text" placeholder="e.g., iPhone 12" onchange="updateSummary(); hideFieldError('items')" maxlength="100">
+                        <input type="text" placeholder="e.g., iPhone 12" oninput="updateSummary(); hideFieldError('items')" maxlength="100">
                     </div>
                     <div class="psp-item-field">
                         <label>Description <span class="required-star">*</span></label>
-                        <input type="text" placeholder="Brief description (e.g., working condition, color)" onchange="updateSummary(); hideFieldError('items')" maxlength="200">
+                        <input type="text" placeholder="Brief description (e.g., working condition, color)" oninput="updateSummary(); hideFieldError('items')" maxlength="200">
                     </div>
                     <div class="psp-item-field">
                         <label>Weight (kg) <span class="required-star">*</span></label>
@@ -1272,15 +1278,15 @@ if ($result) {
                     </div>
                     <div class="psp-item-field">
                         <label>Length (cm) <span class="required-star">*</span></label>
-                        <input type="number" step="0.1" min="0.1" placeholder="0.0" onchange="updateSummary(); hideFieldError('items')">
+                        <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
                     </div>
                     <div class="psp-item-field">
                         <label>Width (cm) <span class="required-star">*</span></label>
-                        <input type="number" step="0.1" min="0.1" placeholder="0.0" onchange="updateSummary(); hideFieldError('items')">
+                        <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
                     </div>
                     <div class="psp-item-field">
                         <label>Height (cm) <span class="required-star">*</span></label>
-                        <input type="number" step="0.1" min="0.1" placeholder="0.0" onchange="updateSummary(); hideFieldError('items')">
+                        <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
                     </div>
                 </div>
             </div>
@@ -1392,31 +1398,107 @@ if ($result) {
         const itemCards = document.querySelectorAll('.psp-item-card');
         let totalWeight = 0;
         let estimatedPoints = 0;
+        let totalVolume = 0;
+        let itemDetails = [];
         
-        itemCards.forEach(card => {
-            const typeSelect = card.querySelector('select:first-child');
-            const weightInput = card.querySelector('input[type="number"]');
+        itemCards.forEach((card, index) => {
+            const inputs = card.querySelectorAll('select, input');
+            const typeSelect = inputs[0];
+            const weightInput = inputs[4];
+            const lengthInput = inputs[5];
+            const widthInput = inputs[6];
+            const heightInput = inputs[7];
+            const brandInput = inputs[1];
+            const modelInput = inputs[2];
             
             if (typeSelect && weightInput) {
                 const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+                const typeName = selectedOption ? selectedOption.text : 'Unknown';
                 const typePoints = selectedOption ? parseInt(selectedOption.dataset.points || 0) : 0;
                 const weight = parseFloat(weightInput.value) || 0;
+                const length = parseFloat(lengthInput?.value) || 0;
+                const width = parseFloat(widthInput?.value) || 0;
+                const height = parseFloat(heightInput?.value) || 0;
+                const volume = length * width * height;
                 
                 totalWeight += weight;
                 estimatedPoints += weight * typePoints;
+                totalVolume += volume;
+                
+                if (weight > 0) {
+                    itemDetails.push({
+                        number: index + 1,
+                        type: typeName,
+                        brand: brandInput?.value || 'Not specified',
+                        model: modelInput?.value || 'Not specified',
+                        weight: weight,
+                        dimensions: length > 0 && width > 0 && height > 0 ? `${length} × ${width} × ${height} cm` : 'Not specified'
+                    });
+                }
             }
         });
         
+        // Update summary statistics
         document.getElementById('summaryItemsCount').textContent = itemCards.length + ' items';
-        document.getElementById('summaryTotalWeight').textContent = totalWeight.toFixed(1) + ' kg';
+        document.getElementById('summaryTotalWeight').textContent = totalWeight.toFixed(2) + ' kg';
         document.getElementById('estimatedPoints').textContent = Math.round(estimatedPoints);
         
+        // Add more detailed summary information
+        const summaryCard = document.querySelector('.psp-summary-card');
+        
+        // Remove existing dynamic summary items if any (keep the static ones)
+        const existingDynamicItems = summaryCard.querySelectorAll('.dynamic-summary-item');
+        existingDynamicItems.forEach(item => item.remove());
+        
+        // Add total volume if available
+        if (totalVolume > 0) {
+            const volumeDiv = document.createElement('div');
+            volumeDiv.className = 'psp-summary-item dynamic-summary-item';
+            volumeDiv.innerHTML = `
+                <span>Total Volume</span>
+                <span>${totalVolume.toFixed(2)} cm³</span>
+            `;
+            const pointsEstimate = summaryCard.querySelector('.psp-points-estimate');
+            pointsEstimate.parentNode.insertBefore(volumeDiv, pointsEstimate);
+        }
+        
+        // Add item details section
+        if (itemDetails.length > 0) {
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'psp-item-details-summary dynamic-summary-item';
+            detailsDiv.style.marginTop = '15px';
+            detailsDiv.style.borderTop = '1px solid #e0e0e0';
+            detailsDiv.style.paddingTop = '12px';
+            
+            let detailsHtml = '<div style="font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Items Details:</div>';
+            itemDetails.forEach(item => {
+                detailsHtml += `
+                    <div style="font-size: 0.75rem; margin-bottom: 8px; padding: 6px; background: #f8f9fa; border-radius: 6px;">
+                        <strong>Item #${item.number}:</strong> ${item.type}<br>
+                        ${item.brand !== 'Not specified' ? `Brand: ${item.brand}<br>` : ''}
+                        ${item.model !== 'Not specified' ? `Model: ${item.model}<br>` : ''}
+                        Weight: ${item.weight.toFixed(2)} kg<br>
+                        ${item.dimensions !== 'Not specified' ? `Dimensions: ${item.dimensions}` : ''}
+                    </div>
+                `;
+            });
+            
+            detailsDiv.innerHTML = detailsHtml;
+            
+            const submitBtn = summaryCard.querySelector('.psp-submit-btn');
+            submitBtn.parentNode.insertBefore(detailsDiv, submitBtn);
+        }
+        
+        // Update date and time in summary
         const date = document.getElementById('preferredDate').value;
         const time = document.getElementById('preferredTime').value;
         
         if (date) {
             const formattedDate = new Date(date).toLocaleDateString('en-US', {
-                day: 'numeric', month: 'short', year: 'numeric'
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
             document.getElementById('summaryDate').textContent = formattedDate;
         } else {
@@ -1424,9 +1506,40 @@ if ($result) {
         }
         
         if (time) {
-            document.getElementById('summaryTime').textContent = time.substring(0, 5);
+            const timeMap = {
+                '09:00:00': '09:00 AM',
+                '10:00:00': '10:00 AM',
+                '11:00:00': '11:00 AM',
+                '14:00:00': '02:00 PM',
+                '15:00:00': '03:00 PM',
+                '16:00:00': '04:00 PM',
+                '17:00:00': '05:00 PM'
+            };
+            document.getElementById('summaryTime').textContent = timeMap[time] || time.substring(0, 5);
         } else {
             document.getElementById('summaryTime').textContent = 'Not set';
+        }
+        
+        // Update address summary
+        const address = document.getElementById('pickupAddress').value.trim();
+        const state = document.getElementById('pickupState').value;
+        const postcode = document.getElementById('pickupPostcode').value.trim();
+        
+        const addressSummary = document.querySelector('.psp-summary-item:first-child');
+        if (addressSummary && address) {
+            const existingAddressDetail = summaryCard.querySelector('.address-detail');
+            if (!existingAddressDetail) {
+                const addressDiv = document.createElement('div');
+                addressDiv.className = 'psp-summary-item address-detail dynamic-summary-item';
+                addressDiv.style.marginTop = '8px';
+                addressDiv.style.fontSize = '0.85rem';
+                addressDiv.style.color = '#666';
+                addressSummary.parentNode.insertBefore(addressDiv, addressSummary.nextSibling);
+            }
+            const addressDetail = summaryCard.querySelector('.address-detail');
+            if (addressDetail) {
+                addressDetail.innerHTML = `<span>Location</span><span>${address}, ${postcode}, ${state}</span>`;
+            }
         }
     }
     
@@ -1527,9 +1640,12 @@ if ($result) {
         window.location.href = 'pMainPickup.php';
     }
     
-    // Event listeners for summary updates
+    // Add event listeners for all input fields to update summary in real-time
     document.getElementById('preferredDate').addEventListener('change', updateSummary);
     document.getElementById('preferredTime').addEventListener('change', updateSummary);
+    document.getElementById('pickupAddress').addEventListener('input', updateSummary);
+    document.getElementById('pickupState').addEventListener('change', updateSummary);
+    document.getElementById('pickupPostcode').addEventListener('input', updateSummary);
 </script>
 </body>
 </html>
