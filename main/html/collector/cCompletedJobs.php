@@ -2,9 +2,10 @@
 session_start();
 include("../../php/dbConn.php");
 
-// ── TEMP: hardcoded session for testing (remove once login is done) ──
-$_SESSION['userID']   = 10;
-$_SESSION['userType'] = 'collector';
+if (!isset($_SESSION['userID']) || $_SESSION['userType'] !== 'collector') {
+    header("Location: /CapstonePJ/signIn.php");
+    exit();
+}
 
 // ── Fetch completed/cancelled jobs for this collector ────────────────
 $collectorUserID = (int) $_SESSION['userID'];

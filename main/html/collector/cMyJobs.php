@@ -2,14 +2,9 @@
 session_start();
 include("../../php/dbConn.php");
 
-// ── TEMP: hardcoded session for testing (remove once login is done) ──
-$_SESSION['userID']   = 9;
-$_SESSION['userType'] = 'collector';
-// ────────────────────────────────────────────────────────────────────
-
-// Basic auth guard
+// REPLACE BOTH WITH just one clean guard:
 if (!isset($_SESSION['userID']) || $_SESSION['userType'] !== 'collector') {
-    header("Location: ../../html/common/Login.html");
+    header("Location: /CapstonePJ/signIn.php");
     exit();
 }
 

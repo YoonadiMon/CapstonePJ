@@ -2,9 +2,10 @@
 session_start();
 include("../../php/dbConn.php");
 
-// ── TEMP: hardcoded session for testing (remove once login is done) ──
-$_SESSION['userID']   = 9;
-$_SESSION['userType'] = 'collector';
+if (!isset($_SESSION['userID']) || $_SESSION['userType'] !== 'collector') {
+    header("Location: /CapstonePJ/signIn.php");
+    exit();
+}
 
 // ─── AJAX / ACTION HANDLER ───────────────────────────────────────────────────
 if (isset($_GET['action'])) {

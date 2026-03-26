@@ -2,14 +2,8 @@
 session_start();
 include("../../php/dbConn.php");
 
-// ── TEMP: hardcoded session for testing (remove once login is done) ──
-$_SESSION['userID']   = 9;
-$_SESSION['userType'] = 'collector';
-// ────────────────────────────────────────────────────────────────────
-
-// Basic auth guard
 if (!isset($_SESSION['userID']) || $_SESSION['userType'] !== 'collector') {
-    header("Location: ../../html/common/Login.html");
+    header("Location: /CapstonePJ/signIn.php");
     exit();
 }
 
@@ -341,10 +335,21 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
                     <div id="itemsContainer">
                         <?php foreach ($items as $item):
                             $itemLabel = 'ITEM' . str_pad($item['itemID'], 3, '0', STR_PAD_LEFT);
-                            // Build image path — fallback to placeholder if no image stored
-                            $imgSrc = !empty($item['image'])
-                                ? '../../assets/images/items/' . htmlspecialchars($item['image'])
-                                : 'https://placehold.co/600x400?text=No+Image';
+                            
+                            // FIXED: Build image path correctly from the database filename
+                            // The database stores just the filename (e.g., 'laptop1.jpg')
+                            // We need to check if the file exists in the items directory
+                            $imageFilename = !empty($item['image']) ? $item['image'] : '';
+                            $imagePath = '../../assets/images/items/' . $imageFilename;
+                            
+                            // Check if the image file actually exists
+                            if (!empty($imageFilename) && file_exists($imagePath)) {
+                                $imgSrc = $imagePath;
+                            } else {
+                                // Use placeholder image if no image or file doesn't exist
+                                $imgSrc = 'https://placehold.co/600x400?text=No+Image+Available';
+                            }
+                            
                             $dropoff = !empty($item['centreName']) ? $item['centreName'] : 'Not assigned yet';
                         ?>
                             <div class="item-dropdown">
