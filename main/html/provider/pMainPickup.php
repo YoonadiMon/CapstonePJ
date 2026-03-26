@@ -833,7 +833,7 @@
                     <button id="themeToggleMobile">
                         <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                     </button>
-                    <a href="../../html/common/Setting.html">
+                    <a href="../../html/common/Setting.php">
                         <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                     </a>
                 </section>
@@ -859,7 +859,7 @@
         <button id="themeToggleDesktop">
             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
         </button>
-        <a href="../../html/common/Setting.html">
+        <a href="../../html/common/Setting.php">
             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
         </a>
     </section>
@@ -1141,7 +1141,7 @@
             <b>Proxy</b><br>
             <a href="../../html/common/About.html">About</a><br>
             <a href="../../html/common/Profile.php">Edit Profile</a><br>
-            <a href="../../html/common/Setting.html">Setting</a>
+            <a href="../../html/common/Setting.php">Setting</a>
         </div>
     </section>
 </footer>

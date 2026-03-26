@@ -1089,7 +1089,7 @@ function getItemImage($itemName, $itemImageMap) {
                         <button id="themeToggleMobile" type="button">
                             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                         </button>
-                        <a href="../../html/common/Setting.html">
+                        <a href="../../html/common/Setting.php">
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
@@ -1114,7 +1114,7 @@ function getItemImage($itemName, $itemImageMap) {
             <button id="themeToggleDesktop" type="button">
                 <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
             </button>
-            <a href="../../html/common/Setting.html">
+            <a href="../../html/common/Setting.php">
                 <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
             </a>
         </section>
@@ -1604,7 +1604,7 @@ function getItemImage($itemName, $itemImageMap) {
         <section class="c-footer-links-section">
             <div><b>Recycling</b><br><a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a></div>
             <div><b>My Activity</b><br><a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br><a href="../../html/provider/pMainPickup.php">My Pickup</a></div>
-            <div><b>Proxy</b><br><a href="../../html/common/About.html">About</a><br><a href="../../html/common/Profile.php">Edit Profile</a><br><a href="../../html/common/Setting.html">Setting</a></div>
+            <div><b>Proxy</b><br><a href="../../html/common/About.html">About</a><br><a href="../../html/common/Profile.php">Edit Profile</a><br><a href="../../html/common/Setting.php">Setting</a></div>
         </section>
     </footer>
 
