@@ -56,7 +56,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                         <!-- Admin Mobile Menu -->
                         <a href="../../html/admin/aHome.php">Home</a>
                         <a href="../../html/admin/aRequests.html">Requests</a>
-                        <a href="../../html/admin/aJobs.html">Jobs</a>
+                        <a href="../../html/admin/aJobs.php">Jobs</a>
                         <a href="../../html/admin/aIssue.html">Issue</a>
                         <a href="../../html/admin/aOperations.html">Operations</a>
                         <a href="../../html/admin/aReport.html">Report</a>
@@ -87,7 +87,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <!-- Admin Desktop Menu -->
                 <a href="../../html/admin/aHome.php">Home</a>
                 <a href="../../html/admin/aRequests.html">Requests</a>
-                <a href="../../html/admin/aJobs.html">Jobs</a>
+                <a href="../../html/admin/aJobs.php">Jobs</a>
                 <a href="../../html/admin/aIssue.html">Issue</a>
                 <a href="../../html/admin/aOperations.html">Operations</a>
                 <a href="../../html/admin/aReport.html">Report</a>
@@ -155,7 +155,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <div>
                     <b>Management</b><br>
                     <a href="../../html/admin/aRequests.html">Collection Requests</a><br>
-                    <a href="../../html/admin/aJobs.html">Collection Jobs</a><br>
+                    <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
                     <a href="../../html/admin/aIssue.html">Issue</a>
                 </div>
                 <div>

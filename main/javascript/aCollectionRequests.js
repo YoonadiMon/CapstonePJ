@@ -600,7 +600,7 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'scheduled':
             case 'ongoing':
                 buttons = `
-                    <button class="detail-btn primary" onclick="window.location.href='/main/html/admin/aJobs.html?job=${request.id}'">
+                    <button class="detail-btn primary" onclick="window.location.href='/main/html/admin/aJobs.php?job=${request.id}'">
                         <i class="fas fa-eye"></i> View Job
                     </button>
                     <button class="detail-btn secondary" onclick="contactCollector('${request.id}')">
