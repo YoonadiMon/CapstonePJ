@@ -192,6 +192,7 @@ if (isset($_GET['action'])) {
         if (empty($subject))     { echo json_encode(['success'=>false,'message'=>'Subject is required']); exit; }
         if (empty($description)) { echo json_encode(['success'=>false,'message'=>'Description is required']); exit; }
 
+        // Insert the issue
         $ins = $conn->prepare(
             "INSERT INTO tblissue
              (requestID, jobID, reportedBy, issueType, severity, subject, description, status)
@@ -202,8 +203,22 @@ if (isset($_GET['action'])) {
         $issueID = $conn->insert_id;
         $ins->close();
 
+        // ── Cancel the job ──
+        $updJob = $conn->prepare("UPDATE tbljob SET status='Cancelled' WHERE jobID=?");
+        $updJob->bind_param('i', $jobID);
+        $updJob->execute();
+        $updJob->close();
+
+        // ── Set collector back to active ──
+        $updCol = $conn->prepare("UPDATE tblcollector SET status='active' WHERE collectorID=?");
+        $updCol->bind_param('i', $userID);
+        $updCol->execute();
+        $updCol->close();
+
         logActivity($conn, $requestID, $jobID, $userID, 'Issue', 'Create',
             "Issue (ID: $issueID) - $issueType - $subject");
+        logActivity($conn, $requestID, $jobID, $userID, 'Job', 'Status Change',
+            'Changed to Cancelled due to reported issue');
 
         echo json_encode(['success'=>true, 'issueID'=>$issueID]);
         exit;
@@ -217,8 +232,8 @@ if (isset($_GET['action'])) {
 $collectorID = (int)$_SESSION['userID'];
 
 /*
-  Fetch the latest SCHEDULED or ONGOING job for this collector.
-  Priority: Ongoing jobs first, then Scheduled
+  Fetch the latest job for this collector, excluding only Pending and Rejected.
+  Priority: Ongoing > Picked Up > Scheduled > Cancelled > Completed
 */
 $jobQuery = $conn->prepare(
     "SELECT j.jobID, j.requestID, j.collectorID, j.vehicleID,
@@ -236,8 +251,8 @@ $jobQuery = $conn->prepare(
      INNER JOIN tblusers u               ON u.userID       = p.providerID
      INNER JOIN tblvehicle v             ON v.vehicleID    = j.vehicleID
      WHERE j.collectorID = ?
-       AND j.status IN ('Scheduled', 'Ongoing', 'Picked Up')
-     ORDER BY FIELD(j.status, 'Ongoing', 'Picked Up', 'Scheduled'), j.scheduledDate ASC
+       AND j.status NOT IN ('Pending', 'Rejected')
+     ORDER BY FIELD(j.status, 'Ongoing', 'Picked Up', 'Scheduled', 'Cancelled', 'Completed'), j.scheduledDate ASC
      LIMIT 1"
 );
 $jobQuery->bind_param('i', $collectorID);
@@ -331,15 +346,17 @@ if ($hasJob) {
 }
 
 // ── Determine current progress state ────────────────────────────────────────
-$journeyStarted = false;
+$journeyStarted  = false;
 $pickupCompleted = false;
 $completedCentres = [];
 $returnCompleted = false;
+$isCancelled     = false;
 
 if ($hasJob) {
-    $journeyStarted = ($job['jobStatus'] !== 'Scheduled');
+    $isCancelled     = ($job['jobStatus'] === 'Cancelled');
+    $journeyStarted  = ($job['jobStatus'] !== 'Scheduled');
     $pickupCompleted = true;
-    
+
     // Check if all items are collected (not pending)
     foreach ($itemsByCentre as $group) {
         foreach ($group['items'] as $item) {
@@ -349,7 +366,7 @@ if ($hasJob) {
             }
         }
     }
-    
+
     // Check which centres have been delivered
     foreach ($itemsByCentre as $group) {
         $allReceived = true;
@@ -363,7 +380,7 @@ if ($hasJob) {
             $completedCentres[] = $group['centreID'];
         }
     }
-    
+
     $returnCompleted = ($job['jobStatus'] === 'Completed');
 }
 ?>
@@ -372,7 +389,7 @@ if ($hasJob) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $journeyStarted ? 'Ongoing Job' : 'Scheduled Job' ?></title>
+    <title><?= $isCancelled ? 'Cancelled Job' : ($journeyStarted ? 'Ongoing Job' : 'Scheduled Job') ?></title>
     <link rel="icon" type="image/png" href="../../assets//images/bolt-lightning-icon.svg">
     <link rel="stylesheet" href="../../style/style.css">
     <link rel="stylesheet" href="../../style/clnProgress.css">
@@ -381,7 +398,6 @@ if ($hasJob) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
 <style>
-/* Your existing CSS styles remain the same */
 .issues-section {
     margin-top: 32px;
 }
@@ -516,45 +532,15 @@ if ($hasJob) {
     background: currentColor;
 }
 
-.severity-low {
-    background: var(--StatusGreenLight);
-    color: var(--StatusGreen);
-}
+.severity-low      { background: var(--StatusGreenLight);  color: var(--StatusGreen); }
+.severity-medium   { background: var(--StatusYellowLight); color: hsl(42, 80%, 30%); }
+.severity-high     { background: hsl(25, 100%, 93%);       color: hsl(25, 90%, 40%); }
+.severity-critical { background: var(--StatusRedLight);    color: var(--StatusRed); }
 
-.severity-medium {
-    background: var(--StatusYellowLight);
-    color: hsl(42, 80%, 30%);
-}
-
-.severity-high {
-    background: hsl(25, 100%, 93%);
-    color: hsl(25, 90%, 40%);
-}
-
-.severity-critical {
-    background: var(--StatusRedLight);
-    color: var(--StatusRed);
-}
-
-.dark-mode .severity-low {
-    background: hsl(142, 40%, 15%);
-    color: hsl(142, 60%, 55%);
-}
-
-.dark-mode .severity-medium {
-    background: hsl(42, 60%, 18%);
-    color: hsl(42, 90%, 65%);
-}
-
-.dark-mode .severity-high {
-    background: hsl(25, 50%, 18%);
-    color: hsl(25, 80%, 65%);
-}
-
-.dark-mode .severity-critical {
-    background: hsl(0, 50%, 18%);
-    color: hsl(0, 72%, 65%);
-}
+.dark-mode .severity-low      { background: hsl(142, 40%, 15%); color: hsl(142, 60%, 55%); }
+.dark-mode .severity-medium   { background: hsl(42,  60%, 18%); color: hsl(42,  90%, 65%); }
+.dark-mode .severity-high     { background: hsl(25,  50%, 18%); color: hsl(25,  80%, 65%); }
+.dark-mode .severity-critical { background: hsl(0,   50%, 18%); color: hsl(0,   72%, 65%); }
 
 .issue-status-badge {
     display: inline-flex;
@@ -574,35 +560,13 @@ if ($hasJob) {
     background: currentColor;
 }
 
-.issue-status-open {
-    background: var(--StatusRedLight);
-    color: var(--StatusRed);
-}
+.issue-status-open     { background: var(--StatusRedLight);    color: var(--StatusRed); }
+.issue-status-assigned { background: var(--StatusYellowLight); color: hsl(42, 80%, 30%); }
+.issue-status-resolved { background: var(--StatusGreenLight);  color: var(--StatusGreen); }
 
-.issue-status-assigned {
-    background: var(--StatusYellowLight);
-    color: hsl(42, 80%, 30%);
-}
-
-.issue-status-resolved {
-    background: var(--StatusGreenLight);
-    color: var(--StatusGreen);
-}
-
-.dark-mode .issue-status-open {
-    background: hsl(0, 50%, 18%);
-    color: hsl(0, 72%, 65%);
-}
-
-.dark-mode .issue-status-assigned {
-    background: hsl(42, 60%, 18%);
-    color: hsl(42, 90%, 65%);
-}
-
-.dark-mode .issue-status-resolved {
-    background: hsl(142, 40%, 15%);
-    color: hsl(142, 60%, 55%);
-}
+.dark-mode .issue-status-open     { background: hsl(0,   50%, 18%); color: hsl(0,   72%, 65%); }
+.dark-mode .issue-status-assigned { background: hsl(42,  60%, 18%); color: hsl(42,  90%, 65%); }
+.dark-mode .issue-status-resolved { background: hsl(142, 40%, 15%); color: hsl(142, 60%, 55%); }
 
 .issue-card-body {
     font-size: 13px;
@@ -623,25 +587,9 @@ if ($hasJob) {
     gap: 10px;
 }
 
-.issue-info-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.issue-info-label {
-    font-size: 10.5px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-}
-
-.issue-info-value {
-    font-size: 12.5px;
-    color: var(--text-color);
-    font-weight: 500;
-}
+.issue-info-cell    { display: flex; flex-direction: column; gap: 2px; }
+.issue-info-label   { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+.issue-info-value   { font-size: 12.5px; color: var(--text-color); font-weight: 500; }
 
 .issue-notes-block {
     background: var(--sec-bg-color);
@@ -663,43 +611,55 @@ if ($hasJob) {
     margin-bottom: 4px;
 }
 
-@media (max-width: 640px) {
-    .issue-card {
-        padding: 16px;
-    }
-
-    .issue-card-footer {
-        grid-template-columns: 1fr 1fr;
-    }
+/* Cancelled job banner */
+.cancelled-banner {
+    background: var(--StatusRedLight);
+    border: 1.5px solid var(--StatusRed);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
 }
 
+.cancelled-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+.cancelled-banner-text strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--StatusRed);
+    margin-bottom: 3px;
+}
+
+.cancelled-banner-text p {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.dark-mode .cancelled-banner {
+    background: hsl(0, 50%, 12%);
+    border-color: hsl(0, 60%, 40%);
+}
 
 /* Issue Alert Banner */
-.issue-alert {
-    animation: slideDown 0.3s ease-out;
-}
+.issue-alert { animation: slideDown 0.3s ease-out; }
 
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Disabled button styles for interrupted state */
-.btn-complete:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    background: var(--text-muted);
-}
+/* Disabled button styles */
+.btn-complete:disabled { opacity: 0.6; cursor: not-allowed; background: var(--text-muted); }
+.btn-danger:disabled   { opacity: 0.6; cursor: not-allowed; }
 
-.btn-danger:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+@media (max-width: 640px) {
+    .issue-card         { padding: 16px; }
+    .issue-card-footer  { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -734,7 +694,9 @@ if ($hasJob) {
 <div class="popup-overlay" id="reportPopup">
     <div class="popup" style="text-align:left; max-width:500px;">
         <h3 style="text-align:center; margin-bottom:6px;">Report an Issue</h3>
-        <p style="text-align:center; margin-bottom:18px;">Describe the issue so an admin can assist you promptly.</p>
+        <p style="text-align:center; margin-bottom:18px; color:var(--StatusRed); font-size:13px; font-weight:600;">
+            ⚠️ Reporting an issue will cancel this job and notify the admin.
+        </p>
 
         <div class="form-group">
             <label>Issue Type <span style="color:var(--StatusRed);">*</span></label>
@@ -771,7 +733,7 @@ if ($hasJob) {
 
         <div class="popup-actions">
             <button class="btn btn-ghost" onclick="closePopup('reportPopup')">Cancel</button>
-            <button class="btn btn-danger" onclick="submitReport()">Submit Report</button>
+            <button class="btn btn-danger" onclick="submitReport()">Submit & Cancel Job</button>
         </div>
     </div>
 </div>
@@ -795,7 +757,7 @@ if ($hasJob) {
             <div class="c-navbar-side-items">
                 <section class="c-navbar-side-more">
                     <button id="themeToggleMobile"><img src="../../assets//images/light-mode-icon.svg" alt="Light Mode Icon"></button>
-                    <a href="../../html/common/Setting.html"><img src="../../assets//images/setting-light.svg" alt="Settings" id="settingImgM"></a>
+                    <a href="../../html/common/Setting.phpl"><img src="../../assets//images/setting-light.svg" alt="Settings" id="settingImgM"></a>
                 </section>
                 <a href="../../html/collector/cHome.php">Home</a>
                 <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
@@ -814,7 +776,7 @@ if ($hasJob) {
     </nav>
     <section class="c-navbar-more">
         <button id="themeToggleDesktop"><img src="../../assets//images/light-mode-icon.svg" alt="Light Mode Icon"></button>
-        <a href="../../html/common/Setting.html"><img src="../../assets//images/setting-light.svg" alt="Settings" id="settingImg"></a>
+        <a href="../../html/common/Setting.php"><img src="../../assets//images/setting-light.svg" alt="Settings" id="settingImg"></a>
     </section>
 </header>
 <hr>
@@ -829,8 +791,8 @@ if ($hasJob) {
     </div>
     <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
         <div style="font-size:48px; margin-bottom:16px;">📋</div>
-        <h3 style="font-size:18px; font-weight:700; color:var(--text-color); margin-bottom:8px;">No Scheduled Job</h3>
-        <p style="font-size:13.5px; line-height:1.6;">You don't have any scheduled job at the moment.<br>Check <a href="../../html/collector/cMyJobs.php" style="color:var(--MainBlue); font-weight:600;">My Jobs</a> for pending assignments that are awaiting acceptance.</p>
+        <h3 style="font-size:18px; font-weight:700; color:var(--text-color); margin-bottom:8px;">No Active Job</h3>
+        <p style="font-size:13.5px; line-height:1.6;">You don't have any active job at the moment.<br>Check <a href="../../html/collector/cMyJobs.php" style="color:var(--MainBlue); font-weight:600;">My Jobs</a> for pending assignments that are awaiting acceptance.</p>
     </div>
 
 <?php else:
@@ -841,7 +803,10 @@ if ($hasJob) {
     $centreCount = count($itemsByCentre);
 
     // Determine global badge
-    if ($returnCompleted) {
+    if ($isCancelled) {
+        $globalBadgeClass = 'badge-interrupted';
+        $globalBadgeText  = 'Cancelled';
+    } elseif ($returnCompleted) {
         $globalBadgeClass = 'badge-completed';
         $globalBadgeText  = 'Completed';
     } elseif ($journeyStarted) {
@@ -866,9 +831,19 @@ if ($hasJob) {
         <button class="back-btn" onclick="history.back()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <h1 class="page-title"><?= $journeyStarted ? 'Ongoing Job' : 'Scheduled Job' ?></h1>
+        <h1 class="page-title"><?= $isCancelled ? 'Cancelled Job' : ($journeyStarted ? 'Ongoing Job' : 'Scheduled Job') ?></h1>
         <span class="badge <?= $globalBadgeClass ?>" id="globalStatus"><?= htmlspecialchars($globalBadgeText) ?></span>
     </div>
+
+    <?php if ($isCancelled): ?>
+    <div class="cancelled-banner">
+        <div class="cancelled-banner-icon">🚫</div>
+        <div class="cancelled-banner-text">
+            <strong>This job has been cancelled</strong>
+            <p>An issue was reported during this job and it has been cancelled. The admin has been notified and will review the issue report below. You will be reassigned once the matter is resolved.</p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="journey-layout">
 
@@ -881,7 +856,7 @@ if ($hasJob) {
                         <span class="job-id-label"><?= htmlspecialchars($jobLabel) ?></span>
                         <span class="badge <?= $globalBadgeClass ?>" id="badge-overview"><?= htmlspecialchars($globalBadgeText) ?></span>
                     </div>
-                    <?php if (!$journeyStarted && !$returnCompleted): ?>
+                    <?php if (!$journeyStarted && !$returnCompleted && !$isCancelled): ?>
                     <button class="btn btn-primary" id="startJourneyBtn" onclick="openStartPopup()">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         Start Journey
@@ -918,8 +893,8 @@ if ($hasJob) {
 
             <!-- CARD 2: Pickup session -->
             <?php
-            $pickupCompletedStatus = $pickupCompleted ? 'completed' : ($journeyStarted ? 'active' : 'locked');
-            $pickupDisabled = ($pickupCompleted || $returnCompleted) ? true : !$journeyStarted;
+            $pickupCompletedStatus = $pickupCompleted ? 'completed' : ($journeyStarted && !$isCancelled ? 'active' : 'locked');
+            $pickupDisabled = $isCancelled || ($pickupCompleted || $returnCompleted) ? true : !$journeyStarted;
             ?>
             <div class="job-card <?= $pickupCompletedStatus ?>" id="card-session1">
                 <div class="card-header">
@@ -935,9 +910,14 @@ if ($hasJob) {
                 </div>
                 <div class="session-footer">
                     <span style="font-size:12px; color:var(--text-muted);">
-                        <?= $pickupCompleted ? '✓ Items collected' : ($journeyStarted ? 'Ready to collect items' : 'Start journey to unlock') ?>
+                        <?php
+                        if ($isCancelled)        echo '🚫 Job cancelled';
+                        elseif ($pickupCompleted) echo '✓ Items collected';
+                        elseif ($journeyStarted)  echo 'Ready to collect items';
+                        else                      echo 'Start journey to unlock';
+                        ?>
                     </span>
-                    <button class="btn btn-complete" id="completeBtn-session1" 
+                    <button class="btn btn-complete" id="completeBtn-session1"
                             onclick="openCompletePopup('session1', null)"
                             <?= $pickupDisabled ? 'disabled' : '' ?>>
                         <?= $pickupCompleted ? '✓ Done' : 'Complete' ?>
@@ -946,10 +926,9 @@ if ($hasJob) {
             </div>
 
             <!-- CARDS: One per dropoff centre -->
-            <?php 
+            <?php
             $activeCentreIndex = -1;
-            if ($pickupCompleted && !$returnCompleted) {
-                // Find first centre not fully delivered
+            if ($pickupCompleted && !$returnCompleted && !$isCancelled) {
                 foreach ($itemsByCentre as $ci => $group) {
                     if (!in_array($group['centreID'], $completedCentres)) {
                         $activeCentreIndex = $ci;
@@ -957,13 +936,13 @@ if ($hasJob) {
                     }
                 }
             }
-            
+
             foreach ($itemsByCentre as $ci => $group):
-                $sessionKey = 'session' . ($ci + 2);
+                $sessionKey  = 'session' . ($ci + 2);
                 $isCompleted = in_array($group['centreID'], $completedCentres);
-                $isActive = ($activeCentreIndex === $ci && !$isCompleted && $pickupCompleted && !$returnCompleted);
-                $cardStatus = $isCompleted ? 'completed-card' : ($isActive ? 'active-card' : 'locked');
-                $btnDisabled = !$isActive;
+                $isActive    = ($activeCentreIndex === $ci && !$isCompleted && $pickupCompleted && !$returnCompleted && !$isCancelled);
+                $cardStatus  = $isCompleted ? 'completed-card' : ($isActive ? 'active-card' : 'locked');
+                $btnDisabled = $isCancelled || !$isActive;
             ?>
             <div class="job-card <?= $cardStatus ?>" id="card-<?= $sessionKey ?>">
                 <div class="card-header">
@@ -1007,9 +986,14 @@ if ($hasJob) {
                 </div>
                 <div class="session-footer">
                     <span style="font-size:12px; color:var(--text-muted);">
-                        <?= $isCompleted ? '✓ Delivered' : ($isActive ? 'Ready to deliver' : 'Complete previous step to unlock') ?>
+                        <?php
+                        if ($isCancelled)        echo '🚫 Job cancelled';
+                        elseif ($isCompleted)     echo '✓ Delivered';
+                        elseif ($isActive)        echo 'Ready to deliver';
+                        else                      echo 'Complete previous step to unlock';
+                        ?>
                     </span>
-                    <button class="btn btn-complete" id="completeBtn-<?= $sessionKey ?>" 
+                    <button class="btn btn-complete" id="completeBtn-<?= $sessionKey ?>"
                             onclick="openCompletePopup('<?= $sessionKey ?>', <?= $group['centreID'] ?>)"
                             <?= $btnDisabled ? 'disabled' : '' ?>>
                         <?= $isCompleted ? '✓ Done' : 'Complete' ?>
@@ -1020,11 +1004,11 @@ if ($hasJob) {
 
             <!-- CARD: Return to Base -->
             <?php
-            $returnSessionKey = 'session' . ($centreCount + 2);
-            $lastCentreName   = !empty($itemsByCentre) ? end($itemsByCentre)['centreName'] : $job['pickupAddress'];
+            $returnSessionKey    = 'session' . ($centreCount + 2);
+            $lastCentreName      = !empty($itemsByCentre) ? end($itemsByCentre)['centreName'] : $job['pickupAddress'];
             $allCentresCompleted = count($completedCentres) === count($itemsByCentre);
-            $returnActive = ($pickupCompleted && $allCentresCompleted && !$returnCompleted);
-            $returnCardStatus = $returnCompleted ? 'completed-card' : ($returnActive ? 'active-card' : 'locked');
+            $returnActive        = ($pickupCompleted && $allCentresCompleted && !$returnCompleted && !$isCancelled);
+            $returnCardStatus    = $returnCompleted ? 'completed-card' : ($returnActive ? 'active-card' : 'locked');
             ?>
             <div class="job-card <?= $returnCardStatus ?>" id="card-<?= $returnSessionKey ?>">
                 <div class="card-header">
@@ -1035,7 +1019,7 @@ if ($hasJob) {
                     <div class="card-header-actions">
                         <button class="btn btn-danger" id="reportBtn-<?= $returnSessionKey ?>"
                                 onclick="openReport('<?= $returnSessionKey ?>', null)"
-                                <?= !$returnActive || $returnCompleted ? 'disabled' : '' ?>>
+                                <?= (!$returnActive || $returnCompleted || $isCancelled) ? 'disabled' : '' ?>>
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                             </svg>
@@ -1050,11 +1034,16 @@ if ($hasJob) {
                 </div>
                 <div class="session-footer">
                     <span style="font-size:12px; color:var(--text-muted);">
-                        <?= $returnCompleted ? '✓ Journey completed' : ($returnActive ? 'Ready to return to base' : 'Complete all dropoffs to unlock') ?>
+                        <?php
+                        if ($isCancelled)          echo '🚫 Job cancelled';
+                        elseif ($returnCompleted)   echo '✓ Journey completed';
+                        elseif ($returnActive)      echo 'Ready to return to base';
+                        else                        echo 'Complete all dropoffs to unlock';
+                        ?>
                     </span>
-                    <button class="btn btn-complete" id="completeBtn-<?= $returnSessionKey ?>" 
+                    <button class="btn btn-complete" id="completeBtn-<?= $returnSessionKey ?>"
                             onclick="openCompletePopup('<?= $returnSessionKey ?>', null)"
-                            <?= !$returnActive || $returnCompleted ? 'disabled' : '' ?>>
+                            <?= (!$returnActive || $returnCompleted || $isCancelled) ? 'disabled' : '' ?>>
                         <?= $returnCompleted ? '✓ Done' : 'Complete' ?>
                     </button>
                 </div>
@@ -1066,28 +1055,27 @@ if ($hasJob) {
         <aside class="route-sidebar">
             <div class="route-title">Route</div>
             <div class="route-steps">
-                <?php 
+                <?php
                 $stepStatuses = [];
-                $stepStatuses[0] = $journeyStarted ? 'active' : '';
-                $stepStatuses[1] = $pickupCompleted ? 'done' : ($journeyStarted ? 'active' : '');
-                $stepStatuses[2] = '';
-                $stepStatuses[3] = '';
-                $stepStatuses[4] = '';
-                
+                $stepStatuses[0] = $journeyStarted ? ($isCancelled ? 'done' : 'active') : '';
+                $stepStatuses[1] = $pickupCompleted ? 'done' : ($journeyStarted && !$isCancelled ? 'active' : '');
+
                 if ($pickupCompleted) {
                     $completedCount = count($completedCentres);
                     for ($i = 0; $i < $completedCount && $i < count($itemsByCentre); $i++) {
                         $stepStatuses[2 + $i] = 'done';
                     }
-                    if ($completedCount < count($itemsByCentre)) {
-                        $stepStatuses[2 + $completedCount] = 'active';
-                    } elseif ($allCentresCompleted && !$returnCompleted) {
-                        $stepStatuses[2 + count($itemsByCentre)] = 'active';
-                    } elseif ($returnCompleted) {
-                        $stepStatuses[2 + count($itemsByCentre)] = 'done';
+                    if (!$isCancelled) {
+                        if ($completedCount < count($itemsByCentre)) {
+                            $stepStatuses[2 + $completedCount] = 'active';
+                        } elseif ($allCentresCompleted && !$returnCompleted) {
+                            $stepStatuses[2 + count($itemsByCentre)] = 'active';
+                        } elseif ($returnCompleted) {
+                            $stepStatuses[2 + count($itemsByCentre)] = 'done';
+                        }
                     }
                 }
-                
+
                 foreach ($routeSteps as $ri => $step):
                     $isLast   = ($ri === count($routeSteps) - 1);
                     $dotState = $stepStatuses[$ri] ?? '';
@@ -1146,8 +1134,8 @@ if ($hasJob) {
                     'Critical' => 'severity-critical',
                     default    => 'severity-medium',
                 };
-                $reportedAt  = date('d M Y, h:i A', strtotime($iss['reportedAt']));
-                $resolvedAt  = $iss['resolvedAt'] ? date('d M Y, h:i A', strtotime($iss['resolvedAt'])) : '—';
+                $reportedAt = date('d M Y, h:i A', strtotime($iss['reportedAt']));
+                $resolvedAt = $iss['resolvedAt'] ? date('d M Y, h:i A', strtotime($iss['resolvedAt'])) : '—';
             ?>
             <div class="issue-card">
                 <div class="issue-card-header">
@@ -1226,7 +1214,7 @@ if ($hasJob) {
             <b>Proxy</b><br>
             <a href="../../html/common/About.html">About</a><br>
             <a href="../../html/common/Profile.php">Edit Profile</a><br>
-            <a href="../../html/common/Setting.html">Setting</a>
+            <a href="../../html/common/Setting.php">Setting</a>
         </div>
     </section>
 </footer>
@@ -1234,356 +1222,33 @@ if ($hasJob) {
 <script src="../../javascript/mainScript.js"></script>
 
 <script>
-// /* ─── PHP → JS BRIDGE ───────────────────────────────────────────── */
-// const JOB_ID      = <?= $hasJob ? (int)$job['jobID']      : 'null' ?>;
-// const REQUEST_ID  = <?= $hasJob ? (int)$job['requestID']  : 'null' ?>;
-// const CENTRE_IDS  = <?= $hasJob ? json_encode(array_column($itemsByCentre, 'centreID')) : '[]' ?>;
-// const RETURN_KEY  = <?= $hasJob ? json_encode('session' . ($centreCount + 2)) : 'null' ?>;
-// const JOURNEY_STARTED = <?= $journeyStarted ? 'true' : 'false' ?>;
-// const PICKUP_COMPLETED = <?= $pickupCompleted ? 'true' : 'false' ?>;
-// const RETURN_COMPLETED = <?= $returnCompleted ? 'true' : 'false' ?>;
+/* ─── PHP → JS BRIDGE ─────────────────────────────────────────────── */
+const JOB_ID           = <?= $hasJob ? (int)$job['jobID']      : 'null' ?>;
+const REQUEST_ID       = <?= $hasJob ? (int)$job['requestID']  : 'null' ?>;
+const CENTRE_IDS       = <?= $hasJob ? json_encode(array_column($itemsByCentre, 'centreID')) : '[]' ?>;
+const RETURN_KEY       = <?= $hasJob ? json_encode('session' . ($centreCount + 2)) : 'null' ?>;
+const JOURNEY_STARTED  = <?= $journeyStarted  ? 'true' : 'false' ?>;
+const PICKUP_COMPLETED = <?= $pickupCompleted  ? 'true' : 'false' ?>;
+const RETURN_COMPLETED = <?= $returnCompleted  ? 'true' : 'false' ?>;
+const JOB_CANCELLED    = <?= $isCancelled      ? 'true' : 'false' ?>;
 
-// /* ─── STATE ─────────────────────────────────────────────────────── */
-// let state = {
-//     journeyStarted: JOURNEY_STARTED,
-//     pickupCompleted: PICKUP_COMPLETED,
-//     completedCentres: <?= json_encode($completedCentres) ?>,
-//     returnCompleted: RETURN_COMPLETED,
-//     pendingSession: null,
-//     pendingCentreID: null,
-// };
-
-// /* ─── POPUP HELPERS ─────────────────────────────────────────────── */
-// function openPopup(id)  { document.getElementById(id).classList.add('visible'); }
-// function closePopup(id) { document.getElementById(id).classList.remove('visible'); }
-
-// /* ─── TOAST ─────────────────────────────────────────────────────── */
-// function showToast(msg, duration = 2500) {
-//     const t = document.getElementById('toast');
-//     t.textContent = msg;
-//     t.classList.add('show');
-//     setTimeout(() => t.classList.remove('show'), duration);
-// }
-
-// /* ─── AJAX HELPER ───────────────────────────────────────────────── */
-// async function postAction(action, extraData = {}) {
-//     const fd = new FormData();
-//     fd.append('jobID',     JOB_ID);
-//     fd.append('requestID', REQUEST_ID);
-//     for (const [k, v] of Object.entries(extraData)) fd.append(k, v);
-//     const res = await fetch(`?action=${action}`, { method: 'POST', body: fd });
-//     return res.json();
-// }
-
-// /* ─── START JOURNEY ─────────────────────────────────────────────── */
-// function openStartPopup() { 
-//     if (!state.journeyStarted && !state.returnCompleted) {
-//         openPopup('startPopup');
-//     }
-// }
-
-// async function confirmStartJourney() {
-//     closePopup('startPopup');
-//     const data = await postAction('start_journey');
-//     if (!data.success) { showToast('❌ Failed to start journey. Try again.'); return; }
-
-//     // Update state
-//     state.journeyStarted = true;
-    
-//     // Update UI
-//     const btn = document.getElementById('startJourneyBtn');
-//     if (btn) btn.style.display = 'none';
-
-//     setBadge('badge-overview', 'ongoing', 'Ongoing');
-//     setBadge('globalStatus', 'ongoing', 'Ongoing');
-
-//     // Update page title
-//     document.querySelector('.page-title').textContent = 'Ongoing Job';
-
-//     // Unlock session 1
-//     updateCardState('card-session1', 'active-card');
-//     const cb = document.getElementById('completeBtn-session1');
-//     if (cb) {
-//         cb.disabled = false;
-//         cb.onclick = () => openCompletePopup('session1', null);
-//     }
-
-//     // Enable report button for session 1
-//     const rb = document.getElementById('reportBtn-session1');
-//     if (rb) rb.disabled = false;
-
-//     // Remove lock hint text
-//     const lockHints = document.querySelectorAll('#card-session1 .session-footer span');
-//     lockHints.forEach(el => el.textContent = 'Ready to collect items');
-
-//     // Update route steps
-//     updateRouteStep(0, 'active');
-//     updateRouteStep(1, 'active');
-//     updateRouteLine(0, 'active');
-
-//     showToast('🚗 Journey started, drive safe!');
-// }
-
-// /* ─── COMPLETE SESSION ──────────────────────────────────────────── */
-// function openCompletePopup(sessionKey, centreID) {
-//     state.pendingSession = sessionKey;
-//     state.pendingCentreID = centreID;
-
-//     const msgs = { 
-//         'session1': 'Confirm you have collected all items from the provider location.'
-//     };
-//     for (let i = 0; i < CENTRE_IDS.length; i++) {
-//         msgs['session' + (i + 2)] = 'Confirm you have delivered all items to this recycling centre.';
-//     }
-//     if (RETURN_KEY) msgs[RETURN_KEY] = 'Confirm you have returned safely to the base facility.';
-
-//     document.getElementById('completePopupMsg').textContent =
-//         msgs[sessionKey] || 'Confirm completion of this session.';
-//     openPopup('completePopup');
-// }
-
-// async function confirmComplete() {
-//     closePopup('completePopup');
-//     const key = state.pendingSession;
-//     const centreID = state.pendingCentreID;
-
-//     let data;
-//     if (key === 'session1') {
-//         data = await postAction('complete_pickup');
-//     } else if (key === RETURN_KEY) {
-//         data = await postAction('complete_return');
-//     } else {
-//         data = await postAction('complete_dropoff', { centreID });
-//     }
-
-//     if (!data.success) { 
-//         showToast('❌ Failed to complete session. Try again.'); 
-//         return; 
-//     }
-
-//     // Mark this card as completed
-//     updateCardState('card-' + key, 'completed-card');
-//     setBadge('badge-' + key, 'completed', 'Completed');
-//     const btn = document.getElementById('completeBtn-' + key);
-//     if (btn) { 
-//         btn.disabled = true; 
-//         btn.textContent = '✓ Done';
-//         btn.onclick = null;
-//     }
-    
-//     // Disable report button
-//     const reportBtn = document.getElementById('reportBtn-' + key);
-//     if (reportBtn) reportBtn.disabled = true;
-
-//     // Build ordered session keys
-//     const allKeys = ['session1'];
-//     for (let i = 0; i < CENTRE_IDS.length; i++) allKeys.push('session' + (i + 2));
-//     if (RETURN_KEY) allKeys.push(RETURN_KEY);
-
-//     const idx = allKeys.indexOf(key);
-//     const dotIdx = idx + 1;
-//     const nextKey = allKeys[idx + 1];
-
-//     // Update route step
-//     updateRouteStep(dotIdx, 'done');
-//     updateRouteLine(dotIdx, 'done');
-
-//     // Update state based on completion
-//     if (key === 'session1') {
-//         state.pickupCompleted = true;
-//     } else if (key === RETURN_KEY) {
-//         state.returnCompleted = true;
-//         setBadge('globalStatus', 'completed', 'Completed');
-//         setBadge('badge-overview', 'completed', 'Completed');
-//         updateRouteStep(dotIdx + 1, 'done');
-//         showToast('🎉 Job completed! Well done!', 4000);
-//         return;
-//     } else {
-//         // It's a centre dropoff
-//         if (centreID && !state.completedCentres.includes(centreID)) {
-//             state.completedCentres.push(centreID);
-//         }
-//     }
-
-//     // Unlock next step if available
-//     if (nextKey) {
-//         updateCardState('card-' + nextKey, 'active-card');
-//         const nextBtn = document.getElementById('completeBtn-' + nextKey);
-//         if (nextBtn) {
-//             nextBtn.disabled = false;
-//             nextBtn.onclick = () => {
-//                 const centreId = nextKey === RETURN_KEY ? null : CENTRE_IDS[parseInt(nextKey.split('session')[1]) - 2];
-//                 openCompletePopup(nextKey, centreId);
-//             };
-//         }
-//         const nextReportBtn = document.getElementById('reportBtn-' + nextKey);
-//         if (nextReportBtn) nextReportBtn.disabled = false;
-//         updateRouteStep(dotIdx + 1, 'active');
-        
-//         // Update footer text
-//         const footerSpan = document.querySelector('#card-' + nextKey + ' .session-footer span');
-//         if (footerSpan) {
-//             if (nextKey === RETURN_KEY) {
-//                 footerSpan.textContent = 'Ready to return to base';
-//             } else {
-//                 footerSpan.textContent = 'Ready to deliver';
-//             }
-//         }
-//     }
-
-//     showToast('✅ Session completed!');
-// }
-
-// /* ─── REPORT ISSUE ──────────────────────────────────────────────── */
-// let pendingReportSession = null;
-// let pendingReportCentreID = null;
-
-// function openReport(sessionKey, centreID) {
-//     pendingReportSession = sessionKey;
-//     pendingReportCentreID = centreID;
-//     openPopup('reportPopup');
-// }
-
-// async function submitReport() {
-//     const issueType = document.getElementById('issueType').value;
-//     const severity = document.getElementById('issueSeverity').value;
-//     const subject = document.getElementById('issueSubject').value.trim();
-//     const description = document.getElementById('issueDescription').value.trim();
-
-//     if (!issueType)   { showToast('⚠️ Please select an issue type.'); return; }
-//     if (!severity)    { showToast('⚠️ Please select a severity level.'); return; }
-//     if (!subject)     { showToast('⚠️ Please enter a subject.'); return; }
-//     if (!description) { showToast('⚠️ Please provide a description.'); return; }
-
-//     const data = await postAction('report_issue', {
-//         issueType,
-//         severity,
-//         subject,
-//         description,
-//     });
-
-//     closePopup('reportPopup');
-//     if (!data.success) { showToast('❌ Failed to submit report. ' + (data.message || '')); return; }
-
-//     // Lock the current session card
-//     updateCardState('card-' + pendingReportSession, 'locked');
-//     setBadge('badge-' + pendingReportSession, 'interrupted', 'Interrupted');
-//     setBadge('globalStatus', 'interrupted', 'Interrupted');
-
-//     // Disable complete button
-//     const btn = document.getElementById('completeBtn-' + pendingReportSession);
-//     if (btn) btn.disabled = true;
-    
-//     // Disable report button
-//     const reportBtn = document.getElementById('reportBtn-' + pendingReportSession);
-//     if (reportBtn) reportBtn.disabled = true;
-
-//     // Reset form
-//     document.getElementById('issueType').value = '';
-//     document.getElementById('issueSeverity').value = '';
-//     document.getElementById('issueSubject').value = '';
-//     document.getElementById('issueDescription').value = '';
-
-//     showToast('⚠️ Issue reported. Admin has been notified.', 4000);
-
-//     // Reload after brief delay
-//     setTimeout(() => location.reload(), 3500);
-// }
-
-// /* ─── DOM HELPERS ───────────────────────────────────────────────── */
-// function updateCardState(cardId, className) {
-//     const card = document.getElementById(cardId);
-//     if (card) {
-//         card.classList.remove('locked', 'active-card', 'completed-card');
-//         card.classList.add(className);
-//     }
-// }
-
-// function setBadge(elemId, type, label) {
-//     const el = document.getElementById(elemId);
-//     if (!el) return;
-//     el.className = 'badge badge-' + type;
-//     el.textContent = label;
-// }
-
-// function updateRouteStep(dotIdx, state) {
-//     const dot = document.getElementById('dot-' + dotIdx);
-//     const label = document.getElementById('label-' + dotIdx);
-//     if (dot) dot.className = 'step-dot ' + state;
-//     if (label) label.className = 'step-label ' + state;
-// }
-
-// function updateRouteLine(lineIdx, state) {
-//     const line = document.getElementById('line-' + lineIdx);
-//     if (line) line.className = 'step-line ' + (state === 'done' ? 'done' : '');
-// }
-
-// // Initialize page state based on PHP data
-// document.addEventListener('DOMContentLoaded', function() {
-//     // Set initial button states
-//     if (!state.journeyStarted && !state.returnCompleted) {
-//         const startBtn = document.getElementById('startJourneyBtn');
-//         if (startBtn) startBtn.style.display = 'flex';
-//     }
-    
-//     // Set initial route step states
-//     if (state.journeyStarted) {
-//         updateRouteStep(0, 'active');
-//         if (state.pickupCompleted) {
-//             updateRouteStep(1, 'done');
-//             updateRouteLine(1, 'done');
-//         } else {
-//             updateRouteStep(1, 'active');
-//             updateRouteLine(1, 'active');
-//         }
-        
-//         let completedCount = state.completedCentres.length;
-//         for (let i = 0; i < completedCount && i < CENTRE_IDS.length; i++) {
-//             updateRouteStep(2 + i, 'done');
-//             updateRouteLine(2 + i, 'done');
-//         }
-        
-//         if (completedCount < CENTRE_IDS.length && state.pickupCompleted && !state.returnCompleted) {
-//             updateRouteStep(2 + completedCount, 'active');
-//         } else if (completedCount === CENTRE_IDS.length && state.pickupCompleted && !state.returnCompleted) {
-//             updateRouteStep(2 + CENTRE_IDS.length, 'active');
-//         } else if (state.returnCompleted) {
-//             updateRouteStep(2 + CENTRE_IDS.length, 'done');
-//         }
-//     }
-    
-//     // If all completed, show final message
-//     if (state.returnCompleted) {
-//         showToast('🎉 This job has been completed!', 3000);
-//     }
-// });
-
-
-/* ─── PHP → JS BRIDGE ───────────────────────────────────────────── */
-const JOB_ID      = <?= $hasJob ? (int)$job['jobID']      : 'null' ?>;
-const REQUEST_ID  = <?= $hasJob ? (int)$job['requestID']  : 'null' ?>;
-const CENTRE_IDS  = <?= $hasJob ? json_encode(array_column($itemsByCentre, 'centreID')) : '[]' ?>;
-const RETURN_KEY  = <?= $hasJob ? json_encode('session' . ($centreCount + 2)) : 'null' ?>;
-const JOURNEY_STARTED = <?= $journeyStarted ? 'true' : 'false' ?>;
-const PICKUP_COMPLETED = <?= $pickupCompleted ? 'true' : 'false' ?>;
-const RETURN_COMPLETED = <?= $returnCompleted ? 'true' : 'false' ?>;
-
-/* ─── STATE ─────────────────────────────────────────────────────── */
+/* ─── STATE ────────────────────────────────────────────────────────── */
 let state = {
-    journeyStarted: JOURNEY_STARTED,
-    pickupCompleted: PICKUP_COMPLETED,
+    journeyStarted:   JOURNEY_STARTED,
+    pickupCompleted:  PICKUP_COMPLETED,
     completedCentres: <?= json_encode($completedCentres) ?>,
-    returnCompleted: RETURN_COMPLETED,
-    pendingSession: null,
-    pendingCentreID: null,
-    hasActiveIssue: false, // Track if there's an active issue that blocks progress
+    returnCompleted:  RETURN_COMPLETED,
+    isCancelled:      JOB_CANCELLED,
+    hasActiveIssue:   JOB_CANCELLED, // pre-lock page if already cancelled
+    pendingSession:   null,
+    pendingCentreID:  null,
 };
 
-/* ─── POPUP HELPERS ─────────────────────────────────────────────── */
+/* ─── POPUP HELPERS ────────────────────────────────────────────────── */
 function openPopup(id)  { document.getElementById(id).classList.add('visible'); }
 function closePopup(id) { document.getElementById(id).classList.remove('visible'); }
 
-/* ─── TOAST ─────────────────────────────────────────────────────── */
+/* ─── TOAST ────────────────────────────────────────────────────────── */
 function showToast(msg, duration = 2500) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -1591,7 +1256,7 @@ function showToast(msg, duration = 2500) {
     setTimeout(() => t.classList.remove('show'), duration);
 }
 
-/* ─── AJAX HELPER ───────────────────────────────────────────────── */
+/* ─── AJAX HELPER ──────────────────────────────────────────────────── */
 async function postAction(action, extraData = {}) {
     const fd = new FormData();
     fd.append('jobID',     JOB_ID);
@@ -1601,163 +1266,39 @@ async function postAction(action, extraData = {}) {
     return res.json();
 }
 
-/* ─── CHECK FOR ACTIVE ISSUES ───────────────────────────────────── */
-function checkForActiveIssues() {
-    // Check if there are any open or assigned issues for this job
-    const openIssues = document.querySelectorAll('.issue-status-open, .issue-status-assigned');
-    if (openIssues.length > 0) {
-        state.hasActiveIssue = true;
-        lockAllSteps();
-        showToast('⚠️ There are unresolved issues. Please wait for admin resolution before continuing.', 5000);
-        return true;
-    }
-    return false;
-}
-
-/* ─── LOCK ALL FUTURE STEPS ─────────────────────────────────────── */
+/* ─── LOCK ALL STEPS (used when job is cancelled) ──────────────────── */
 function lockAllSteps() {
-    // Get all session cards
-    const allCards = document.querySelectorAll('[id^="card-session"]');
-    
-    allCards.forEach(card => {
-        // Don't lock already completed cards
+    document.querySelectorAll('[id^="card-session"]').forEach(card => {
         if (!card.classList.contains('completed-card')) {
             card.classList.remove('active-card', 'completed-card');
             card.classList.add('locked');
-            
-            // Disable complete button
+
             const completeBtn = card.querySelector('.btn-complete');
-            if (completeBtn) {
-                completeBtn.disabled = true;
-                completeBtn.onclick = null;
-            }
-            
-            // Disable report button
+            if (completeBtn) { completeBtn.disabled = true; completeBtn.onclick = null; }
+
             const reportBtn = card.querySelector('.btn-danger');
-            if (reportBtn) {
-                reportBtn.disabled = true;
-            }
-            
-            // Update footer text
+            if (reportBtn) reportBtn.disabled = true;
+
             const footerSpan = card.querySelector('.session-footer span');
             if (footerSpan) {
-                footerSpan.textContent = '🔒 Journey paused due to reported issue';
+                footerSpan.textContent = '🚫 Job cancelled';
                 footerSpan.style.color = 'var(--StatusRed)';
             }
         }
     });
-    
-    // Update global status badge
-    setBadge('globalStatus', 'interrupted', 'Interrupted');
-    setBadge('badge-overview', 'interrupted', 'Interrupted');
-    
-    // Show notification if there are active issues
-    const issueCount = document.querySelectorAll('.issue-status-open, .issue-status-assigned').length;
-    if (issueCount > 0) {
-        const issueMessage = document.createElement('div');
-        issueMessage.className = 'issue-alert';
-        issueMessage.innerHTML = `
-            <div style="background: var(--StatusRedLight); border-left: 4px solid var(--StatusRed); padding: 12px 16px; margin: 16px 0; border-radius: 8px;">
-                <strong style="color: var(--StatusRed);">⚠️ Journey Interrupted</strong><br>
-                You have ${issueCount} unresolved issue(s) that require admin attention. 
-                Please wait for resolution before continuing your journey.
-            </div>
-        `;
-        
-        const cardsColumn = document.getElementById('cardsColumn');
-        const existingAlert = document.querySelector('.issue-alert');
-        if (!existingAlert && cardsColumn) {
-            cardsColumn.insertBefore(issueMessage, cardsColumn.firstChild);
-        }
-    }
+
+    setBadge('globalStatus',   'interrupted', 'Cancelled');
+    setBadge('badge-overview', 'interrupted', 'Cancelled');
 }
 
-/* ─── UNLOCK STEPS AFTER ISSUE RESOLUTION ───────────────────────── */
-function unlockSteps() {
-    state.hasActiveIssue = false;
-    
-    // Remove any alert messages
-    const alerts = document.querySelectorAll('.issue-alert');
-    alerts.forEach(alert => alert.remove());
-    
-    // Find the current active step based on progress
-    if (!state.pickupCompleted && state.journeyStarted) {
-        // Pickup not completed yet
-        updateCardState('card-session1', 'active-card');
-        const cb = document.getElementById('completeBtn-session1');
-        if (cb) {
-            cb.disabled = false;
-            cb.onclick = () => openCompletePopup('session1', null);
-        }
-        const rb = document.getElementById('reportBtn-session1');
-        if (rb) rb.disabled = false;
-        
-        const footerSpan = document.querySelector('#card-session1 .session-footer span');
-        if (footerSpan) {
-            footerSpan.textContent = 'Ready to collect items';
-            footerSpan.style.color = '';
-        }
-    } 
-    else if (state.pickupCompleted && !state.returnCompleted) {
-        // Pickup completed, find next centre to deliver
-        let nextCentreIndex = -1;
-        for (let i = 0; i < CENTRE_IDS.length; i++) {
-            if (!state.completedCentres.includes(CENTRE_IDS[i])) {
-                nextCentreIndex = i;
-                break;
-            }
-        }
-        
-        if (nextCentreIndex !== -1) {
-            // Unlock the next centre
-            const sessionKey = 'session' + (nextCentreIndex + 2);
-            updateCardState('card-' + sessionKey, 'active-card');
-            const cb = document.getElementById('completeBtn-' + sessionKey);
-            if (cb) {
-                cb.disabled = false;
-                cb.onclick = () => openCompletePopup(sessionKey, CENTRE_IDS[nextCentreIndex]);
-            }
-            const rb = document.getElementById('reportBtn-' + sessionKey);
-            if (rb) rb.disabled = false;
-            
-            const footerSpan = document.querySelector('#card-' + sessionKey + ' .session-footer span');
-            if (footerSpan) {
-                footerSpan.textContent = 'Ready to deliver';
-                footerSpan.style.color = '';
-            }
-        } 
-        else if (state.completedCentres.length === CENTRE_IDS.length) {
-            // All centres completed, unlock return step
-            updateCardState('card-' + RETURN_KEY, 'active-card');
-            const cb = document.getElementById('completeBtn-' + RETURN_KEY);
-            if (cb) {
-                cb.disabled = false;
-                cb.onclick = () => openCompletePopup(RETURN_KEY, null);
-            }
-            const rb = document.getElementById('reportBtn-' + RETURN_KEY);
-            if (rb) rb.disabled = false;
-            
-            const footerSpan = document.querySelector('#card-' + RETURN_KEY + ' .session-footer span');
-            if (footerSpan) {
-                footerSpan.textContent = 'Ready to return to base';
-                footerSpan.style.color = '';
-            }
-        }
+/* ─── START JOURNEY ────────────────────────────────────────────────── */
+function openStartPopup() {
+    if (state.isCancelled) {
+        showToast('🚫 This job has been cancelled.', 3000);
+        return;
     }
-    
-    // Update global badge back to ongoing
-    setBadge('globalStatus', 'ongoing', 'Ongoing');
-    setBadge('badge-overview', 'ongoing', 'Ongoing');
-    
-    showToast('✅ Issues resolved! You can now continue your journey.', 4000);
-}
-
-/* ─── START JOURNEY ─────────────────────────────────────────────── */
-function openStartPopup() { 
-    if (!state.journeyStarted && !state.returnCompleted && !state.hasActiveIssue) {
+    if (!state.journeyStarted && !state.returnCompleted) {
         openPopup('startPopup');
-    } else if (state.hasActiveIssue) {
-        showToast('⚠️ Cannot start journey. There are unresolved issues that need admin attention.', 4000);
     }
 }
 
@@ -1766,39 +1307,27 @@ async function confirmStartJourney() {
     const data = await postAction('start_journey');
     if (!data.success) { showToast('❌ Failed to start journey. Try again.'); return; }
 
-    // Update state
     state.journeyStarted = true;
-    
-    // Update UI
+
     const btn = document.getElementById('startJourneyBtn');
     if (btn) btn.style.display = 'none';
 
     setBadge('badge-overview', 'ongoing', 'Ongoing');
-    setBadge('globalStatus', 'ongoing', 'Ongoing');
-
-    // Update page title
+    setBadge('globalStatus',   'ongoing', 'Ongoing');
     document.querySelector('.page-title').textContent = 'Ongoing Job';
 
-    // Unlock session 1
     updateCardState('card-session1', 'active-card');
     const cb = document.getElementById('completeBtn-session1');
-    if (cb) {
-        cb.disabled = false;
-        cb.onclick = () => openCompletePopup('session1', null);
-    }
+    if (cb) { cb.disabled = false; cb.onclick = () => openCompletePopup('session1', null); }
 
-    // Enable report button for session 1
     const rb = document.getElementById('reportBtn-session1');
     if (rb) rb.disabled = false;
 
-    // Remove lock hint text
-    const lockHints = document.querySelectorAll('#card-session1 .session-footer span');
-    lockHints.forEach(el => {
+    document.querySelectorAll('#card-session1 .session-footer span').forEach(el => {
         el.textContent = 'Ready to collect items';
         el.style.color = '';
     });
 
-    // Update route steps
     updateRouteStep(0, 'active');
     updateRouteStep(1, 'active');
     updateRouteLine(0, 'active');
@@ -1806,19 +1335,17 @@ async function confirmStartJourney() {
     showToast('🚗 Journey started, drive safe!');
 }
 
-/* ─── COMPLETE SESSION ──────────────────────────────────────────── */
+/* ─── COMPLETE SESSION ─────────────────────────────────────────────── */
 function openCompletePopup(sessionKey, centreID) {
-    if (state.hasActiveIssue) {
-        showToast('⚠️ Cannot complete session. There are unresolved issues that need admin attention.', 4000);
+    if (state.isCancelled) {
+        showToast('🚫 This job has been cancelled.', 3000);
         return;
     }
-    
-    state.pendingSession = sessionKey;
+
+    state.pendingSession  = sessionKey;
     state.pendingCentreID = centreID;
 
-    const msgs = { 
-        'session1': 'Confirm you have collected all items from the provider location.'
-    };
+    const msgs = { 'session1': 'Confirm you have collected all items from the provider location.' };
     for (let i = 0; i < CENTRE_IDS.length; i++) {
         msgs['session' + (i + 2)] = 'Confirm you have delivered all items to this recycling centre.';
     }
@@ -1831,34 +1358,22 @@ function openCompletePopup(sessionKey, centreID) {
 
 async function confirmComplete() {
     closePopup('completePopup');
-    const key = state.pendingSession;
+    const key      = state.pendingSession;
     const centreID = state.pendingCentreID;
 
     let data;
-    if (key === 'session1') {
-        data = await postAction('complete_pickup');
-    } else if (key === RETURN_KEY) {
-        data = await postAction('complete_return');
-    } else {
-        data = await postAction('complete_dropoff', { centreID });
-    }
+    if (key === 'session1')  data = await postAction('complete_pickup');
+    else if (key === RETURN_KEY) data = await postAction('complete_return');
+    else data = await postAction('complete_dropoff', { centreID });
 
-    if (!data.success) { 
-        showToast('❌ Failed to complete session. Try again.'); 
-        return; 
-    }
+    if (!data.success) { showToast('❌ Failed to complete session. Try again.'); return; }
 
     // Mark this card as completed
     updateCardState('card-' + key, 'completed-card');
     setBadge('badge-' + key, 'completed', 'Completed');
     const btn = document.getElementById('completeBtn-' + key);
-    if (btn) { 
-        btn.disabled = true; 
-        btn.textContent = '✓ Done';
-        btn.onclick = null;
-    }
-    
-    // Disable report button
+    if (btn) { btn.disabled = true; btn.textContent = '✓ Done'; btn.onclick = null; }
+
     const reportBtn = document.getElementById('reportBtn-' + key);
     if (reportBtn) reportBtn.disabled = true;
 
@@ -1867,125 +1382,109 @@ async function confirmComplete() {
     for (let i = 0; i < CENTRE_IDS.length; i++) allKeys.push('session' + (i + 2));
     if (RETURN_KEY) allKeys.push(RETURN_KEY);
 
-    const idx = allKeys.indexOf(key);
+    const idx    = allKeys.indexOf(key);
     const dotIdx = idx + 1;
     const nextKey = allKeys[idx + 1];
 
-    // Update route step
     updateRouteStep(dotIdx, 'done');
     updateRouteLine(dotIdx, 'done');
 
-    // Update state based on completion
     if (key === 'session1') {
         state.pickupCompleted = true;
     } else if (key === RETURN_KEY) {
         state.returnCompleted = true;
-        setBadge('globalStatus', 'completed', 'Completed');
+        setBadge('globalStatus',   'completed', 'Completed');
         setBadge('badge-overview', 'completed', 'Completed');
         updateRouteStep(dotIdx + 1, 'done');
         showToast('🎉 Job completed! Well done!', 4000);
         return;
     } else {
-        // It's a centre dropoff
         if (centreID && !state.completedCentres.includes(centreID)) {
             state.completedCentres.push(centreID);
         }
     }
 
-    // Unlock next step if available and no active issues
-    if (nextKey && !state.hasActiveIssue) {
+    // Unlock next step
+    if (nextKey) {
         updateCardState('card-' + nextKey, 'active-card');
         const nextBtn = document.getElementById('completeBtn-' + nextKey);
         if (nextBtn) {
             nextBtn.disabled = false;
             nextBtn.onclick = () => {
-                const centreId = nextKey === RETURN_KEY ? null : CENTRE_IDS[parseInt(nextKey.split('session')[1]) - 2];
-                openCompletePopup(nextKey, centreId);
+                const cid = nextKey === RETURN_KEY
+                    ? null
+                    : CENTRE_IDS[parseInt(nextKey.split('session')[1]) - 2];
+                openCompletePopup(nextKey, cid);
             };
         }
         const nextReportBtn = document.getElementById('reportBtn-' + nextKey);
         if (nextReportBtn) nextReportBtn.disabled = false;
         updateRouteStep(dotIdx + 1, 'active');
-        
-        // Update footer text
+
         const footerSpan = document.querySelector('#card-' + nextKey + ' .session-footer span');
         if (footerSpan) {
-            if (nextKey === RETURN_KEY) {
-                footerSpan.textContent = 'Ready to return to base';
-            } else {
-                footerSpan.textContent = 'Ready to deliver';
-            }
+            footerSpan.textContent = nextKey === RETURN_KEY ? 'Ready to return to base' : 'Ready to deliver';
             footerSpan.style.color = '';
         }
-    } else if (nextKey && state.hasActiveIssue) {
-        // If there's an active issue, keep the next step locked
-        updateCardState('card-' + nextKey, 'locked');
     }
 
     showToast('✅ Session completed!');
 }
 
-/* ─── REPORT ISSUE ──────────────────────────────────────────────── */
-let pendingReportSession = null;
+/* ─── REPORT ISSUE ─────────────────────────────────────────────────── */
+let pendingReportSession  = null;
 let pendingReportCentreID = null;
 
 function openReport(sessionKey, centreID) {
-    // Don't allow reporting if journey hasn't started or is completed
-    if (!state.journeyStarted || state.returnCompleted) {
+    if (!state.journeyStarted || state.returnCompleted || state.isCancelled) {
         showToast('⚠️ Cannot report issues at this stage.', 3000);
         return;
     }
-    
-    pendingReportSession = sessionKey;
+    pendingReportSession  = sessionKey;
     pendingReportCentreID = centreID;
     openPopup('reportPopup');
 }
 
 async function submitReport() {
-    const issueType = document.getElementById('issueType').value;
-    const severity = document.getElementById('issueSeverity').value;
-    const subject = document.getElementById('issueSubject').value.trim();
+    const issueType   = document.getElementById('issueType').value;
+    const severity    = document.getElementById('issueSeverity').value;
+    const subject     = document.getElementById('issueSubject').value.trim();
     const description = document.getElementById('issueDescription').value.trim();
 
-    if (!issueType)   { showToast('⚠️ Please select an issue type.'); return; }
-    if (!severity)    { showToast('⚠️ Please select a severity level.'); return; }
-    if (!subject)     { showToast('⚠️ Please enter a subject.'); return; }
-    if (!description) { showToast('⚠️ Please provide a description.'); return; }
+    if (!issueType)   { showToast('⚠️ Please select an issue type.');     return; }
+    if (!severity)    { showToast('⚠️ Please select a severity level.');  return; }
+    if (!subject)     { showToast('⚠️ Please enter a subject.');          return; }
+    if (!description) { showToast('⚠️ Please provide a description.');    return; }
 
-    const data = await postAction('report_issue', {
-        issueType,
-        severity,
-        subject,
-        description,
-    });
+    const data = await postAction('report_issue', { issueType, severity, subject, description });
 
     closePopup('reportPopup');
     if (!data.success) { showToast('❌ Failed to submit report. ' + (data.message || '')); return; }
 
-    // Mark that there's an active issue
+    // Mark state as cancelled
+    state.isCancelled    = true;
     state.hasActiveIssue = true;
-    
-    // Lock the current session card
-    updateCardState('card-' + pendingReportSession, 'locked');
-    setBadge('badge-' + pendingReportSession, 'interrupted', 'Interrupted');
-    
-    // Disable all future steps
+
+    // Lock all steps and update badges
     lockAllSteps();
 
+    // Also mark the specific card that triggered the report
+    updateCardState('card-' + pendingReportSession, 'locked');
+    setBadge('badge-' + pendingReportSession, 'interrupted', 'Cancelled');
+
     // Reset form
-    document.getElementById('issueType').value = '';
-    document.getElementById('issueSeverity').value = '';
-    document.getElementById('issueSubject').value = '';
+    document.getElementById('issueType').value        = '';
+    document.getElementById('issueSeverity').value    = '';
+    document.getElementById('issueSubject').value     = '';
     document.getElementById('issueDescription').value = '';
 
-    showToast('⚠️ Issue reported. Journey paused. Admin has been notified and will review shortly.', 5000);
+    showToast('🚫 Issue reported. Job has been cancelled. Admin has been notified.', 5000);
 
-    // Instead of reloading, we'll keep the page state and just lock everything
-    // Reload after 5 seconds to show the new issue in the history
+    // Reload after delay to show new issue in history and render cancelled state
     setTimeout(() => location.reload(), 5000);
 }
 
-/* ─── DOM HELPERS ───────────────────────────────────────────────── */
+/* ─── DOM HELPERS ──────────────────────────────────────────────────── */
 function updateCardState(cardId, className) {
     const card = document.getElementById(cardId);
     if (card) {
@@ -2001,66 +1500,58 @@ function setBadge(elemId, type, label) {
     el.textContent = label;
 }
 
-function updateRouteStep(dotIdx, state) {
-    const dot = document.getElementById('dot-' + dotIdx);
+function updateRouteStep(dotIdx, stepState) {
+    const dot   = document.getElementById('dot-'   + dotIdx);
     const label = document.getElementById('label-' + dotIdx);
-    if (dot) dot.className = 'step-dot ' + state;
-    if (label) label.className = 'step-label ' + state;
+    if (dot)   dot.className   = 'step-dot '   + stepState;
+    if (label) label.className = 'step-label ' + stepState;
 }
 
-function updateRouteLine(lineIdx, state) {
+function updateRouteLine(lineIdx, lineState) {
     const line = document.getElementById('line-' + lineIdx);
-    if (line) line.className = 'step-line ' + (state === 'done' ? 'done' : '');
+    if (line) line.className = 'step-line ' + (lineState === 'done' ? 'done' : '');
 }
 
-// Initialize page state based on PHP data
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for any active issues on page load
-    checkForActiveIssues();
-    
-    // Set initial button states
-    if (!state.journeyStarted && !state.returnCompleted && !state.hasActiveIssue) {
-        const startBtn = document.getElementById('startJourneyBtn');
-        if (startBtn) startBtn.style.display = 'flex';
-    }
-    
-    // If there's an active issue, all steps should be locked
-    if (state.hasActiveIssue) {
+/* ─── INIT ─────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+
+    // If job is already cancelled on load, lock everything and stop
+    if (state.isCancelled) {
         lockAllSteps();
-    } else {
-        // Set initial route step states
-        if (state.journeyStarted) {
-            updateRouteStep(0, 'active');
-            if (state.pickupCompleted) {
-                updateRouteStep(1, 'done');
-                updateRouteLine(1, 'done');
-            } else {
-                updateRouteStep(1, 'active');
-                updateRouteLine(1, 'active');
-            }
-            
-            let completedCount = state.completedCentres.length;
-            for (let i = 0; i < completedCount && i < CENTRE_IDS.length; i++) {
-                updateRouteStep(2 + i, 'done');
-                updateRouteLine(2 + i, 'done');
-            }
-            
-            if (completedCount < CENTRE_IDS.length && state.pickupCompleted && !state.returnCompleted) {
-                updateRouteStep(2 + completedCount, 'active');
-            } else if (completedCount === CENTRE_IDS.length && state.pickupCompleted && !state.returnCompleted) {
-                updateRouteStep(2 + CENTRE_IDS.length, 'active');
-            } else if (state.returnCompleted) {
-                updateRouteStep(2 + CENTRE_IDS.length, 'done');
-            }
+        return;
+    }
+
+    // Normal route step initialisation
+    if (state.journeyStarted) {
+        updateRouteStep(0, 'active');
+
+        if (state.pickupCompleted) {
+            updateRouteStep(1, 'done');
+            updateRouteLine(1, 'done');
+        } else {
+            updateRouteStep(1, 'active');
+            updateRouteLine(1, 'active');
         }
-        
-        // If all completed, show final message
-        if (state.returnCompleted) {
-            showToast('🎉 This job has been completed!', 3000);
+
+        const completedCount = state.completedCentres.length;
+        for (let i = 0; i < completedCount && i < CENTRE_IDS.length; i++) {
+            updateRouteStep(2 + i, 'done');
+            updateRouteLine(2 + i, 'done');
         }
+
+        if (completedCount < CENTRE_IDS.length && state.pickupCompleted && !state.returnCompleted) {
+            updateRouteStep(2 + completedCount, 'active');
+        } else if (completedCount === CENTRE_IDS.length && state.pickupCompleted && !state.returnCompleted) {
+            updateRouteStep(2 + CENTRE_IDS.length, 'active');
+        } else if (state.returnCompleted) {
+            updateRouteStep(2 + CENTRE_IDS.length, 'done');
+        }
+    }
+
+    if (state.returnCompleted) {
+        showToast('🎉 This job has been completed!', 3000);
     }
 });
-
 </script>
 </body>
 </html>

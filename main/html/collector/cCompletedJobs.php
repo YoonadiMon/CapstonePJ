@@ -173,7 +173,7 @@ $historyJson = json_encode($historyData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX
                         <button id="themeToggleMobile">
                             <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
                         </button>
-                        <a href="../../html/common/Setting.html">
+                        <a href="../../html/common/Setting.php">
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
