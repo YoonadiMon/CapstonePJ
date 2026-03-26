@@ -612,7 +612,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
                         </a>
                     </section>
                     <a href="../../html/admin/aHome.php">Home</a>
-                    <a href="../../html/admin/aRequests.html">Requests</a>
+                    <a href="../../html/admin/aRequests.php">Requests</a>
                     <a href="../../html/admin/aJobs.php">Jobs</a>
                     <a href="../../html/admin/aIssue.html">Issue</a>
                     <a href="../../html/admin/aOperations.html">Operations</a>
@@ -623,7 +623,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
 
         <nav class="c-navbar-desktop">
             <a href="../../html/admin/aHome.php">Home</a>
-            <a href="../../html/admin/aRequests.html">Requests</a>
+            <a href="../../html/admin/aRequests.php">Requests</a>
             <a href="../../html/admin/aJobs.php">Jobs</a>
             <a href="../../html/admin/aIssue.html">Issue</a>
             <a href="../../html/admin/aOperations.html">Operations</a>
@@ -927,7 +927,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aRequests.html">Collection Requests</a><br>
+                <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
                 <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
                 <a href="../../html/admin/aIssue.html">Issue</a><br>
             </div>
