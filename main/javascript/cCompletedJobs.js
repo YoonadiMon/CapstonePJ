@@ -307,32 +307,51 @@
  * Do NOT redeclare historyData here.
  */
 
+/* cCompletedJobs.js
+ * historyData is injected by cCompletedJobs.php as an inline <script> block
+ * just before this file is loaded, so it is already available as a global.
+ * Do NOT redeclare historyData here.
+ */
+
 // ─── STATE ────────────────────────────────────────────────────
 let activeJobId = null;
 let filteredData = [...historyData];
 
 // ─── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    renderStats();
+    // Stats are already set by PHP, but we'll keep the function for completeness
+    // The PHP already displays correct stats for completed jobs only
     renderJobList(historyData);
 });
 
 // ─── STATS ───────────────────────────────────────────────────
+// This function is kept but will be overridden by PHP stats
+// It's only here for reference or if needed elsewhere
 function renderStats() {
-    let totalJobs   = historyData.length;
-    let totalItems  = 0;
+    // Only count completed jobs for stats
+    let totalJobs = 0;
+    let totalItems = 0;
     let totalWeight = 0;
 
     historyData.forEach(job => {
-        job.items.forEach(item => {
-            totalItems++;
-            totalWeight += parseFloat(item.weight);
-        });
+        // Only count if the job status is 'completed'
+        if (job.status === 'completed') {
+            totalJobs++;
+            job.items.forEach(item => {
+                totalItems++;
+                totalWeight += parseFloat(item.weight);
+            });
+        }
     });
 
-    document.getElementById('statJobs').textContent   = totalJobs;
-    document.getElementById('statItems').textContent  = totalItems;
-    document.getElementById('statWeight').textContent = totalWeight.toFixed(1) + ' kg';
+    // Update the stats display
+    const jobEl = document.getElementById('statJobs');
+    const itemEl = document.getElementById('statItems');
+    const weightEl = document.getElementById('statWeight');
+    
+    if (jobEl && !jobEl.textContent) jobEl.textContent = totalJobs;
+    if (itemEl && !itemEl.textContent) itemEl.textContent = totalItems;
+    if (weightEl && !weightEl.textContent) weightEl.textContent = totalWeight.toFixed(2) + ' kg';
 }
 
 // ─── JOB LIST ─────────────────────────────────────────────────
@@ -349,6 +368,7 @@ function renderJobList(data) {
         const item = document.createElement('div');
         item.className = 'history-job-item' + (job.id === activeJobId ? ' active' : '');
         item.dataset.jobId = job.id;
+        item.dataset.status = job.status; // Add status attribute for styling
         item.innerHTML = `
             <span class="history-job-id">${job.id}</span>
             <span class="history-job-date">${job.date}</span>
@@ -389,7 +409,9 @@ function selectJob(jobId) {
     // Header
     document.getElementById('detailJobId').textContent = job.id;
     const badge = document.getElementById('detailStatus');
-    badge.textContent = capitalize(job.status);
+    // Use statusText for display, fallback to status if not available
+    const displayStatus = job.statusText || capitalize(job.status);
+    badge.textContent = displayStatus;
     badge.className = 'detail-badge badge-' + job.status;
 
     document.getElementById('detailDate').textContent     = job.date;
@@ -408,11 +430,11 @@ function selectJob(jobId) {
     let totalWeight = 0;
     job.items.forEach((item, i) => {
         totalWeight += parseFloat(item.weight);
-        itemList.innerHTML  += `<li>${i + 1}. ${item.name}</li>`;
+        itemList.innerHTML  += `<li><span class="item-name">${i + 1}. ${item.name}</span><span class="item-weight">${item.weight} kg</span></li>`;
         brandList.innerHTML += `<li>${i + 1}. ${item.brand}</li>`;
     });
 
-    document.getElementById('dTotalWeight').textContent = totalWeight.toFixed(1) + ' kg total';
+    document.getElementById('dTotalWeight').textContent = totalWeight.toFixed(2) + ' kg total';
 
     // Item dropdowns
     const dropdowns = document.getElementById('dItemDropdowns');
@@ -422,7 +444,7 @@ function selectJob(jobId) {
         el.className = 'item-dropdown';
         el.innerHTML = `
             <div class="item-dropdown-header">
-                <span>${item.id} — ${item.name}</span>
+                <h3>${item.id} — ${item.name} <small>(${item.weight} kg)</small></h3>
                 <span class="dropdown-arrow">▼</span>
             </div>
             <div class="item-dropdown-content">
@@ -433,11 +455,17 @@ function selectJob(jobId) {
                         <a class="view-full-pic-link" onclick="openHistoryModal('${item.img}','${item.name}')">View full pic</a>
                     </div>
                     <div class="item-details-col">
-                        <p><strong>Item</strong> ${item.name}</p>
-                        <p><strong>Brand</strong> ${item.brand}</p>
-                        <p><strong>Weight</strong> ${item.weight} kg</p>
-                        <p><strong>Drop-off</strong> ${item.dropoff}</p>
-                        <p><strong>Note</strong> ${item.description}</p>
+                        <div class="item-grid">
+                            <div>
+                                <p><strong>Item:</strong> <span>${item.name}</span></p>
+                                <p><strong>Brand:</strong> <span>${item.brand}</span></p>
+                                <p><strong>Weight:</strong> <span>${item.weight} kg</span></p>
+                            </div>
+                            <div>
+                                <p><strong>Drop-off:</strong> <span>${item.dropoff}</span></p>
+                                <p><strong>Description:</strong> <span>${item.description}</span></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -29,7 +29,6 @@ if (isset($_GET['action'])) {
     if ($action === 'start_journey') {
         $jobID = (int)$_POST['jobID'];
 
-        // Verify this job belongs to this collector and is Scheduled
         $chk = $conn->prepare(
             "SELECT j.jobID, j.requestID, j.status FROM tbljob j
              WHERE j.jobID = ? AND j.collectorID = ?
@@ -45,19 +44,16 @@ if (isset($_GET['action'])) {
         $requestID = $row['requestID'];
         $now = date('Y-m-d H:i:s');
 
-        // Update job status → Ongoing, set startedAt
         $upd = $conn->prepare("UPDATE tbljob SET status='Ongoing', startedAt=? WHERE jobID=?");
         $upd->bind_param('si', $now, $jobID);
         $upd->execute();
         $upd->close();
 
-        // Update request status → Ongoing
         $upd2 = $conn->prepare("UPDATE tblcollection_request SET status='Ongoing' WHERE requestID=?");
         $upd2->bind_param('i', $requestID);
         $upd2->execute();
         $upd2->close();
 
-        // Update collector status → on duty
         $upd3 = $conn->prepare("UPDATE tblcollector SET status='on duty' WHERE collectorID=?");
         $upd3->bind_param('i', $userID);
         $upd3->execute();
@@ -76,7 +72,6 @@ if (isset($_GET['action'])) {
         $jobID     = (int)$_POST['jobID'];
         $requestID = (int)$_POST['requestID'];
 
-        // Mark all Pending items on this request → Collected
         $upd = $conn->prepare("UPDATE tblitem SET status='Collected' WHERE requestID=? AND status='Pending'");
         $upd->bind_param('i', $requestID);
         $upd->execute();
@@ -101,7 +96,6 @@ if (isset($_GET['action'])) {
         $requestID = (int)$_POST['requestID'];
         $centreID  = (int)$_POST['centreID'];
 
-        // Mark items for this centre → Received
         $upd = $conn->prepare(
             "UPDATE tblitem SET status='Received'
              WHERE requestID=? AND centreID=? AND status='Collected'"
@@ -110,7 +104,6 @@ if (isset($_GET['action'])) {
         $upd->execute();
         $upd->close();
 
-        // Check if ALL items are now Received+
         $chk = $conn->prepare(
             "SELECT COUNT(*) as c FROM tblitem
              WHERE requestID=? AND status NOT IN ('Received','Processed','Recycled','Cancelled')"
@@ -120,7 +113,6 @@ if (isset($_GET['action'])) {
         $remaining = $chk->get_result()->fetch_assoc()['c'];
         $chk->close();
 
-        // Get centre name for log
         $cname = $conn->prepare("SELECT name FROM tblcentre WHERE centreID=?");
         $cname->bind_param('i', $centreID);
         $cname->execute();
@@ -182,18 +174,15 @@ if (isset($_GET['action'])) {
         $subject     = trim($_POST['subject']     ?? '');
         $description = trim($_POST['description'] ?? '');
 
-        // Validate issueType against DB enum
         $validTypes = ['Operational', 'Vehicle', 'Safety', 'Technical', 'Other'];
         if (!in_array($issueType, $validTypes)) $issueType = 'Other';
 
-        // Validate severity against DB enum
         $validSeverities = ['Low', 'Medium', 'High', 'Critical'];
         if (!in_array($severity, $validSeverities)) $severity = 'Medium';
 
         if (empty($subject))     { echo json_encode(['success'=>false,'message'=>'Subject is required']); exit; }
         if (empty($description)) { echo json_encode(['success'=>false,'message'=>'Description is required']); exit; }
 
-        // Insert the issue
         $ins = $conn->prepare(
             "INSERT INTO tblissue
              (requestID, jobID, reportedBy, issueType, severity, subject, description, status)
@@ -204,22 +193,11 @@ if (isset($_GET['action'])) {
         $issueID = $conn->insert_id;
         $ins->close();
 
-        // ── Cancel the job ──
-        $updJob = $conn->prepare("UPDATE tbljob SET status='Cancelled' WHERE jobID=?");
-        $updJob->bind_param('i', $jobID);
-        $updJob->execute();
-        $updJob->close();
-
-        // ── Set collector back to active ──
-        $updCol = $conn->prepare("UPDATE tblcollector SET status='active' WHERE collectorID=?");
-        $updCol->bind_param('i', $userID);
-        $updCol->execute();
-        $updCol->close();
+        // DO NOT cancel the job automatically - just log the issue
+        // The job remains ongoing, but admin will review the issue
 
         logActivity($conn, $requestID, $jobID, $userID, 'Issue', 'Create',
-            "Issue (ID: $issueID) - $issueType - $subject");
-        logActivity($conn, $requestID, $jobID, $userID, 'Job', 'Status Change',
-            'Changed to Cancelled due to reported issue');
+            "Issue (ID: $issueID) - $issueType - $subject - Awaiting admin review");
 
         echo json_encode(['success'=>true, 'issueID'=>$issueID]);
         exit;
@@ -232,10 +210,6 @@ if (isset($_GET['action'])) {
 // ─── FETCH JOB DATA FOR PAGE RENDER ─────────────────────────────────────────
 $collectorID = (int)$_SESSION['userID'];
 
-/*
-  Fetch the latest job for this collector, excluding only Pending and Rejected.
-  Priority: Ongoing > Picked Up > Scheduled > Cancelled > Completed
-*/
 $jobQuery = $conn->prepare(
     "SELECT j.jobID, j.requestID, j.collectorID, j.vehicleID,
             j.scheduledDate, j.scheduledTime, j.estimatedEndTime,
@@ -352,13 +326,13 @@ $pickupCompleted = false;
 $completedCentres = [];
 $returnCompleted = false;
 $isCancelled     = false;
+$hasPendingIssue = false;
 
 if ($hasJob) {
     $isCancelled     = ($job['jobStatus'] === 'Cancelled');
     $journeyStarted  = ($job['jobStatus'] !== 'Scheduled');
     $pickupCompleted = true;
 
-    // Check if all items are collected (not pending)
     foreach ($itemsByCentre as $group) {
         foreach ($group['items'] as $item) {
             if ($item['status'] === 'Pending') {
@@ -368,7 +342,6 @@ if ($hasJob) {
         }
     }
 
-    // Check which centres have been delivered
     foreach ($itemsByCentre as $group) {
         $allReceived = true;
         foreach ($group['items'] as $item) {
@@ -383,6 +356,14 @@ if ($hasJob) {
     }
 
     $returnCompleted = ($job['jobStatus'] === 'Completed');
+    
+    // Check if there's any pending/open issue that hasn't been resolved
+    foreach ($jobIssues as $issue) {
+        if ($issue['status'] !== 'Resolved') {
+            $hasPendingIssue = true;
+            break;
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -390,8 +371,8 @@ if ($hasJob) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $isCancelled ? 'Cancelled Job' : ($journeyStarted ? 'Ongoing Job' : 'Scheduled Job') ?></title>
-    <link rel="icon" type="image/png" href="../../assets//images/bolt-lightning-icon.svg">
+    <title><?= $isCancelled ? 'Cancelled Job' : ($journeyStarted ? 'Ongoing Job' : 'Scheduled Job') ?> - AfterVolt</title>
+    <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
     <link rel="stylesheet" href="../../style/style.css">
     <link rel="stylesheet" href="../../style/clnProgress.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -399,6 +380,7 @@ if ($hasJob) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
 <style>
+/* ─── ISSUE SECTION STYLES ───────────────────────────────────────────── */
 .issues-section {
     margin-top: 32px;
 }
@@ -464,13 +446,10 @@ if ($hasJob) {
     transition: box-shadow 0.25s, border-color 0.25s;
 }
 
-.issue-card:last-child {
-    margin-bottom: 0;
-}
 
-.issue-card:hover {
-    box-shadow: var(--shadow-hover);
-}
+.issue-card:last-child { margin-bottom: 0; }
+
+.issue-card:hover { box-shadow: var(--shadow-hover); }
 
 .issue-card-header {
     display: flex;
@@ -612,10 +591,10 @@ if ($hasJob) {
     margin-bottom: 4px;
 }
 
-/* Cancelled job banner */
-.cancelled-banner {
-    background: var(--StatusRedLight);
-    border: 1.5px solid var(--StatusRed);
+/* ─── PENDING ISSUE BANNER ────────────────────────────────────────────────── */
+.pending-issue-banner {
+    background: var(--StatusYellowLight);
+    border: 1.5px solid hsl(42, 80%, 50%);
     border-radius: 12px;
     padding: 14px 18px;
     margin-bottom: 18px;
@@ -624,37 +603,33 @@ if ($hasJob) {
     gap: 12px;
 }
 
-.cancelled-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.pending-issue-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
 
-.cancelled-banner-text strong {
+.pending-issue-banner-text strong {
     display: block;
     font-size: 13.5px;
     font-weight: 700;
-    color: var(--StatusRed);
+    color: hsl(42, 80%, 35%);
     margin-bottom: 3px;
 }
 
-.cancelled-banner-text p {
+.pending-issue-banner-text p {
     font-size: 12.5px;
     color: var(--text-muted);
     line-height: 1.5;
     margin: 0;
 }
 
-.dark-mode .cancelled-banner {
-    background: hsl(0, 50%, 12%);
-    border-color: hsl(0, 60%, 40%);
+.dark-mode .pending-issue-banner {
+    background: hsl(42, 60%, 12%);
+    border-color: hsl(42, 70%, 40%);
 }
 
-/* Issue Alert Banner */
-.issue-alert { animation: slideDown 0.3s ease-out; }
-
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to   { opacity: 1; transform: translateY(0); }
+.dark-mode .pending-issue-banner-text strong {
+    color: hsl(42, 80%, 55%);
 }
 
-/* Disabled button styles */
+/* ─── DISABLED BUTTON OVERRIDE ───────────────────────────────────────── */
 .btn-complete:disabled { opacity: 0.6; cursor: not-allowed; background: var(--text-muted); }
 .btn-danger:disabled   { opacity: 0.6; cursor: not-allowed; }
 
@@ -673,6 +648,7 @@ if ($hasJob) {
         <h3>Start Journey</h3>
         <p>Drive safe! Your journey has begun. Follow the route and complete each session in order.</p>
         <div class="popup-actions">
+            <button class="btn btn-ghost" onclick="closePopup('startPopup')">Cancel</button>
             <button class="btn btn-primary" onclick="confirmStartJourney()">Let's Go!</button>
         </div>
     </div>
@@ -695,8 +671,8 @@ if ($hasJob) {
 <div class="popup-overlay" id="reportPopup">
     <div class="popup" style="text-align:left; max-width:500px;">
         <h3 style="text-align:center; margin-bottom:6px;">Report an Issue</h3>
-        <p style="text-align:center; margin-bottom:18px; color:var(--StatusRed); font-size:13px; font-weight:600;">
-            ⚠️ Reporting an issue will cancel this job and notify the admin.
+        <p style="text-align:center; margin-bottom:18px; color:var(--StatusYellow); font-size:13px; font-weight:600;">
+            ⚠️ Reporting an issue will notify the admin. The complete button will be disabled until the issue is resolved.
         </p>
 
         <div class="form-group">
@@ -734,7 +710,7 @@ if ($hasJob) {
 
         <div class="popup-actions">
             <button class="btn btn-ghost" onclick="closePopup('reportPopup')">Cancel</button>
-            <button class="btn btn-danger" onclick="submitReport()">Submit & Cancel Job</button>
+            <button class="btn btn-warning" onclick="submitReport()">Submit Report</button>
         </div>
     </div>
 </div>
@@ -744,56 +720,78 @@ if ($hasJob) {
 
 <div id="cover" class="" onclick="hideMenu()"></div>
 
+<!-- ─── HEADER ─── -->
 <header>
     <section class="c-logo-section">
         <a href="../../html/collector/cHome.php" class="c-logo-link">
-            <img src="../../assets//images/logo.png" alt="Logo" class="c-logo">
+            <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             <div class="c-text">AfterVolt</div>
         </a>
     </section>
+
+    <!-- Mobile nav -->
     <nav class="c-navbar-side">
-        <img src="../../assets//images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
+        <img src="../../assets/images/icon-menu.svg" alt="icon-menu" onclick="showMenu()" class="c-icon-btn" id="menuBtn">
         <div id="sidebarNav" class="c-navbar-side-menu">
-            <img src="../../assets//images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
+            <img src="../../assets/images/icon-menu-close.svg" alt="icon-menu-close" onclick="hideMenu()" class="close-btn" id="closeBtn">
             <div class="c-navbar-side-items">
                 <section class="c-navbar-side-more">
-                    <button id="themeToggleMobile"><img src="../../assets//images/light-mode-icon.svg" alt="Light Mode Icon"></button>
-                    <a href="../../html/common/Setting.phpl"><img src="../../assets//images/setting-light.svg" alt="Settings" id="settingImgM"></a>
+                    <button id="themeToggleMobile">
+                        <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+                    </button>
+                    <a href="../../html/common/Setting.php">
+                        <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
+                    </a>
                 </section>
                 <a href="../../html/collector/cHome.php">Home</a>
-                <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
-                <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a><br>
+                <a href="../../html/collector/cMyJobs.php">My Jobs</a>
+                <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                 <a href="../../html/collector/cCompletedJobs.php">History</a>
-                <a href="../../html/common/About.html">About</a><br>
+                <a href="../../html/common/About.html">About</a>
             </div>
         </div>
     </nav>
+
+    <!-- Desktop nav -->
     <nav class="c-navbar-desktop">
         <a href="../../html/collector/cHome.php">Home</a>
-        <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
-        <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a><br>
+        <a href="../../html/collector/cMyJobs.php">My Jobs</a>
+        <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
         <a href="../../html/collector/cCompletedJobs.php">History</a>
-        <a href="../../html/common/About.html">About</a><br>
+        <a href="../../html/common/About.html">About</a>
     </nav>
+
     <section class="c-navbar-more">
-        <button id="themeToggleDesktop"><img src="../../assets//images/light-mode-icon.svg" alt="Light Mode Icon"></button>
-        <a href="../../html/common/Setting.php"><img src="../../assets//images/setting-light.svg" alt="Settings" id="settingImg"></a>
+        <button id="themeToggleDesktop">
+            <img src="../../assets/images/light-mode-icon.svg" alt="Light Mode Icon">
+        </button>
+        <a href="../../html/common/Setting.php">
+            <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImg">
+        </a>
     </section>
 </header>
 <hr>
 
+<!-- ─── MAIN ─── -->
 <main>
+
 <?php if (!$hasJob): ?>
     <div class="page-header">
         <button class="back-btn" onclick="history.back()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
         </button>
         <h1 class="page-title">Ongoing Job</h1>
     </div>
     <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
         <div style="font-size:48px; margin-bottom:16px;">📋</div>
         <h3 style="font-size:18px; font-weight:700; color:var(--text-color); margin-bottom:8px;">No Active Job</h3>
-        <p style="font-size:13.5px; line-height:1.6;">You don't have any active job at the moment.<br>Check <a href="../../html/collector/cMyJobs.php" style="color:var(--MainBlue); font-weight:600;">My Jobs</a> for pending assignments that are awaiting acceptance.</p>
+        <p style="font-size:13.5px; line-height:1.6;">
+            You don't have any active job at the moment.<br>
+            Check <a href="../../html/collector/cMyJobs.php" style="color:var(--MainBlue); font-weight:600;">My Jobs</a>
+            for pending assignments that are awaiting acceptance.
+        </p>
     </div>
 
 <?php else:
@@ -818,23 +816,47 @@ if ($hasJob) {
         $globalBadgeText  = 'Scheduled';
     }
 
-    // All items flat
+    // Flatten all items
     $allItems    = [];
     $totalWeight = 0;
     foreach ($itemsByCentre as $group) {
-        foreach ($group['items'] as $it) { $allItems[] = $it; $totalWeight += (float)$it['weight']; }
+        foreach ($group['items'] as $it) {
+            $allItems[]   = $it;
+            $totalWeight += (float)$it['weight'];
+        }
     }
-    foreach ($itemsNoCentre as $it) { $allItems[] = $it; $totalWeight += (float)$it['weight']; }
+    foreach ($itemsNoCentre as $it) {
+        $allItems[]   = $it;
+        $totalWeight += (float)$it['weight'];
+    }
 
     $issueCount = count($jobIssues ?? []);
 ?>
+
+    <!-- Page Header -->
     <div class="page-header">
         <button class="back-btn" onclick="history.back()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
         </button>
-        <h1 class="page-title"><?= $isCancelled ? 'Cancelled Job' : ($journeyStarted ? 'Ongoing Job' : 'Scheduled Job') ?></h1>
-        <span class="badge <?= $globalBadgeClass ?>" id="globalStatus"><?= htmlspecialchars($globalBadgeText) ?></span>
+        <h1 class="page-title" id="pageTitle">
+            <?= $isCancelled ? 'Cancelled Job' : ($journeyStarted ? 'Ongoing Job' : 'Scheduled Job') ?>
+        </h1>
+        <span class="badge <?= $globalBadgeClass ?>" id="globalStatus">
+            <?= htmlspecialchars($globalBadgeText) ?>
+        </span>
     </div>
+
+    <?php if ($hasPendingIssue && !$isCancelled && !$returnCompleted): ?>
+    <div class="pending-issue-banner">
+        <div class="pending-issue-banner-icon">⚠️</div>
+        <div class="pending-issue-banner-text">
+            <strong>Pending Issue Report</strong>
+            <p>An issue has been reported for this job. The complete button has been disabled until an admin reviews and resolves the issue. Please wait for further instructions.</p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <?php if ($isCancelled): ?>
     <div class="cancelled-banner">
@@ -846,8 +868,10 @@ if ($hasJob) {
     </div>
     <?php endif; ?>
 
+    <!-- Two-column layout -->
     <div class="journey-layout">
 
+        <!-- ─── CARDS COLUMN ─── -->
         <div class="cards-column" id="cardsColumn">
 
             <!-- CARD 1: Overview -->
@@ -855,16 +879,24 @@ if ($hasJob) {
                 <div class="card-header">
                     <div class="card-header-left">
                         <span class="job-id-label"><?= htmlspecialchars($jobLabel) ?></span>
-                        <span class="badge <?= $globalBadgeClass ?>" id="badge-overview"><?= htmlspecialchars($globalBadgeText) ?></span>
+                        <span class="badge <?= $globalBadgeClass ?>" id="badge-overview">
+                            <?= htmlspecialchars($globalBadgeText) ?>
+                        </span>
                     </div>
-                    <?php if (!$journeyStarted && !$returnCompleted && !$isCancelled): ?>
+                    <?php if (!$journeyStarted && !$returnCompleted && !$isCancelled && !$hasPendingIssue): ?>
                     <button class="btn btn-primary" id="startJourneyBtn" onclick="openStartPopup()">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
                         Start Journey
                     </button>
                     <?php endif; ?>
                 </div>
-                <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Details Overview</p>
+
+                <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">
+                    Details Overview
+                </p>
+
                 <div class="overview-grid">
                     <div class="overview-cell">
                         <div class="overview-cell-title">Provider</div>
@@ -877,7 +909,7 @@ if ($hasJob) {
                         <div class="overview-cell-title">Items</div>
                         <ul class="item-list">
                             <?php foreach ($allItems as $idx => $it): ?>
-                            <li><?= ($idx+1) . '. ' . htmlspecialchars($it['typeName']) . ' (' . htmlspecialchars($it['status']) . ')' ?></li>
+                            <li><?= ($idx + 1) . '. ' . htmlspecialchars($it['typeName']) . ' (' . htmlspecialchars($it['status']) . ')' ?></li>
                             <?php endforeach; ?>
                         </ul>
                         <span class="weight-tag">Total weight: <?= number_format($totalWeight, 1) ?> kg</span>
@@ -894,33 +926,52 @@ if ($hasJob) {
 
             <!-- CARD 2: Pickup session -->
             <?php
-            $pickupCompletedStatus = $pickupCompleted ? 'completed' : ($journeyStarted && !$isCancelled ? 'active' : 'locked');
-            $pickupDisabled = $isCancelled || ($pickupCompleted || $returnCompleted) ? true : !$journeyStarted;
+            $pickupCardStatus = $pickupCompleted
+                ? 'completed-card'
+                : ($journeyStarted && !$isCancelled ? 'active-card' : 'locked');
+            $pickupBtnDisabled = $isCancelled || $pickupCompleted || $returnCompleted || !$journeyStarted || $hasPendingIssue;
             ?>
-            <div class="job-card <?= $pickupCompletedStatus ?>" id="card-session1">
+            <div class="job-card <?= $pickupCardStatus ?>" id="card-session1">
                 <div class="card-header">
                     <div class="card-header-left">
                         <span class="job-id-label"><?= htmlspecialchars($jobLabel) ?></span>
                         <span class="badge badge-pickup" id="badge-session1">Pick Up</span>
                     </div>
+                    <div class="card-header-actions">
+                        <button class="btn btn-danger"
+                                id="reportBtn-session1"
+                                onclick="openReport('session1', null)"
+                                <?= ($pickupBtnDisabled || $hasPendingIssue) ? 'disabled' : '' ?>>
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            Report Issue
+                        </button>
+                    </div>
                 </div>
                 <hr class="card-divider">
                 <div class="session-route">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
                     Base → <?= htmlspecialchars($job['pickupAddress'] . ', ' . $job['pickupPostcode'] . ', ' . $job['pickupState']) ?>
                 </div>
                 <div class="session-footer">
                     <span style="font-size:12px; color:var(--text-muted);">
                         <?php
-                        if ($isCancelled)        echo '🚫 Job cancelled';
-                        elseif ($pickupCompleted) echo '✓ Items collected';
-                        elseif ($journeyStarted)  echo 'Ready to collect items';
-                        else                      echo 'Start journey to unlock';
+                        if ($isCancelled)         echo '🚫 Job cancelled';
+                        elseif ($hasPendingIssue) echo '⚠️ Pending issue - awaiting admin review';
+                        elseif ($pickupCompleted)  echo '✓ Items collected';
+                        elseif ($journeyStarted)   echo 'Ready to collect items';
+                        else                       echo 'Start journey to unlock';
                         ?>
                     </span>
-                    <button class="btn btn-complete" id="completeBtn-session1"
+                    <button class="btn btn-complete"
+                            id="completeBtn-session1"
                             onclick="openCompletePopup('session1', null)"
-                            <?= $pickupDisabled ? 'disabled' : '' ?>>
+                            <?= $pickupBtnDisabled ? 'disabled' : '' ?>>
                         <?= $pickupCompleted ? '✓ Done' : 'Complete' ?>
                     </button>
                 </div>
@@ -929,7 +980,7 @@ if ($hasJob) {
             <!-- CARDS: One per dropoff centre -->
             <?php
             $activeCentreIndex = -1;
-            if ($pickupCompleted && !$returnCompleted && !$isCancelled) {
+            if ($pickupCompleted && !$returnCompleted && !$isCancelled && !$hasPendingIssue) {
                 foreach ($itemsByCentre as $ci => $group) {
                     if (!in_array($group['centreID'], $completedCentres)) {
                         $activeCentreIndex = $ci;
@@ -941,9 +992,9 @@ if ($hasJob) {
             foreach ($itemsByCentre as $ci => $group):
                 $sessionKey  = 'session' . ($ci + 2);
                 $isCompleted = in_array($group['centreID'], $completedCentres);
-                $isActive    = ($activeCentreIndex === $ci && !$isCompleted && $pickupCompleted && !$returnCompleted && !$isCancelled);
+                $isActive    = ($activeCentreIndex === $ci && !$isCompleted && $pickupCompleted && !$returnCompleted && !$isCancelled && !$hasPendingIssue);
                 $cardStatus  = $isCompleted ? 'completed-card' : ($isActive ? 'active-card' : 'locked');
-                $btnDisabled = $isCancelled || !$isActive;
+                $btnDisabled = $isCancelled || !$isActive || $hasPendingIssue;
             ?>
             <div class="job-card <?= $cardStatus ?>" id="card-<?= $sessionKey ?>">
                 <div class="card-header">
@@ -952,22 +1003,26 @@ if ($hasJob) {
                         <span class="badge badge-pickup" id="badge-<?= $sessionKey ?>">Drop Off</span>
                     </div>
                     <div class="card-header-actions">
-                        <button class="btn btn-danger" id="reportBtn-<?= $sessionKey ?>"
+                        <button class="btn btn-danger"
+                                id="reportBtn-<?= $sessionKey ?>"
                                 onclick="openReport('<?= $sessionKey ?>', <?= $group['centreID'] ?>)"
-                                <?= $btnDisabled ? 'disabled' : '' ?>>
+                                <?= ($btnDisabled || $hasPendingIssue) ? 'disabled' : '' ?>>
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
                             </svg>
                             Report Issue
                         </button>
                     </div>
                 </div>
+
                 <div class="session-items-grid">
                     <div class="session-items-cell">
                         <div class="cell-title">Item Dropoff</div>
                         <ul>
                             <?php foreach ($group['items'] as $ii => $git): ?>
-                            <li><?= ($ii+1) . '. ' . htmlspecialchars($git['typeName']) ?></li>
+                            <li><?= ($ii + 1) . '. ' . htmlspecialchars($git['typeName']) ?></li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
@@ -975,26 +1030,31 @@ if ($hasJob) {
                         <div class="cell-title">Brand &amp; Model</div>
                         <ul>
                             <?php foreach ($group['items'] as $ii => $git): ?>
-                            <li><?= ($ii+1) . '. ' . htmlspecialchars(($git['brand'] ?? '-') . ', ' . ($git['model'] ?? '-')) ?></li>
+                            <li><?= ($ii + 1) . '. ' . htmlspecialchars(($git['brand'] ?? '-') . ', ' . ($git['model'] ?? '-')) ?></li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
                 </div>
+
                 <hr class="card-divider">
                 <div class="session-route">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
                     <?= htmlspecialchars($job['pickupAddress']) ?> → <?= htmlspecialchars($group['centreName'] . ', ' . $group['centreState']) ?>
                 </div>
                 <div class="session-footer">
                     <span style="font-size:12px; color:var(--text-muted);">
                         <?php
-                        if ($isCancelled)        echo '🚫 Job cancelled';
-                        elseif ($isCompleted)     echo '✓ Delivered';
-                        elseif ($isActive)        echo 'Ready to deliver';
-                        else                      echo 'Complete previous step to unlock';
+                        if ($isCancelled)    echo '🚫 Job cancelled';
+                        elseif ($hasPendingIssue) echo '⚠️ Pending issue - awaiting admin review';
+                        elseif ($isCompleted) echo '✓ Delivered';
+                        elseif ($isActive)    echo 'Ready to deliver';
+                        else                  echo 'Complete previous step to unlock';
                         ?>
                     </span>
-                    <button class="btn btn-complete" id="completeBtn-<?= $sessionKey ?>"
+                    <button class="btn btn-complete"
+                            id="completeBtn-<?= $sessionKey ?>"
                             onclick="openCompletePopup('<?= $sessionKey ?>', <?= $group['centreID'] ?>)"
                             <?= $btnDisabled ? 'disabled' : '' ?>>
                         <?= $isCompleted ? '✓ Done' : 'Complete' ?>
@@ -1008,7 +1068,7 @@ if ($hasJob) {
             $returnSessionKey    = 'session' . ($centreCount + 2);
             $lastCentreName      = !empty($itemsByCentre) ? end($itemsByCentre)['centreName'] : $job['pickupAddress'];
             $allCentresCompleted = count($completedCentres) === count($itemsByCentre);
-            $returnActive        = ($pickupCompleted && $allCentresCompleted && !$returnCompleted && !$isCancelled);
+            $returnActive        = ($pickupCompleted && $allCentresCompleted && !$returnCompleted && !$isCancelled && !$hasPendingIssue);
             $returnCardStatus    = $returnCompleted ? 'completed-card' : ($returnActive ? 'active-card' : 'locked');
             ?>
             <div class="job-card <?= $returnCardStatus ?>" id="card-<?= $returnSessionKey ?>">
@@ -1018,11 +1078,14 @@ if ($hasJob) {
                         <span class="badge badge-pickup" id="badge-<?= $returnSessionKey ?>">Return</span>
                     </div>
                     <div class="card-header-actions">
-                        <button class="btn btn-danger" id="reportBtn-<?= $returnSessionKey ?>"
+                        <button class="btn btn-danger"
+                                id="reportBtn-<?= $returnSessionKey ?>"
                                 onclick="openReport('<?= $returnSessionKey ?>', null)"
-                                <?= (!$returnActive || $returnCompleted || $isCancelled) ? 'disabled' : '' ?>>
+                                <?= ((!$returnActive || $returnCompleted || $isCancelled) || $hasPendingIssue) ? 'disabled' : '' ?>>
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
                             </svg>
                             Report Issue
                         </button>
@@ -1030,21 +1093,25 @@ if ($hasJob) {
                 </div>
                 <hr class="card-divider">
                 <div class="session-route">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
                     <?= htmlspecialchars($lastCentreName) ?> → Collector Base
                 </div>
                 <div class="session-footer">
                     <span style="font-size:12px; color:var(--text-muted);">
                         <?php
-                        if ($isCancelled)          echo '🚫 Job cancelled';
-                        elseif ($returnCompleted)   echo '✓ Journey completed';
-                        elseif ($returnActive)      echo 'Ready to return to base';
-                        else                        echo 'Complete all dropoffs to unlock';
+                        if ($isCancelled)        echo '🚫 Job cancelled';
+                        elseif ($hasPendingIssue) echo '⚠️ Pending issue - awaiting admin review';
+                        elseif ($returnCompleted)  echo '✓ Journey completed';
+                        elseif ($returnActive)     echo 'Ready to return to base';
+                        else                       echo 'Complete all dropoffs to unlock';
                         ?>
                     </span>
-                    <button class="btn btn-complete" id="completeBtn-<?= $returnSessionKey ?>"
+                    <button class="btn btn-complete"
+                            id="completeBtn-<?= $returnSessionKey ?>"
                             onclick="openCompletePopup('<?= $returnSessionKey ?>', null)"
-                            <?= (!$returnActive || $returnCompleted || $isCancelled) ? 'disabled' : '' ?>>
+                            <?= ((!$returnActive || $returnCompleted || $isCancelled) || $hasPendingIssue) ? 'disabled' : '' ?>>
                         <?= $returnCompleted ? '✓ Done' : 'Complete' ?>
                     </button>
                 </div>
@@ -1057,39 +1124,93 @@ if ($hasJob) {
             <div class="route-title">Route</div>
             <div class="route-steps">
                 <?php
-                $stepStatuses = [];
-                $stepStatuses[0] = $journeyStarted ? ($isCancelled ? 'done' : 'active') : '';
-                $stepStatuses[1] = $pickupCompleted ? 'done' : ($journeyStarted && !$isCancelled ? 'active' : '');
+                // ── Pre-compute dot states on PHP side for initial render ──────
+                // Dot 0 = Base/Start
+                // Dot 1 = Provider (pickup)
+                // Dot 2..N = Dropoff centres
+                // Dot N+1 = Return to base
 
-                if ($pickupCompleted) {
-                    $completedCount = count($completedCentres);
-                    for ($i = 0; $i < $completedCount && $i < count($itemsByCentre); $i++) {
-                        $stepStatuses[2 + $i] = 'done';
-                    }
-                    if (!$isCancelled) {
-                        if ($completedCount < count($itemsByCentre)) {
-                            $stepStatuses[2 + $completedCount] = 'active';
-                        } elseif ($allCentresCompleted && !$returnCompleted) {
-                            $stepStatuses[2 + count($itemsByCentre)] = 'active';
-                        } elseif ($returnCompleted) {
-                            $stepStatuses[2 + count($itemsByCentre)] = 'done';
+                $dotStates = [];
+                $lineStates = [];
+                $totalDots  = count($routeSteps);
+
+                if ($isCancelled) {
+                    // Journey was started (departed), so dot 0 is done
+                    $dotStates[0] = 'done';
+                    for ($i = 1; $i < $totalDots; $i++) $dotStates[$i] = '';
+                    for ($i = 0; $i < $totalDots - 1; $i++) $lineStates[$i] = '';
+
+                } elseif (!$journeyStarted) {
+                    // Not started — all inactive
+                    for ($i = 0; $i < $totalDots; $i++) $dotStates[$i] = '';
+                    for ($i = 0; $i < $totalDots - 1; $i++) $lineStates[$i] = '';
+
+                } else {
+                    // Journey started
+                    // Dot 0 = done (departed base)
+                    $dotStates[0] = 'done';
+
+                    if (!$pickupCompleted) {
+                        // Heading to provider
+                        $lineStates[0] = 'active';
+                        $dotStates[1]  = 'active';
+                        for ($i = 1; $i < $totalDots - 1; $i++) $lineStates[$i] = '';
+                        for ($i = 2; $i < $totalDots; $i++)    $dotStates[$i]  = '';
+                    } else {
+                        // Pickup done
+                        $lineStates[0] = 'done';
+                        $dotStates[1]  = 'done';
+
+                        $completedCount = count($completedCentres);
+
+                        // Mark completed centre dots + their outgoing lines
+                        for ($i = 0; $i < $completedCount; $i++) {
+                            $dotStates[2 + $i]  = 'done';
+                            $lineStates[1 + $i] = 'done';  // line from dot(1+i) to dot(2+i)
+                        }
+
+                        if ($returnCompleted) {
+                            // Everything done
+                            for ($i = 0; $i < $centreCount; $i++) {
+                                $dotStates[2 + $i]  = 'done';
+                                $lineStates[1 + $i] = 'done';
+                            }
+                            $lineStates[1 + $centreCount] = 'done';
+                            $dotStates[2 + $centreCount]  = 'done';
+                        } elseif ($completedCount < $centreCount) {
+                            // Still have centres to drop off
+                            $lineStates[1 + $completedCount] = 'active';
+                            $dotStates[2 + $completedCount]  = 'active';
+                            for ($i = $completedCount + 1; $i < $centreCount; $i++) {
+                                $dotStates[2 + $i]  = '';
+                                $lineStates[1 + $i] = '';
+                            }
+                            $lineStates[1 + $centreCount] = '';
+                            $dotStates[2 + $centreCount]  = '';
+                        } else {
+                            // All centres done, heading back
+                            $lineStates[1 + $centreCount] = 'active';
+                            $dotStates[2 + $centreCount]  = 'active';
                         }
                     }
                 }
 
                 foreach ($routeSteps as $ri => $step):
-                    $isLast   = ($ri === count($routeSteps) - 1);
-                    $dotState = $stepStatuses[$ri] ?? '';
+                    $isLast    = ($ri === count($routeSteps) - 1);
+                    $dotState  = $dotStates[$ri]  ?? '';
+                    $lineState = $lineStates[$ri] ?? '';
                 ?>
                 <div class="route-step">
                     <div class="step-indicator">
                         <div class="step-dot <?= $dotState ?>" id="dot-<?= $ri ?>"></div>
                         <?php if (!$isLast): ?>
-                        <div class="step-line <?= $stepStatuses[$ri] === 'done' ? 'done' : '' ?>" id="line-<?= $ri ?>"></div>
+                        <div class="step-line <?= $lineState ?>" id="line-<?= $ri ?>"></div>
                         <?php endif; ?>
                     </div>
                     <div class="step-content">
-                        <div class="step-label <?= $dotState ?>" id="label-<?= $ri ?>"><?= htmlspecialchars($step['label']) ?></div>
+                        <div class="step-label <?= $dotState ?>" id="label-<?= $ri ?>">
+                            <?= htmlspecialchars($step['label']) ?>
+                        </div>
                         <div class="step-sublabel"><?= htmlspecialchars($step['sublabel']) ?></div>
                     </div>
                 </div>
@@ -1102,7 +1223,8 @@ if ($hasJob) {
     <!-- ─── ISSUE HISTORY SECTION ─── -->
     <div class="issues-section">
         <div class="issues-section-title">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" style="color:var(--StatusRed);">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"
+                 style="color:var(--StatusRed);">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -1147,12 +1269,12 @@ if ($hasJob) {
                             <span class="severity-badge <?= $sevClass ?>"><?= htmlspecialchars($iss['severity']) ?></span>
                         </div>
                     </div>
-                    <span class="issue-status-badge <?= $issStatusClass ?>"><?= htmlspecialchars($iss['status']) ?></span>
+                    <span class="issue-status-badge <?= $issStatusClass ?>">
+                        <?= htmlspecialchars($iss['status']) ?>
+                    </span>
                 </div>
 
-                <div class="issue-card-body">
-                    <?= htmlspecialchars($iss['description']) ?>
-                </div>
+                <div class="issue-card-body"><?= htmlspecialchars($iss['description']) ?></div>
 
                 <hr class="issue-card-divider">
 
@@ -1190,13 +1312,17 @@ if ($hasJob) {
 </main>
 
 <hr>
+
+<!-- ─── FOOTER ─── -->
 <footer>
     <section class="c-footer-info-section">
         <a href="../../html/collector/cHome.php">
-            <img src="../../assets//images/logo.png" alt="Logo" class="c-logo">
+            <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
         </a>
         <div class="c-text">AfterVolt</div>
-        <div class="c-text c-text-center">Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.</div>
+        <div class="c-text c-text-center">
+            Promoting responsible e-waste collection and sustainable recycling practices in partnership with APU.
+        </div>
         <div class="c-text c-text-label">+60 12 345 6789</div>
         <div class="c-text">abc@gmail.com</div>
     </section>
@@ -1209,7 +1335,7 @@ if ($hasJob) {
         </div>
         <div>
             <b>Support</b><br>
-            <a href="../../html/collector/cReportIssues.html">Report Issue</a>
+            <a href="../../html/collector/cReportIssues.php">Report Issue</a>
         </div>
         <div>
             <b>Proxy</b><br>
@@ -1222,34 +1348,35 @@ if ($hasJob) {
 
 <script src="../../javascript/mainScript.js"></script>
 
+<!-- ─── PHP → JS BRIDGE ─── -->
 <script>
-/* ─── PHP → JS BRIDGE ─────────────────────────────────────────────── */
-const JOB_ID           = <?= $hasJob ? (int)$job['jobID']      : 'null' ?>;
-const REQUEST_ID       = <?= $hasJob ? (int)$job['requestID']  : 'null' ?>;
+const JOB_ID           = <?= $hasJob ? (int)$job['jobID']     : 'null' ?>;
+const REQUEST_ID       = <?= $hasJob ? (int)$job['requestID'] : 'null' ?>;
 const CENTRE_IDS       = <?= $hasJob ? json_encode(array_column($itemsByCentre, 'centreID')) : '[]' ?>;
 const RETURN_KEY       = <?= $hasJob ? json_encode('session' . ($centreCount + 2)) : 'null' ?>;
 const JOURNEY_STARTED  = <?= $journeyStarted  ? 'true' : 'false' ?>;
 const PICKUP_COMPLETED = <?= $pickupCompleted  ? 'true' : 'false' ?>;
 const RETURN_COMPLETED = <?= $returnCompleted  ? 'true' : 'false' ?>;
 const JOB_CANCELLED    = <?= $isCancelled      ? 'true' : 'false' ?>;
+const HAS_PENDING_ISSUE = <?= $hasPendingIssue ? 'true' : 'false' ?>;
 
-/* ─── STATE ────────────────────────────────────────────────────────── */
+/* ─── STATE ──────────────────────────────────────────────────────────── */
 let state = {
     journeyStarted:   JOURNEY_STARTED,
     pickupCompleted:  PICKUP_COMPLETED,
     completedCentres: <?= json_encode($completedCentres) ?>,
     returnCompleted:  RETURN_COMPLETED,
     isCancelled:      JOB_CANCELLED,
-    hasActiveIssue:   JOB_CANCELLED, // pre-lock page if already cancelled
+    hasPendingIssue:  HAS_PENDING_ISSUE,
     pendingSession:   null,
     pendingCentreID:  null,
 };
 
-/* ─── POPUP HELPERS ────────────────────────────────────────────────── */
+/* ─── POPUP HELPERS ──────────────────────────────────────────────────── */
 function openPopup(id)  { document.getElementById(id).classList.add('visible'); }
 function closePopup(id) { document.getElementById(id).classList.remove('visible'); }
 
-/* ─── TOAST ────────────────────────────────────────────────────────── */
+/* ─── TOAST ──────────────────────────────────────────────────────────── */
 function showToast(msg, duration = 2500) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -1257,7 +1384,7 @@ function showToast(msg, duration = 2500) {
     setTimeout(() => t.classList.remove('show'), duration);
 }
 
-/* ─── AJAX HELPER ──────────────────────────────────────────────────── */
+/* ─── AJAX HELPER ────────────────────────────────────────────────────── */
 async function postAction(action, extraData = {}) {
     const fd = new FormData();
     fd.append('jobID',     JOB_ID);
@@ -1267,7 +1394,7 @@ async function postAction(action, extraData = {}) {
     return res.json();
 }
 
-/* ─── LOCK ALL STEPS (used when job is cancelled) ──────────────────── */
+/* ─── LOCK ALL STEPS (for cancelled jobs only) ─────────────────────────────────────────────────── */
 function lockAllSteps() {
     document.querySelectorAll('[id^="card-session"]').forEach(card => {
         if (!card.classList.contains('completed-card')) {
@@ -1290,63 +1417,84 @@ function lockAllSteps() {
 
     setBadge('globalStatus',   'interrupted', 'Cancelled');
     setBadge('badge-overview', 'interrupted', 'Cancelled');
+
+    const pageTitle = document.getElementById('pageTitle');
+    if (pageTitle) pageTitle.textContent = 'Cancelled Job';
 }
 
-/* ─── START JOURNEY ────────────────────────────────────────────────── */
+/* ─── DISABLE ALL BUTTONS FOR PENDING ISSUE ──────────────────────────── */
+function disableAllButtonsForPendingIssue() {
+    document.querySelectorAll('.btn-complete, .btn-danger').forEach(btn => {
+        btn.disabled = true;
+    });
+    
+    // Update footer text for all cards
+    document.querySelectorAll('.session-footer span').forEach(span => {
+        if (!span.textContent.includes('✓') && !span.textContent.includes('🚫')) {
+            span.textContent = '⚠️ Pending issue - awaiting admin review';
+        }
+    });
+}
+
+/* ─── START JOURNEY ──────────────────────────────────────────────────── */
 function openStartPopup() {
-    if (state.isCancelled) {
-        showToast('🚫 This job has been cancelled.', 3000);
-        return;
-    }
-    if (!state.journeyStarted && !state.returnCompleted) {
-        openPopup('startPopup');
-    }
+    if (state.isCancelled) { showToast('🚫 This job has been cancelled.', 3000); return; }
+    if (state.hasPendingIssue) { showToast('⚠️ Cannot start journey while there is a pending issue.', 3000); return; }
+    if (!state.journeyStarted && !state.returnCompleted) openPopup('startPopup');
 }
 
 async function confirmStartJourney() {
     closePopup('startPopup');
+
     const data = await postAction('start_journey');
     if (!data.success) { showToast('❌ Failed to start journey. Try again.'); return; }
 
     state.journeyStarted = true;
 
+    // Hide start button
     const btn = document.getElementById('startJourneyBtn');
     if (btn) btn.style.display = 'none';
 
+    // Update badges + title
     setBadge('badge-overview', 'ongoing', 'Ongoing');
     setBadge('globalStatus',   'ongoing', 'Ongoing');
-    document.querySelector('.page-title').textContent = 'Ongoing Job';
+    const pageTitle = document.getElementById('pageTitle');
+    if (pageTitle) pageTitle.textContent = 'Ongoing Job';
 
+    // Unlock pickup card
     updateCardState('card-session1', 'active-card');
     const cb = document.getElementById('completeBtn-session1');
     if (cb) { cb.disabled = false; cb.onclick = () => openCompletePopup('session1', null); }
+    
+    const reportBtn = document.getElementById('reportBtn-session1');
+    if (reportBtn) reportBtn.disabled = false;
 
-    const rb = document.getElementById('reportBtn-session1');
-    if (rb) rb.disabled = false;
+    const footerSpan = document.querySelector('#card-session1 .session-footer span');
+    if (footerSpan) { footerSpan.textContent = 'Ready to collect items'; footerSpan.style.color = ''; }
 
-    document.querySelectorAll('#card-session1 .session-footer span').forEach(el => {
-        el.textContent = 'Ready to collect items';
-        el.style.color = '';
-    });
-
-    updateRouteStep(0, 'active');
-    updateRouteStep(1, 'active');
+    // Update route dots
+    updateRouteStep(0, 'done');
     updateRouteLine(0, 'active');
+    updateRouteStep(1, 'active');
 
     showToast('🚗 Journey started, drive safe!');
 }
 
-/* ─── COMPLETE SESSION ─────────────────────────────────────────────── */
+/* ─── COMPLETE SESSION ───────────────────────────────────────────────── */
 function openCompletePopup(sessionKey, centreID) {
-    if (state.isCancelled) {
-        showToast('🚫 This job has been cancelled.', 3000);
-        return;
-    }
+    if (state.isCancelled) { showToast('🚫 This job has been cancelled.', 3000); return; }
+    if (state.hasPendingIssue) { showToast('⚠️ Cannot complete session while there is a pending issue. Wait for admin review.', 3000); return; }
 
     state.pendingSession  = sessionKey;
     state.pendingCentreID = centreID;
 
-    const msgs = { 'session1': 'Confirm you have collected all items from the provider location.' };
+    const allKeys = ['session1'];
+    for (let i = 0; i < CENTRE_IDS.length; i++) allKeys.push('session' + (i + 2));
+    if (RETURN_KEY) allKeys.push(RETURN_KEY);
+
+    const msgs = {
+        'session1': 'Confirm you have collected all items from the provider location.',
+    };
     for (let i = 0; i < CENTRE_IDS.length; i++) {
         msgs['session' + (i + 2)] = 'Confirm you have delivered all items to this recycling centre.';
     }
@@ -1359,46 +1507,57 @@ function openCompletePopup(sessionKey, centreID) {
 
 async function confirmComplete() {
     closePopup('completePopup');
+
     const key      = state.pendingSession;
     const centreID = state.pendingCentreID;
 
+    // Send AJAX
     let data;
-    if (key === 'session1')  data = await postAction('complete_pickup');
-    else if (key === RETURN_KEY) data = await postAction('complete_return');
-    else data = await postAction('complete_dropoff', { centreID });
+    if (key === 'session1')       data = await postAction('complete_pickup');
+    else if (key === RETURN_KEY)  data = await postAction('complete_return');
+    else                          data = await postAction('complete_dropoff', { centreID });
 
     if (!data.success) { showToast('❌ Failed to complete session. Try again.'); return; }
 
-    // Mark this card as completed
-    updateCardState('card-' + key, 'completed-card');
-    setBadge('badge-' + key, 'completed', 'Completed');
-    const btn = document.getElementById('completeBtn-' + key);
-    if (btn) { btn.disabled = true; btn.textContent = '✓ Done'; btn.onclick = null; }
-
-    const reportBtn = document.getElementById('reportBtn-' + key);
-    if (reportBtn) reportBtn.disabled = true;
-
-    // Build ordered session keys
+    // Build ordered session key list
     const allKeys = ['session1'];
     for (let i = 0; i < CENTRE_IDS.length; i++) allKeys.push('session' + (i + 2));
     if (RETURN_KEY) allKeys.push(RETURN_KEY);
 
-    const idx    = allKeys.indexOf(key);
-    const dotIdx = idx + 1;
-    const nextKey = allKeys[idx + 1];
+    const idx     = allKeys.indexOf(key);
+    const nextKey = allKeys[idx + 1] ?? null;
 
+    // dotIdx: session1 = dot 1 (provider), session2 = dot 2 (centre 0), ..., returnKey = dot N
+    const dotIdx = idx + 1;
+
+    // Mark current card completed
+    updateCardState('card-' + key, 'completed-card');
+    const doneBtn = document.getElementById('completeBtn-' + key);
+    if (doneBtn) { doneBtn.disabled = true; doneBtn.textContent = '✓ Done'; doneBtn.onclick = null; }
+
+    const reportBtn = document.getElementById('reportBtn-' + key);
+    if (reportBtn) reportBtn.disabled = true;
+
+    // Update route: current dot = done, outgoing line from this dot = done
     updateRouteStep(dotIdx, 'done');
     updateRouteLine(dotIdx, 'done');
 
-    if (key === 'session1') {
-        state.pickupCompleted = true;
-    } else if (key === RETURN_KEY) {
+    // Handle return completion
+    if (key === RETURN_KEY) {
         state.returnCompleted = true;
+        // Final dot (base return) = done
+        updateRouteStep(dotIdx + 1, 'done');
         setBadge('globalStatus',   'completed', 'Completed');
         setBadge('badge-overview', 'completed', 'Completed');
-        updateRouteStep(dotIdx + 1, 'done');
+        const pageTitle = document.getElementById('pageTitle');
+        if (pageTitle) pageTitle.textContent = 'Completed Job';
         showToast('🎉 Job completed! Well done!', 4000);
         return;
+    }
+
+    // Update state
+    if (key === 'session1') {
+        state.pickupCompleted = true;
     } else {
         if (centreID && !state.completedCentres.includes(centreID)) {
             state.completedCentres.push(centreID);
@@ -1406,25 +1565,30 @@ async function confirmComplete() {
     }
 
     // Unlock next step
-    if (nextKey) {
+    if (nextKey && !state.hasPendingIssue) {
         updateCardState('card-' + nextKey, 'active-card');
+
         const nextBtn = document.getElementById('completeBtn-' + nextKey);
         if (nextBtn) {
             nextBtn.disabled = false;
             nextBtn.onclick = () => {
-                const cid = nextKey === RETURN_KEY
+                const cid = (nextKey === RETURN_KEY)
                     ? null
-                    : CENTRE_IDS[parseInt(nextKey.split('session')[1]) - 2];
-                openCompletePopup(nextKey, cid);
+                    : CENTRE_IDS[parseInt(nextKey.replace('session', '')) - 2];
+                openCompletePopup(nextKey, cid ?? null);
             };
         }
+
         const nextReportBtn = document.getElementById('reportBtn-' + nextKey);
         if (nextReportBtn) nextReportBtn.disabled = false;
+
+        // Update route: outgoing line from current dot → next dot = active; next dot = active
+        updateRouteLine(dotIdx, 'active');
         updateRouteStep(dotIdx + 1, 'active');
 
         const footerSpan = document.querySelector('#card-' + nextKey + ' .session-footer span');
         if (footerSpan) {
-            footerSpan.textContent = nextKey === RETURN_KEY ? 'Ready to return to base' : 'Ready to deliver';
+            footerSpan.textContent = (nextKey === RETURN_KEY) ? 'Ready to return to base' : 'Ready to deliver';
             footerSpan.style.color = '';
         }
     }
@@ -1432,17 +1596,80 @@ async function confirmComplete() {
     showToast('✅ Session completed!');
 }
 
-/* ─── REPORT ISSUE ─────────────────────────────────────────────────── */
+/* ─── REPORT ISSUE ───────────────────────────────────────────────────── */
 let pendingReportSession  = null;
 let pendingReportCentreID = null;
 
 function openReport(sessionKey, centreID) {
-    if (!state.journeyStarted || state.returnCompleted || state.isCancelled) {
-        showToast('⚠️ Cannot report issues at this stage.', 3000);
+    // Validation checks
+    if (state.isCancelled) {
+        showToast('🚫 This job has already been cancelled.', 3000);
         return;
     }
+    
+    if (state.hasPendingIssue) {
+        showToast('⚠️ There is already a pending issue. Please wait for admin resolution.', 3000);
+        return;
+    }
+    
+    if (!state.journeyStarted) {
+        showToast('⚠️ Journey has not started yet. Start the journey first.', 3000);
+        return;
+    }
+    
+    if (state.returnCompleted) {
+        showToast('✅ This job is already completed. Cannot report issues.', 3000);
+        return;
+    }
+    
+    // Validate that the session is actually active (not completed)
+    const cardId = 'card-' + sessionKey;
+    const card = document.getElementById(cardId);
+    if (!card || card.classList.contains('completed-card')) {
+        showToast('⚠️ Cannot report issues for completed sessions.', 3000);
+        return;
+    }
+    
+    if (!card.classList.contains('active-card')) {
+        showToast('⚠️ This session is not active yet. Complete previous steps first.', 3000);
+        return;
+    }
+    
     pendingReportSession  = sessionKey;
     pendingReportCentreID = centreID;
+    
+    // Add session context to the popup
+    let contextMsg = '';
+    let sessionType = '';
+    
+    if (sessionKey === 'session1') {
+        sessionType = 'Pickup';
+        contextMsg = 'You are reporting an issue at the pickup location.';
+    } else if (sessionKey === RETURN_KEY) {
+        sessionType = 'Return to Base';
+        contextMsg = 'You are reporting an issue while returning to base.';
+    } else {
+        sessionType = 'Drop-off';
+        contextMsg = 'You are reporting an issue at a recycling centre.';
+    }
+    
+    // Update the popup header to show session context
+    const popupHeader = document.querySelector('#reportPopup h3');
+    if (popupHeader) {
+        popupHeader.textContent = `Report an Issue - ${sessionType}`;
+    }
+    
+    const popupWarning = document.querySelector('#reportPopup p:first-of-type');
+    if (popupWarning) {
+        popupWarning.innerHTML = `⚠️ ${contextMsg}<br>Reporting an issue will notify the admin. The complete button will be disabled until the issue is resolved.`;
+    }
+    
+    // Reset form fields
+    document.getElementById('issueType').value = '';
+    document.getElementById('issueSeverity').value = '';
+    document.getElementById('issueSubject').value = '';
+    document.getElementById('issueDescription').value = '';
+    
     openPopup('reportPopup');
 }
 
@@ -1452,40 +1679,74 @@ async function submitReport() {
     const subject     = document.getElementById('issueSubject').value.trim();
     const description = document.getElementById('issueDescription').value.trim();
 
-    if (!issueType)   { showToast('⚠️ Please select an issue type.');     return; }
-    if (!severity)    { showToast('⚠️ Please select a severity level.');  return; }
-    if (!subject)     { showToast('⚠️ Please enter a subject.');          return; }
-    if (!description) { showToast('⚠️ Please provide a description.');    return; }
+    // Validation
+    if (!issueType)   { showToast('⚠️ Please select an issue type.');    return; }
+    if (!severity)    { showToast('⚠️ Please select a severity level.'); return; }
+    if (!subject)     { showToast('⚠️ Please enter a subject.');         return; }
+    if (!description) { showToast('⚠️ Please provide a description.');   return; }
 
-    const data = await postAction('report_issue', { issueType, severity, subject, description });
+    // Disable the submit button to prevent double submission
+    const submitBtn = document.querySelector('#reportPopup .btn-warning');
+    const originalText = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+    }
 
-    closePopup('reportPopup');
-    if (!data.success) { showToast('❌ Failed to submit report. ' + (data.message || '')); return; }
+    try {
+        const data = await postAction('report_issue', { issueType, severity, subject, description });
+        closePopup('reportPopup');
 
-    // Mark state as cancelled
-    state.isCancelled    = true;
-    state.hasActiveIssue = true;
+        if (!data.success) { 
+            showToast('❌ Failed to submit report. ' + (data.message || 'Please try again.')); 
+            return; 
+        }
 
-    // Lock all steps and update badges
-    lockAllSteps();
-
-    // Also mark the specific card that triggered the report
-    updateCardState('card-' + pendingReportSession, 'locked');
-    setBadge('badge-' + pendingReportSession, 'interrupted', 'Cancelled');
-
-    // Reset form
-    document.getElementById('issueType').value        = '';
-    document.getElementById('issueSeverity').value    = '';
-    document.getElementById('issueSubject').value     = '';
-    document.getElementById('issueDescription').value = '';
-
-    showToast('🚫 Issue reported. Job has been cancelled. Admin has been notified.', 5000);
-
-    // Reload after delay to show new issue in history and render cancelled state
-    setTimeout(() => location.reload(), 5000);
+        // Mark that there's a pending issue
+        state.hasPendingIssue = true;
+        
+        // Disable all complete and report buttons
+        disableAllButtonsForPendingIssue();
+        
+        // Add a pending issue banner if it doesn't exist
+        if (!document.querySelector('.pending-issue-banner')) {
+            const pageHeader = document.querySelector('.page-header');
+            const bannerHTML = `
+                <div class="pending-issue-banner">
+                    <div class="pending-issue-banner-icon">⚠️</div>
+                    <div class="pending-issue-banner-text">
+                        <strong>Pending Issue Report</strong>
+                        <p>An issue has been reported for this job. The complete button has been disabled until an admin reviews and resolves the issue. Please wait for further instructions.</p>
+                    </div>
+                </div>
+            `;
+            pageHeader.insertAdjacentHTML('afterend', bannerHTML);
+        }
+        
+        // Reset form fields
+        document.getElementById('issueType').value = '';
+        document.getElementById('issueSeverity').value = '';
+        document.getElementById('issueSubject').value = '';
+        document.getElementById('issueDescription').value = '';
+        
+        showToast('📋 Issue reported successfully. Admin has been notified. The complete button is now disabled until the issue is resolved.', 5000);
+        
+        // Reload page after 5 seconds to show updated state with issue history
+        setTimeout(() => location.reload(), 5000);
+        
+    } catch (error) {
+        console.error('Error submitting report:', error);
+        showToast('❌ An error occurred. Please try again.');
+    } finally {
+        // Re-enable the submit button if still visible
+        if (submitBtn && document.getElementById('reportPopup').classList.contains('visible')) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    }
 }
 
-/* ─── DOM HELPERS ──────────────────────────────────────────────────── */
+/* ─── DOM HELPERS ────────────────────────────────────────────────────── */
 function updateCardState(cardId, className) {
     const card = document.getElementById(cardId);
     if (card) {
@@ -1501,6 +1762,10 @@ function setBadge(elemId, type, label) {
     el.textContent = label;
 }
 
+/**
+ * Update a route dot and its label.
+ * state: 'done' | 'active' | '' (inactive)
+ */
 function updateRouteStep(dotIdx, stepState) {
     const dot   = document.getElementById('dot-'   + dotIdx);
     const label = document.getElementById('label-' + dotIdx);
@@ -1508,44 +1773,72 @@ function updateRouteStep(dotIdx, stepState) {
     if (label) label.className = 'step-label ' + stepState;
 }
 
+/**
+ * Update the connector line trailing from dot[lineIdx].
+ * lineState: 'done' | 'active' | '' (inactive)
+ */
 function updateRouteLine(lineIdx, lineState) {
     const line = document.getElementById('line-' + lineIdx);
-    if (line) line.className = 'step-line ' + (lineState === 'done' ? 'done' : '');
+    if (!line) return;
+    line.classList.remove('done', 'active');
+    if (lineState === 'done' || lineState === 'active') {
+        line.classList.add(lineState);
+    }
 }
 
-/* ─── INIT ─────────────────────────────────────────────────────────── */
+/* ─── INIT ───────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
 
-    // If job is already cancelled on load, lock everything and stop
+    // Already cancelled on load — lock everything
     if (state.isCancelled) {
         lockAllSteps();
         return;
     }
+    
+    // If there's a pending issue, disable all buttons
+    if (state.hasPendingIssue && !state.returnCompleted) {
+        disableAllButtonsForPendingIssue();
+        return;
+    }
 
-    // Normal route step initialisation
-    if (state.journeyStarted) {
-        updateRouteStep(0, 'active');
+    if (!state.journeyStarted) return; // Nothing to initialise — page renders correctly from PHP
 
-        if (state.pickupCompleted) {
-            updateRouteStep(1, 'done');
-            updateRouteLine(1, 'done');
-        } else {
-            updateRouteStep(1, 'active');
-            updateRouteLine(1, 'active');
-        }
+    // ── Journey has started — repaint route dots & lines ──────────────
+    // Dot 0 = base/start — always DONE once journey started
+    updateRouteStep(0, 'done');
+
+    if (!state.pickupCompleted) {
+        // Still heading to provider
+        updateRouteLine(0, 'active');
+        updateRouteStep(1, 'active');
+    } else {
+        // Pickup done
+        updateRouteLine(0, 'done');
+        updateRouteStep(1, 'done');
 
         const completedCount = state.completedCentres.length;
-        for (let i = 0; i < completedCount && i < CENTRE_IDS.length; i++) {
+        const centreTotal    = CENTRE_IDS.length;
+
+        // Mark each completed centre dot + outgoing line
+        for (let i = 0; i < completedCount; i++) {
             updateRouteStep(2 + i, 'done');
-            updateRouteLine(2 + i, 'done');
+            updateRouteLine(1 + i, 'done');
         }
 
-        if (completedCount < CENTRE_IDS.length && state.pickupCompleted && !state.returnCompleted) {
+        if (state.returnCompleted) {
+            // All done — mark final line + return dot
+            updateRouteLine(1 + centreTotal, 'done');
+            updateRouteStep(2 + centreTotal, 'done');
+
+        } else if (completedCount < centreTotal) {
+            // Still have centres to visit
+            updateRouteLine(1 + completedCount, 'active');
             updateRouteStep(2 + completedCount, 'active');
-        } else if (completedCount === CENTRE_IDS.length && state.pickupCompleted && !state.returnCompleted) {
-            updateRouteStep(2 + CENTRE_IDS.length, 'active');
-        } else if (state.returnCompleted) {
-            updateRouteStep(2 + CENTRE_IDS.length, 'done');
+
+        } else {
+            // All centres done, heading back to base
+            updateRouteLine(1 + centreTotal, 'active');
+            updateRouteStep(2 + centreTotal, 'active');
         }
     }
 

@@ -333,20 +333,55 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
                 <!-- Items Dropdown Section -->
                 <section class="items-section">
                     <div id="itemsContainer">
-                        <?php foreach ($items as $item):
+                        <?php 
+                        // Hardcoded image mapping - all available images in uploads folder
+                        $availableImages = [
+                            'hdd1.jpg', 'laptop1.jpg', 'monitor1.jpg', 'pc1.jpg', 
+                            'photocopier1.jpg', 'printer1.jpg', 'scanner1.jpg', 
+                            'tablet_accessory1.jpg', 'tv1.jpg'
+                        ];
+                        
+                        foreach ($items as $item):
                             $itemLabel = 'ITEM' . str_pad($item['itemID'], 3, '0', STR_PAD_LEFT);
                             
-                            // FIXED: Build image path correctly from the database filename
-                            // The database stores just the filename (e.g., 'laptop1.jpg')
-                            // We need to check if the file exists in the items directory
-                            $imageFilename = !empty($item['image']) ? $item['image'] : '';
-                            $imagePath = '../../assets/images/items/' . $imageFilename;
+                            // Get the image filename from database
+                            $dbImage = !empty($item['image']) ? $item['image'] : '';
                             
-                            // Check if the image file actually exists
-                            if (!empty($imageFilename) && file_exists($imagePath)) {
+                            // Check if the database image exists in our uploads folder
+                            $imagePath = '../../uploads/' . $dbImage;
+                            $imageExists = !empty($dbImage) && file_exists($imagePath);
+                            
+                            // If image doesn't exist or is empty, try to find a matching image based on item type
+                            if (!$imageExists) {
+                                // Map item types to possible image names
+                                $itemTypeToImage = [
+                                    'Laptop' => 'laptop1.jpg',
+                                    'PC / CPU' => 'pc1.jpg',
+                                    'Monitor' => 'monitor1.jpg',
+                                    'Printer' => 'printer1.jpg',
+                                    'Scanner' => 'scanner1.jpg',
+                                    'Photocopier' => 'photocopier1.jpg',
+                                    'External Hard Drive' => 'hdd1.jpg',
+                                    'Tablet Accessories' => 'tablet_accessory1.jpg',
+                                    'Television' => 'tv1.jpg'
+                                ];
+                                
+                                $itemTypeName = $item['itemTypeName'];
+                                if (isset($itemTypeToImage[$itemTypeName])) {
+                                    $mappedImage = $itemTypeToImage[$itemTypeName];
+                                    $mappedPath = '../../uploads/' . $mappedImage;
+                                    if (file_exists($mappedPath)) {
+                                        $imagePath = $mappedPath;
+                                        $imageExists = true;
+                                    }
+                                }
+                            }
+                            
+                            // Final image source
+                            if ($imageExists) {
                                 $imgSrc = $imagePath;
                             } else {
-                                // Use placeholder image if no image or file doesn't exist
+                                // Use placeholder if no image found
                                 $imgSrc = 'https://placehold.co/600x400?text=No+Image+Available';
                             }
                             

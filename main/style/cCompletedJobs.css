@@ -699,3 +699,175 @@
         margin: 0;
     }
 }
+
+/* Add these styles to your existing cCompletedJobs.css */
+
+/* Improve text readability */
+.detail-overview-card p {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.detail-overview-card p strong {
+    min-width: 110px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.detail-overview-card p span {
+    color: var(--text-color);
+    font-weight: 500;
+    word-break: break-word;
+    flex: 1;
+}
+
+/* Item list styling */
+.detail-item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.detail-item-list li {
+    font-size: 0.85rem;
+    padding: 0.35rem 0;
+    color: var(--text-color);
+    border-bottom: 1px dashed var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-item-list li:last-child {
+    border-bottom: none;
+}
+
+.detail-item-list li .item-name {
+    font-weight: 500;
+}
+
+.detail-item-list li .item-weight {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Weight tag styling */
+.detail-weight-tag {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--MainBlue);
+    background: var(--LightBlue);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+}
+
+/* Section title */
+.detail-section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin: 1.25rem 0 0.75rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Item dropdown improvements */
+.item-dropdown-header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.item-dropdown-header h3 small {
+    font-size: 0.75rem;
+    font-weight: normal;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+}
+
+/* Item details grid - improved text layout */
+.item-details-col p {
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.item-details-col p strong {
+    min-width: 85px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.item-details-col p span {
+    color: var(--text-color);
+    flex: 1;
+}
+
+/* Image placeholder styling */
+.item-sample-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--stats-bg);
+}
+
+/* Empty state text */
+.detail-empty p {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* Search input placeholder */
+.history-search-input::placeholder {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Job list item text */
+.history-job-id {
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+.history-job-date {
+    font-size: 0.75rem;
+    font-family: monospace;
+}
+
+/* Responsive text adjustments */
+@media (max-width: 768px) {
+    .detail-overview-card p {
+        font-size: 0.8rem;
+    }
+    
+    .detail-overview-card p strong {
+        min-width: 90px;
+    }
+    
+    .item-details-col p strong {
+        min-width: 70px;
+    }
+    
+    .history-job-id {
+        font-size: 0.85rem;
+    }
+}
