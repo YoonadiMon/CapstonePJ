@@ -747,8 +747,14 @@
 
                     <?php
                     $count = 0;
+                    $displayedProviderIDs = []; // Track displayed provider IDs to avoid duplicates
 
                     foreach ($allRequestStats as $request) {
+
+                        // Skip if this provider ID has already been displayed
+                        if (in_array($request['providerID'], $displayedProviderIDs)) {
+                            continue;
+                        }
 
                         // Match provider info
                         $providerData = null;
@@ -762,8 +768,17 @@
                         // Skip if no provider found
                         if (!$providerData) continue;
 
+                        // Add provider ID to tracking array
+                        $displayedProviderIDs[] = $request['providerID'];
+
                         $name = "User ID: " . $request['providerID']; 
-                        $initials = getInitials($name);
+                        
+                        // Generate consistent, unique colors based on provider ID
+                        $hash = crc32($request['providerID']);
+                        $hue1 = ($hash % 360);
+                        $hue2 = (($hash + 120) % 360);
+                        
+                        $initials = getInitials($collector_name);
 
                         $address = $providerData['address'] . ", " . $providerData['state'];
 
@@ -781,30 +796,30 @@
 
                         ?>
 
-                        <div class="user-item">
-                            <div class="user-av" style="background:linear-gradient(135deg,hsl(<?= rand(0,360) ?>,60%,40%),hsl(<?= rand(0,360) ?>,70%,60%))">
-                                <?= $initials ?>
-                            </div>
+        <div class="user-item" data-provider-id="<?= htmlspecialchars($request['providerID']) ?>">
+            <div class="user-av" style="background:linear-gradient(135deg,hsl(<?= $hue1 ?>,70%,45%),hsl(<?= $hue2 ?>,80%,55%))">
+                <?= htmlspecialchars(substr($request['providerID'], 0, 2)) ?>
+            </div>
 
-                            <div class="user-info">
-                                <div class="user-name"><?= htmlspecialchars($name) ?></div>
-                                <div class="user-addr"><?= htmlspecialchars($address) ?></div>
-                            </div>
+            <div class="user-info">
+                <div class="user-name"><?= htmlspecialchars($name) ?></div>
+                <div class="user-addr"><?= htmlspecialchars($address) ?></div>
+            </div>
 
-                            <span class="pill <?= $statusClass ?>">
-                                <?= ucfirst($status) ?>
-                            </span>
-                        </div>
+            <span class="pill <?= $statusClass ?>">
+                <?= ucfirst($status) ?>
+            </span>
+        </div>
 
-                        <?php
-                        $count++;
-                    }
+        <?php
+        $count++;
+    }
 
-                    // Close extra users div if needed
-                    if ($count > 3) {
-                        echo '</div>';
-                    }
-                    ?>
+    // Close extra users div if needed
+    if ($count > 3) {
+        echo '</div>';
+    }
+    ?>
 
                 </div>
             </div>
