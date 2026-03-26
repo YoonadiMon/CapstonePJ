@@ -615,7 +615,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
                     <a href="../../html/admin/aRequests.php">Requests</a>
                     <a href="../../html/admin/aJobs.php">Jobs</a>
                     <a href="../../html/admin/aIssue.php">Issue</a>
-                    <a href="../../html/admin/aOperations.html">Operations</a>
+                    <a href="../../html/admin/aOperations.php">Operations</a>
                     <a href="../../html/admin/aReport.php">Report</a>
                 </div>
             </div>
@@ -626,7 +626,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
             <a href="../../html/admin/aRequests.php">Requests</a>
             <a href="../../html/admin/aJobs.php">Jobs</a>
             <a href="../../html/admin/aIssue.php">Issue</a>
-            <a href="../../html/admin/aOperations.html">Operations</a>
+            <a href="../../html/admin/aOperations.php">Operations</a>
             <a href="../../html/admin/aReport.php">Report</a>
         </nav>
 
