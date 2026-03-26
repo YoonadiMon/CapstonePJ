@@ -67,7 +67,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                         <a href="../../html/collector/cMyJobs.php">My Jobs</a>
                         <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                         <a href="../../html/collector/cCompletedJobs.php">History</a>
-                        <a href="../../html/common/About.html">About</a>
+                        <a href="../../html/common/About.php">About</a>
                     
                     <?php elseif ($userType === 'provider'): ?>
                         <!-- Provider Mobile Menu -->
@@ -75,7 +75,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                         <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                         <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                         <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-                        <a href="../../html/common/About.html">About</a>
+                        <a href="../../html/common/About.php">About</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -98,7 +98,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <a href="../../html/collector/cMyJobs.php">My Jobs</a>
                 <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                 <a href="../../html/collector/cCompletedJobs.php">History</a>
-                <a href="../../html/common/About.html">About</a>
+                <a href="../../html/common/About.php">About</a>
             
             <?php elseif ($userType === 'provider'): ?>
                 <!-- Provider Desktop Menu -->
@@ -106,7 +106,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                 <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                 <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-                <a href="../../html/common/About.html">About</a>
+                <a href="../../html/common/About.php">About</a>
             <?php endif; ?>
         </nav>
 
@@ -160,11 +160,11 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 </div>
                 <div>
                     <b>System Operation</b><br>
-                    <a href="../../html/admin/aProviders.html">Providers</a><br>
-                    <a href="../../html/admin/aCollectors.html">Collectors</a><br>
-                    <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
-                    <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
-                    <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
+                    <a href="../../html/admin/aProviders.php">Providers</a><br>
+                    <a href="../../html/admin/aCollectors.php">Collectors</a><br>
+                    <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
+                    <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
+                    <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
                 </div>
                 <div>
                     <b>Proxy</b><br>
@@ -182,11 +182,11 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 </div>
                 <div>
                     <b>Support</b><br>
-                    <a href="../../html/collector/cReportIssues.html">Report Issue</a>
+                    <a href="../../html/collector/cReportIssues.php">Report Issue</a>
                 </div>
                 <div>
                     <b>Proxy</b><br>
-                    <a href="../../html/common/About.html">About</a><br>
+                    <a href="../../html/common/About.php">About</a><br>
                     <a href="../../html/common/Profile.php">Edit Profile</a><br>
                     <a href="../../html/common/Setting.php">Setting</a>
                 </div>
@@ -204,7 +204,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 </div>
                 <div>
                     <b>Proxy</b><br>
-                    <a href="../../html/common/About.html">About</a><br>
+                    <a href="../../html/common/About.php">About</a><br>
                     <a href="../../html/common/Profile.php">Edit Profile</a><br>
                     <a href="../../html/common/Setting.php">Setting</a>
                 </div>
