@@ -782,7 +782,7 @@ if ($hasJob) {
                 <a href="../../html/collector/cMyJobs.php">My Jobs</a>
                 <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                 <a href="../../html/collector/cCompletedJobs.php">History</a>
-                <a href="../../html/common/About.html">About</a>
+                <a href="../../html/common/About.php">About</a>
             </div>
         </div>
     </nav>
@@ -793,7 +793,7 @@ if ($hasJob) {
         <a href="../../html/collector/cMyJobs.php">My Jobs</a>
         <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
         <a href="../../html/collector/cCompletedJobs.php">History</a>
-        <a href="../../html/common/About.html">About</a>
+        <a href="../../html/common/About.php">About</a>
     </nav>
 
     <section class="c-navbar-more">
@@ -1369,12 +1369,8 @@ if ($hasJob) {
             <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
         </div>
         <div>
-            <b>Support</b><br>
-            <a href="../../html/collector/cReportIssues.php">Report Issue</a>
-        </div>
-        <div>
             <b>Proxy</b><br>
-            <a href="../../html/common/About.html">About</a><br>
+            <a href="../../html/common/About.php">About</a><br>
             <a href="../../html/common/Profile.php">Edit Profile</a><br>
             <a href="../../html/common/Setting.php">Setting</a>
         </div>

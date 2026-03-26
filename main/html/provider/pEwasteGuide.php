@@ -1097,7 +1097,7 @@ function getItemImage($itemName, $itemImageMap) {
                     <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                     <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                     <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-                    <a href="../../html/common/About.html">About</a>
+                    <a href="../../html/common/About.php">About</a>
                 </div>
             </div>
         </nav>
@@ -1107,7 +1107,7 @@ function getItemImage($itemName, $itemImageMap) {
             <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
             <a href="../../html/provider/pMainPickup.php">My Pickup</a>
             <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-            <a href="../../html/common/About.html">About</a>
+            <a href="../../html/common/About.php">About</a>
         </nav>
 
         <section class="c-navbar-more">
@@ -1604,7 +1604,7 @@ function getItemImage($itemName, $itemImageMap) {
         <section class="c-footer-links-section">
             <div><b>Recycling</b><br><a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a></div>
             <div><b>My Activity</b><br><a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br><a href="../../html/provider/pMainPickup.php">My Pickup</a></div>
-            <div><b>Proxy</b><br><a href="../../html/common/About.html">About</a><br><a href="../../html/common/Profile.php">Edit Profile</a><br><a href="../../html/common/Setting.php">Setting</a></div>
+            <div><b>Proxy</b><br><a href="../../html/common/About.php">About</a><br><a href="../../html/common/Profile.php">Edit Profile</a><br><a href="../../html/common/Setting.php">Setting</a></div>
         </section>
     </footer>
 

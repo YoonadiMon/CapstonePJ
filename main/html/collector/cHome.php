@@ -469,7 +469,7 @@
                     <a href="../../html/collector/cMyJobs.php">My Jobs</a>
                     <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                     <a href="../../html/collector/cCompletedJobs.php">History</a>
-                    <a href="../../html/common/About.html">About</a>
+                    <a href="../../html/common/About.php">About</a>
                 </div>
             </div>
         </nav>
@@ -479,7 +479,7 @@
             <a href="../../html/collector/cMyJobs.php">My Jobs</a>
             <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
             <a href="../../html/collector/cCompletedJobs.php">History</a>
-            <a href="../../html/common/About.html">About</a>
+            <a href="../../html/common/About.php">About</a>
         </nav>
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
@@ -924,7 +924,7 @@
             </div> -->
             <div>
                 <b>Proxy</b><br>
-                <a href="../../html/common/About.html">About</a><br>
+                <a href="../../html/common/About.php">About</a><br>
                 <a href="../../html/common/Profile.php?user=col1" id="editProfileFooterLink">Edit Profile</a><br>
                 <a href="../../html/common/Setting.php">Setting</a>
             </div>

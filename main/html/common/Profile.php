@@ -532,13 +532,13 @@ switch($userType) {
                         <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                         <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                         <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-                        <a href="../../html/common/About.html">About</a>
+                        <a href="../../html/common/About.php">About</a>
                     <?php elseif ($userType == 'collector'): ?>
                         <a href="../../html/collector/cHome.php">Home</a>
                         <a href="../../html/collector/cMyJobs.php">My Jobs</a>
                         <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                         <a href="../../html/collector/cCompletedJobs.php">History</a>
-                        <a href="../../html/common/About.html">About</a>
+                        <a href="../../html/common/About.php">About</a>
                     <?php elseif ($userType == 'admin'): ?>
                         <a href="../../html/admin/aHome.php">Home</a>
                         <a href="../../html/admin/aRequests.php">Requests</a>
@@ -558,13 +558,13 @@ switch($userType) {
                 <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
                 <a href="../../html/provider/pMainPickup.php">My Pickup</a>
                 <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-                <a href="../../html/common/About.html">About</a>
+                <a href="../../html/common/About.php">About</a>
             <?php elseif ($userType == 'collector'): ?>
                 <a href="../../html/collector/cHome.php">Home</a>
                 <a href="../../html/collector/cMyJobs.php">My Jobs</a>
                 <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                 <a href="../../html/collector/cCompletedJobs.php">History</a>
-                <a href="../../html/common/About.html">About</a>
+                <a href="../../html/common/About.php">About</a>
             <?php elseif ($userType == 'admin'): ?>
                 <a href="../../html/admin/aHome.php">Home</a>
                 <a href="../../html/admin/aRequests.php">Requests</a>
@@ -747,7 +747,7 @@ switch($userType) {
             <?php if ($userType == 'provider'): ?>
                 <div><b>Quick Links</b><br>
                     <a href="../../html/provider/pHome.php">Home</a><br>
-                    <a href="../../html/common/About.html">About</a>
+                    <a href="../../html/common/About.php">About</a>
                 </div>
                 <div><b>Account</b><br>
                     <a href="Profile.php">Edit Profile</a><br>
@@ -760,7 +760,7 @@ switch($userType) {
                     <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
                 </div>
                 <div><b>Proxy</b><br>
-                    <a href="../../html/common/About.html">About</a><br>
+                    <a href="../../html/common/About.php">About</a><br>
                     <a href="Profile.php">Edit Profile</a><br>
                     <a href="Setting.php">Setting</a>
                 </div>

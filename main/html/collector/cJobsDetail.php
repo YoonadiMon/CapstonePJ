@@ -189,7 +189,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
                     <a href="../../html/collector/cMyJobs.php">My Jobs</a>
                     <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
                     <a href="../../html/collector/cCompletedJobs.php">History</a>
-                    <a href="../../html/common/About.html">About</a>
+                    <a href="../../html/common/About.php">About</a>
                 </div>
             </div>
         </nav>
@@ -199,7 +199,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
             <a href="../../html/collector/cMyJobs.php">My Jobs</a>
             <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
             <a href="../../html/collector/cCompletedJobs.php">History</a>
-            <a href="../../html/common/About.html">About</a>
+            <a href="../../html/common/About.php">About</a>
         </nav>
 
         <section class="c-navbar-more">
@@ -472,7 +472,7 @@ $jobLabel = $job ? ('JOB' . str_pad($job['jobID'], 3, '0', STR_PAD_LEFT)) : '';
             </div> -->
             <div>
                 <b>Proxy</b><br>
-                <a href="../../html/common/About.html">About</a><br>
+                <a href="../../html/common/About.php">About</a><br>
                 <a href="../../html/common/Profile.php">Edit Profile</a><br>
                 <a href="../../html/common/Setting.php">Setting</a>
             </div>
