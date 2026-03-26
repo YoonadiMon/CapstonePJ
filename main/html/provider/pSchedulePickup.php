@@ -1004,600 +1004,144 @@ if ($result) {
 
 <script src="../../javascript/mainScript.js"></script>
 <script>
-    // pSchedulePickup.js with Enhanced Validations - COMPLETE VERSION WITH FIXED SUMMARY
-    
-    let itemCount = 0;
-    let items = [];
-    let uploadedImages = [];
-    const MAX_IMAGES = 5;
-    
-    // E-waste types from database (populated from PHP)
-    const eWasteTypes = <?php echo json_encode($itemTypes); ?>;
-    
-    // Brand list
-    const brands = [
-        'Apple', 'Samsung', 'Dell', 'HP', 'Lenovo', 'Asus', 'Acer',
-        'Microsoft', 'Sony', 'LG', 'Panasonic', 'Canon', 'Epson', 'Other'
-    ];
-    
-    // Helper function to show field error
-    function showFieldError(fieldId, message) {
-        const errorDiv = document.getElementById(fieldId + 'Error');
-        if (errorDiv) {
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            const inputField = document.getElementById(fieldId);
-            if (inputField) inputField.classList.add('error');
-        }
+// pSchedulePickup.js with Enhanced Validations - COMPLETE VERSION WITH FIXED SUMMARY
+
+let itemCount = 0;
+let items = [];
+let uploadedImages = [];
+const MAX_IMAGES = 5;
+
+// E-waste types from database (populated from PHP)
+const eWasteTypes = <?php echo json_encode($itemTypes); ?>;
+
+// Brand list
+const brands = [
+    'Apple', 'Samsung', 'Dell', 'HP', 'Lenovo', 'Asus', 'Acer',
+    'Microsoft', 'Sony', 'LG', 'Panasonic', 'Canon', 'Epson', 'Other'
+];
+
+// Helper function to show field error
+function showFieldError(fieldId, message) {
+    const errorDiv = document.getElementById(fieldId + 'Error');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        const inputField = document.getElementById(fieldId);
+        if (inputField) inputField.classList.add('error');
     }
-    
-    function hideFieldError(fieldId) {
-        const errorDiv = document.getElementById(fieldId + 'Error');
-        if (errorDiv) {
-            errorDiv.style.display = 'none';
-            const inputField = document.getElementById(fieldId);
-            if (inputField) inputField.classList.remove('error');
-        }
-    }
-    
-    function clearAllErrors() {
-        const errorFields = ['address', 'state', 'postcode', 'date', 'time', 'items', 'image'];
-        errorFields.forEach(field => hideFieldError(field));
-    }
-    
-    // Validate postcode format (Malaysian 5-digit)
-    function isValidPostcode(postcode) {
-        return /^\d{5}$/.test(postcode);
-    }
-    
-    // Validate date is not in the past and not more than 30 days ahead
-    function isValidPickupDate(dateStr) {
-        const selectedDate = new Date(dateStr);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const maxDate = new Date();
-        maxDate.setDate(maxDate.getDate() + 30);
-        
-        if (selectedDate < today) return false;
-        if (selectedDate > maxDate) return false;
-        return true;
-    }
-    
-    // Main validation function - validates all required fields including item details
-    function validateForm() {
-        clearAllErrors();
-        let isValid = true;
-        
-        // 1. Validate Address
-        const address = document.getElementById('pickupAddress').value.trim();
-        if (address === '') {
-            showFieldError('address', 'Pickup address is required');
-            isValid = false;
-        } else if (address.length < 5) {
-            showFieldError('address', 'Please enter a complete address (minimum 5 characters)');
-            isValid = false;
-        }
-        
-        // 2. Validate State
-        const state = document.getElementById('pickupState').value;
-        if (state === '') {
-            showFieldError('state', 'Please select a state');
-            isValid = false;
-        }
-        
-        // 3. Validate Postcode
-        const postcode = document.getElementById('pickupPostcode').value.trim();
-        if (postcode === '') {
-            showFieldError('postcode', 'Postcode is required');
-            isValid = false;
-        } else if (!isValidPostcode(postcode)) {
-            showFieldError('postcode', 'Please enter a valid 5-digit Malaysian postcode');
-            isValid = false;
-        }
-        
-        // 4. Validate Date
-        const date = document.getElementById('preferredDate').value;
-        if (!date) {
-            showFieldError('date', 'Please select a preferred pickup date');
-            isValid = false;
-        } else if (!isValidPickupDate(date)) {
-            showFieldError('date', 'Pickup date must be tomorrow or within the next 30 days');
-            isValid = false;
-        }
-        
-        // 5. Validate Time
-        const time = document.getElementById('preferredTime').value;
-        if (!time) {
-            showFieldError('time', 'Please select a preferred time');
-            isValid = false;
-        }
-        
-        // 6. Validate Items - Now checks all required fields: type, brand, model, description, weight, length, width, height
-        const itemCards = document.querySelectorAll('.psp-item-card');
-        if (itemCards.length === 0) {
-            showFieldError('items', 'Please add at least one e-waste item');
-            isValid = false;
-        } else {
-            let hasValidItem = false;
-            let firstErrorMsg = '';
-            
-            for (let idx = 0; idx < itemCards.length; idx++) {
-                const card = itemCards[idx];
-                const inputs = card.querySelectorAll('select, input');
-                
-                // Get all field values
-                const typeValue = inputs[0] ? inputs[0].value : '';
-                const brandValue = inputs[1] ? inputs[1].value : '';
-                const modelValue = inputs[2] ? inputs[2].value.trim() : '';
-                const descriptionValue = inputs[3] ? inputs[3].value.trim() : '';
-                const weightValue = inputs[4] ? parseFloat(inputs[4].value) : 0;
-                const lengthValue = inputs[5] ? parseFloat(inputs[5].value) : 0;
-                const widthValue = inputs[6] ? parseFloat(inputs[6].value) : 0;
-                const heightValue = inputs[7] ? parseFloat(inputs[7].value) : 0;
-                
-                // Check if this item has all required fields filled
-                let itemComplete = true;
-                let itemErrorMsg = '';
-                
-                if (!typeValue || typeValue === '') {
-                    itemComplete = false;
-                    itemErrorMsg = `Item #${idx + 1}: Please select an item type`;
-                } else if (!brandValue || brandValue === '') {
-                    itemComplete = false;
-                    itemErrorMsg = `Item #${idx + 1}: Please select a brand`;
-                } else if (!modelValue) {
-                    itemComplete = false;
-                    itemErrorMsg = `Item #${idx + 1}: Please enter the model`;
-                } else if (!descriptionValue) {
-                    itemComplete = false;
-                    itemErrorMsg = `Item #${idx + 1}: Please enter a brief description`;
-                } else if (!weightValue || weightValue <= 0) {
-                    itemComplete = false;
-                    itemErrorMsg = `Item #${idx + 1}: Weight must be greater than 0 kg`;
-                } else if (!lengthValue || lengthValue <= 0) {
-                    itemComplete = false;
-                    itemErrorMsg = `Item #${idx + 1}: Length must be greater than 0 cm`;
-                } else if (!widthValue || widthValue <= 0) {
-                    itemComplete = false;
-                    itemErrorMsg = `Item #${idx + 1}: Width must be greater than 0 cm`;
-                } else if (!heightValue || heightValue <= 0) {
-                    itemComplete = false;
-                    itemErrorMsg = `Item #${idx + 1}: Height must be greater than 0 cm`;
-                }
-                
-                if (itemComplete) {
-                    hasValidItem = true;
-                } else if (!firstErrorMsg) {
-                    firstErrorMsg = itemErrorMsg;
-                }
-            }
-            
-            if (!hasValidItem && itemCards.length > 0) {
-                if (firstErrorMsg) {
-                    showFieldError('items', firstErrorMsg);
-                } else {
-                    showFieldError('items', 'Please fill in all required fields for at least one item (Type, Brand, Model, Description, Weight, Length, Width, Height)');
-                }
-                isValid = false;
-            }
-        }
-        
-        // 7. Validate Images (max 5 files)
-        if (uploadedImages.length > MAX_IMAGES) {
-            showFieldError('image', `Maximum ${MAX_IMAGES} images allowed`);
-            isValid = false;
-        }
-        
-        return isValid;
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        // Set minimum date for pickup (tomorrow)
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const dateInput = document.getElementById('preferredDate');
-        dateInput.min = tomorrow.toISOString().split('T')[0];
-        
-        // Add real-time validation listeners
-        document.getElementById('pickupAddress').addEventListener('input', () => hideFieldError('address'));
-        document.getElementById('pickupState').addEventListener('change', () => hideFieldError('state'));
-        document.getElementById('pickupPostcode').addEventListener('input', () => hideFieldError('postcode'));
-        document.getElementById('preferredDate').addEventListener('change', () => {
-            hideFieldError('date');
-            updateSummary();
-        });
-        document.getElementById('preferredTime').addEventListener('change', () => {
-            hideFieldError('time');
-            updateSummary();
-        });
-        
-        // Character counter for special instructions
-        const textarea = document.getElementById('specialInstructions');
-        const charCounter = document.getElementById('charCounter');
-        if (textarea && charCounter) {
-            textarea.addEventListener('input', function() {
-                const length = this.value.length;
-                charCounter.textContent = `${length}/500 characters`;
-                if (length > 500) {
-                    this.value = this.value.substring(0, 500);
-                    charCounter.textContent = `500/500 characters`;
-                }
-            });
-        }
-        
-        // Add first item by default
-        addNewItem();
-    });
-    
-    function addNewItem() {
-        itemCount++;
-        const itemId = `item_${itemCount}`;
-        
-        // Build item type options with recycle points data
-        let typeOptions = '<option value="">Select Type</option>';
-        eWasteTypes.forEach(type => {
-            typeOptions += `<option value="${type.itemTypeID}" data-points="${type.recycle_points}">${escapeHtml(type.name)}</option>`;
-        });
-        
-        const itemHtml = `
-            <div class="psp-item-card" id="${itemId}">
-                <div class="psp-item-header">
-                    <span class="psp-item-title">Item #${itemCount}</span>
-                    <button type="button" class="psp-remove-item" onclick="removeItem('${itemId}')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="psp-item-grid">
-                    <div class="psp-item-field">
-                        <label>Type <span class="required-star">*</span></label>
-                        <select onchange="updateSummary(); hideFieldError('items')">
-                            ${typeOptions}
-                        </select>
-                    </div>
-                    <div class="psp-item-field">
-                        <label>Brand <span class="required-star">*</span></label>
-                        <select onchange="updateSummary(); hideFieldError('items')">
-                            <option value="">Select Brand</option>
-                            ${brands.map(brand => `<option value="${escapeHtml(brand)}">${escapeHtml(brand)}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="psp-item-field">
-                        <label>Model <span class="required-star">*</span></label>
-                        <input type="text" placeholder="e.g., iPhone 12" oninput="updateSummary(); hideFieldError('items')" maxlength="100">
-                    </div>
-                    <div class="psp-item-field">
-                        <label>Description <span class="required-star">*</span></label>
-                        <input type="text" placeholder="Brief description (e.g., working condition, color)" oninput="updateSummary(); hideFieldError('items')" maxlength="200">
-                    </div>
-                    <div class="psp-item-field">
-                        <label>Weight (kg) <span class="required-star">*</span></label>
-                        <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
-                    </div>
-                    <div class="psp-item-field">
-                        <label>Length (cm) <span class="required-star">*</span></label>
-                        <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
-                    </div>
-                    <div class="psp-item-field">
-                        <label>Width (cm) <span class="required-star">*</span></label>
-                        <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
-                    </div>
-                    <div class="psp-item-field">
-                        <label>Height (cm) <span class="required-star">*</span></label>
-                        <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('itemsContainer').insertAdjacentHTML('beforeend', itemHtml);
-        updateSummary();
-        hideFieldError('items');
-    }
-    
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    function removeItem(itemId) {
-        const itemElement = document.getElementById(itemId);
-        if (itemElement) {
-            itemElement.remove();
-            itemCount--;
-            renumberItems();
-            updateSummary();
-            hideFieldError('items');
-            // If no items left, show error
-            if (document.querySelectorAll('.psp-item-card').length === 0) {
-                showFieldError('items', 'Please add at least one e-waste item');
-            }
-        }
-    }
-    
-    function renumberItems() {
-        const itemCards = document.querySelectorAll('.psp-item-card');
-        itemCards.forEach((card, index) => {
-            const title = card.querySelector('.psp-item-title');
-            if (title) {
-                title.textContent = `Item #${index + 1}`;
-            }
-        });
-    }
-    
-    function handleImageUpload(event) {
-        const files = event.target.files;
-        const preview = document.getElementById('imagePreview');
-        const errorDiv = document.getElementById('imageError');
-        
-        if (uploadedImages.length + files.length > MAX_IMAGES) {
-            errorDiv.textContent = `Maximum ${MAX_IMAGES} images allowed. You can upload ${MAX_IMAGES - uploadedImages.length} more.`;
-            errorDiv.style.display = 'block';
-            return;
-        }
-        
+}
+
+function hideFieldError(fieldId) {
+    const errorDiv = document.getElementById(fieldId + 'Error');
+    if (errorDiv) {
         errorDiv.style.display = 'none';
-        
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            
-            // Validate file type
-            if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-                errorDiv.textContent = 'Only JPG and PNG images are allowed';
-                errorDiv.style.display = 'block';
-                continue;
-            }
-            
-            if (file.size > 5 * 1024 * 1024) {
-                errorDiv.textContent = 'File size must be less than 5MB';
-                errorDiv.style.display = 'block';
-                continue;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const imageId = 'img_' + Date.now() + '_' + i;
-                uploadedImages.push({
-                    id: imageId,
-                    data: e.target.result,
-                    file: file
-                });
-                
-                const imageHtml = `
-                    <div class="psp-image-preview-item" id="${imageId}">
-                        <img src="${e.target.result}" alt="Preview">
-                        <button type="button" onclick="removeImage('${imageId}')">✕</button>
-                    </div>
-                `;
-                preview.insertAdjacentHTML('beforeend', imageHtml);
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        // Clear input to allow re-upload of same files if needed
-        document.getElementById('imageInput').value = '';
+        const inputField = document.getElementById(fieldId);
+        if (inputField) inputField.classList.remove('error');
+    }
+}
+
+function clearAllErrors() {
+    const errorFields = ['address', 'state', 'postcode', 'date', 'time', 'items', 'image'];
+    errorFields.forEach(field => hideFieldError(field));
+}
+
+// Validate postcode format (Malaysian 5-digit)
+function isValidPostcode(postcode) {
+    return /^\d{5}$/.test(postcode);
+}
+
+// Validate date - requires minimum 10 days advance notice for scheduling
+// The rule: User can only request pickup for dates that are at least 10 days from now
+// Maximum booking is 30 days in advance
+function isValidPickupDate(dateStr) {
+    const selectedDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Minimum date: 10 days from now
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + 10);
+    minDate.setHours(0, 0, 0, 0);
+    
+    // Maximum date: 30 days from now
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+    maxDate.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < minDate) {
+        const daysDiff = Math.ceil((minDate - today) / (1000 * 60 * 60 * 24));
+        return { valid: false, message: `Pickup date must be at least 10 days from now (earliest: ${minDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})` };
+    }
+    if (selectedDate > maxDate) {
+        return { valid: false, message: 'Pickup date cannot be more than 30 days in advance' };
     }
     
-    function removeImage(imageId) {
-        const imageElement = document.getElementById(imageId);
-        if (imageElement) {
-            imageElement.remove();
-            uploadedImages = uploadedImages.filter(img => img.id !== imageId);
-            document.getElementById('imageError').style.display = 'none';
-        }
+    return { valid: true, message: '' };
+}
+
+// Main validation function - validates all required fields including item details
+function validateForm() {
+    clearAllErrors();
+    let isValid = true;
+    
+    // 1. Validate Address
+    const address = document.getElementById('pickupAddress').value.trim();
+    if (address === '') {
+        showFieldError('address', 'Pickup address is required');
+        isValid = false;
+    } else if (address.length < 5) {
+        showFieldError('address', 'Please enter a complete address (minimum 5 characters)');
+        isValid = false;
     }
     
-    function updateSummary() {
-        const itemCards = document.querySelectorAll('.psp-item-card');
-        let totalWeight = 0;
-        let estimatedPoints = 0;
-        let totalVolume = 0;
-        let itemDetails = [];
-        
-        itemCards.forEach((card, index) => {
-            const inputs = card.querySelectorAll('select, input');
-            const typeSelect = inputs[0];
-            const weightInput = inputs[4];
-            const lengthInput = inputs[5];
-            const widthInput = inputs[6];
-            const heightInput = inputs[7];
-            const brandInput = inputs[1];
-            const modelInput = inputs[2];
-            
-            if (typeSelect && weightInput) {
-                const selectedOption = typeSelect.options[typeSelect.selectedIndex];
-                const typeName = selectedOption ? selectedOption.text : 'Unknown';
-                const typePoints = selectedOption ? parseInt(selectedOption.dataset.points || 0) : 0;
-                const weight = parseFloat(weightInput.value) || 0;
-                const length = parseFloat(lengthInput?.value) || 0;
-                const width = parseFloat(widthInput?.value) || 0;
-                const height = parseFloat(heightInput?.value) || 0;
-                const volume = length * width * height;
-                
-                totalWeight += weight;
-                estimatedPoints += weight * typePoints;
-                totalVolume += volume;
-                
-                if (weight > 0) {
-                    itemDetails.push({
-                        number: index + 1,
-                        type: typeName,
-                        brand: brandInput?.value || 'Not specified',
-                        model: modelInput?.value || 'Not specified',
-                        weight: weight,
-                        dimensions: length > 0 && width > 0 && height > 0 ? `${length} × ${width} × ${height} cm` : 'Not specified'
-                    });
-                }
-            }
-        });
-        
-        // Update summary statistics
-        document.getElementById('summaryItemsCount').textContent = itemCards.length + ' items';
-        document.getElementById('summaryTotalWeight').textContent = totalWeight.toFixed(2) + ' kg';
-        document.getElementById('estimatedPoints').textContent = Math.round(estimatedPoints);
-        
-        // Add more detailed summary information
-        const summaryCard = document.querySelector('.psp-summary-card');
-        
-        // Remove existing dynamic summary items if any (keep the static ones)
-        const existingDynamicItems = summaryCard.querySelectorAll('.dynamic-summary-item');
-        existingDynamicItems.forEach(item => item.remove());
-        
-        // Add total volume if available
-        if (totalVolume > 0) {
-            const volumeDiv = document.createElement('div');
-            volumeDiv.className = 'psp-summary-item dynamic-summary-item';
-            volumeDiv.innerHTML = `
-                <span>Total Volume</span>
-                <span>${totalVolume.toFixed(2)} cm³</span>
-            `;
-            const pointsEstimate = summaryCard.querySelector('.psp-points-estimate');
-            pointsEstimate.parentNode.insertBefore(volumeDiv, pointsEstimate);
-        }
-        
-        // Add item details section
-        if (itemDetails.length > 0) {
-            const detailsDiv = document.createElement('div');
-            detailsDiv.className = 'psp-item-details-summary dynamic-summary-item';
-            detailsDiv.style.marginTop = '15px';
-            detailsDiv.style.borderTop = '1px solid #e0e0e0';
-            detailsDiv.style.paddingTop = '12px';
-            
-            let detailsHtml = '<div style="font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Items Details:</div>';
-            itemDetails.forEach(item => {
-                detailsHtml += `
-                    <div style="font-size: 0.75rem; margin-bottom: 8px; padding: 6px; background: #f8f9fa; border-radius: 6px;">
-                        <strong>Item #${item.number}:</strong> ${item.type}<br>
-                        ${item.brand !== 'Not specified' ? `Brand: ${item.brand}<br>` : ''}
-                        ${item.model !== 'Not specified' ? `Model: ${item.model}<br>` : ''}
-                        Weight: ${item.weight.toFixed(2)} kg<br>
-                        ${item.dimensions !== 'Not specified' ? `Dimensions: ${item.dimensions}` : ''}
-                    </div>
-                `;
-            });
-            
-            detailsDiv.innerHTML = detailsHtml;
-            
-            const submitBtn = summaryCard.querySelector('.psp-submit-btn');
-            submitBtn.parentNode.insertBefore(detailsDiv, submitBtn);
-        }
-        
-        // Update date and time in summary
-        const date = document.getElementById('preferredDate').value;
-        const time = document.getElementById('preferredTime').value;
-        
-        if (date) {
-            const formattedDate = new Date(date).toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            document.getElementById('summaryDate').textContent = formattedDate;
-        } else {
-            document.getElementById('summaryDate').textContent = 'Not set';
-        }
-        
-        if (time) {
-            const timeMap = {
-                '09:00:00': '09:00 AM',
-                '10:00:00': '10:00 AM',
-                '11:00:00': '11:00 AM',
-                '14:00:00': '02:00 PM',
-                '15:00:00': '03:00 PM',
-                '16:00:00': '04:00 PM',
-                '17:00:00': '05:00 PM'
-            };
-            document.getElementById('summaryTime').textContent = timeMap[time] || time.substring(0, 5);
-        } else {
-            document.getElementById('summaryTime').textContent = 'Not set';
-        }
-        
-        // Update address summary
-        const address = document.getElementById('pickupAddress').value.trim();
-        const state = document.getElementById('pickupState').value;
-        const postcode = document.getElementById('pickupPostcode').value.trim();
-        
-        const addressSummary = document.querySelector('.psp-summary-item:first-child');
-        if (addressSummary && address) {
-            const existingAddressDetail = summaryCard.querySelector('.address-detail');
-            if (!existingAddressDetail) {
-                const addressDiv = document.createElement('div');
-                addressDiv.className = 'psp-summary-item address-detail dynamic-summary-item';
-                addressDiv.style.marginTop = '8px';
-                addressDiv.style.fontSize = '0.85rem';
-                addressDiv.style.color = '#666';
-                addressSummary.parentNode.insertBefore(addressDiv, addressSummary.nextSibling);
-            }
-            const addressDetail = summaryCard.querySelector('.address-detail');
-            if (addressDetail) {
-                addressDetail.innerHTML = `<span>Location</span><span>${address}, ${postcode}, ${state}</span>`;
-            }
+    // 2. Validate State
+    const state = document.getElementById('pickupState').value;
+    if (state === '') {
+        showFieldError('state', 'Please select a state');
+        isValid = false;
+    }
+    
+    // 3. Validate Postcode
+    const postcode = document.getElementById('pickupPostcode').value.trim();
+    if (postcode === '') {
+        showFieldError('postcode', 'Postcode is required');
+        isValid = false;
+    } else if (!isValidPostcode(postcode)) {
+        showFieldError('postcode', 'Please enter a valid 5-digit Malaysian postcode');
+        isValid = false;
+    }
+    
+    // 4. Validate Date
+    const date = document.getElementById('preferredDate').value;
+    if (!date) {
+        showFieldError('date', 'Please select a preferred pickup date');
+        isValid = false;
+    } else {
+        const dateValidation = isValidPickupDate(date);
+        if (!dateValidation.valid) {
+            showFieldError('date', dateValidation.message);
+            isValid = false;
         }
     }
     
-    function submitPickupRequest(providerId) {
-        // Run validation first
-        if (!validateForm()) {
-            // Scroll to first error
-            const firstError = document.querySelector('.error-message[style*="display: block"]');
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            return;
-        }
-        
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Submitting...';
-        
-        const requestData = {
-            providerID: providerId,
-            pickupAddress: document.getElementById('pickupAddress').value.trim(),
-            pickupState: document.getElementById('pickupState').value,
-            pickupPostcode: document.getElementById('pickupPostcode').value.trim(),
-            preferredDateTime: document.getElementById('preferredDate').value + ' ' + document.getElementById('preferredTime').value,
-            status: 'Pending',
-            specialInstructions: document.getElementById('specialInstructions').value.trim(),
-            items: collectItemData()
-        };
-        
-        fetch('../../php/submitPickupRequest.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('requestIdDisplay').textContent = data.requestID;
-                document.getElementById('successModal').style.display = 'flex';
-            } else {
-                alert('Error submitting request: ' + data.message);
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit Pickup Request';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while submitting the request. Please try again.');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit Pickup Request';
-        });
+    // 5. Validate Time
+    const time = document.getElementById('preferredTime').value;
+    if (!time) {
+        showFieldError('time', 'Please select a preferred time');
+        isValid = false;
     }
     
-    function collectItemData() {
-        const itemsList = [];
-        const itemCards = document.querySelectorAll('.psp-item-card');
+    // 6. Validate Items - Now checks all required fields: type, brand, model, description, weight, length, width, height
+    const itemCards = document.querySelectorAll('.psp-item-card');
+    if (itemCards.length === 0) {
+        showFieldError('items', 'Please add at least one e-waste item');
+        isValid = false;
+    } else {
+        let hasValidItem = false;
+        let firstErrorMsg = '';
         
-        itemCards.forEach(card => {
+        for (let idx = 0; idx < itemCards.length; idx++) {
+            const card = itemCards[idx];
             const inputs = card.querySelectorAll('select, input');
             
             // Get all field values
@@ -1610,42 +1154,564 @@ if ($result) {
             const widthValue = inputs[6] ? parseFloat(inputs[6].value) : 0;
             const heightValue = inputs[7] ? parseFloat(inputs[7].value) : 0;
             
-            // Only include items that have ALL required fields filled
-            if (typeValue && typeValue !== '' && 
-                brandValue && brandValue !== '' && 
-                modelValue && 
-                descriptionValue && 
-                weightValue > 0 && 
-                lengthValue > 0 && 
-                widthValue > 0 && 
-                heightValue > 0) {
-                itemsList.push({
-                    itemTypeID: typeValue,
-                    brand: brandValue,
-                    model: modelValue,
-                    description: descriptionValue,
-                    weight: weightValue,
-                    length: lengthValue,
-                    width: widthValue,
-                    height: heightValue,
-                    status: 'Pending'
-                });
+            // Check if this item has all required fields filled
+            let itemComplete = true;
+            let itemErrorMsg = '';
+            
+            if (!typeValue || typeValue === '') {
+                itemComplete = false;
+                itemErrorMsg = `Item #${idx + 1}: Please select an item type`;
+            } else if (!brandValue || brandValue === '') {
+                itemComplete = false;
+                itemErrorMsg = `Item #${idx + 1}: Please select a brand`;
+            } else if (!modelValue) {
+                itemComplete = false;
+                itemErrorMsg = `Item #${idx + 1}: Please enter the model`;
+            } else if (!descriptionValue) {
+                itemComplete = false;
+                itemErrorMsg = `Item #${idx + 1}: Please enter a brief description`;
+            } else if (!weightValue || weightValue <= 0) {
+                itemComplete = false;
+                itemErrorMsg = `Item #${idx + 1}: Weight must be greater than 0 kg`;
+            } else if (!lengthValue || lengthValue <= 0) {
+                itemComplete = false;
+                itemErrorMsg = `Item #${idx + 1}: Length must be greater than 0 cm`;
+            } else if (!widthValue || widthValue <= 0) {
+                itemComplete = false;
+                itemErrorMsg = `Item #${idx + 1}: Width must be greater than 0 cm`;
+            } else if (!heightValue || heightValue <= 0) {
+                itemComplete = false;
+                itemErrorMsg = `Item #${idx + 1}: Height must be greater than 0 cm`;
+            }
+            
+            if (itemComplete) {
+                hasValidItem = true;
+            } else if (!firstErrorMsg) {
+                firstErrorMsg = itemErrorMsg;
+            }
+        }
+        
+        if (!hasValidItem && itemCards.length > 0) {
+            if (firstErrorMsg) {
+                showFieldError('items', firstErrorMsg);
+            } else {
+                showFieldError('items', 'Please fill in all required fields for at least one item (Type, Brand, Model, Description, Weight, Length, Width, Height)');
+            }
+            isValid = false;
+        }
+    }
+    
+    // 7. Validate Images (max 5 files)
+    if (uploadedImages.length > MAX_IMAGES) {
+        showFieldError('image', `Maximum ${MAX_IMAGES} images allowed`);
+        isValid = false;
+    }
+    
+    return isValid;
+}
+
+ddocument.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date for pickup (10 days from now)
+    const minPickupDate = new Date();
+    minPickupDate.setDate(minPickupDate.getDate() + 10);
+    const dateInput = document.getElementById('preferredDate');
+    dateInput.min = minPickupDate.toISOString().split('T')[0];
+    
+    // Set maximum date (30 days from now)
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+    dateInput.max = maxDate.toISOString().split('T')[0];
+    
+    // Set default value to 10 days from now
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 10);
+    dateInput.value = defaultDate.toISOString().split('T')[0];
+    
+    // Add validation message for date picker
+    const dateHelpText = document.createElement('small');
+    dateHelpText.style.display = 'block';
+    dateHelpText.style.fontSize = '0.7rem';
+    dateHelpText.style.color = '#6c757d';
+    dateHelpText.style.marginTop = '4px';
+    
+    const minDateFormatted = minPickupDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+    const maxDateFormatted = maxDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+    dateHelpText.innerHTML = `📅 Pickup requests require 10 days advance notice. Earliest: ${minDateFormatted} | Latest: ${maxDateFormatted}`;
+    
+    const dateGroup = document.getElementById('preferredDate').closest('.psp-form-group');
+    if (dateGroup) {
+        dateGroup.appendChild(dateHelpText);
+    }
+    
+    // Add real-time validation listeners
+    document.getElementById('pickupAddress').addEventListener('input', () => hideFieldError('address'));
+    document.getElementById('pickupState').addEventListener('change', () => hideFieldError('state'));
+    document.getElementById('pickupPostcode').addEventListener('input', () => hideFieldError('postcode'));
+    document.getElementById('preferredDate').addEventListener('change', () => {
+        hideFieldError('date');
+        updateSummary();
+    });
+    document.getElementById('preferredTime').addEventListener('change', () => {
+        hideFieldError('time');
+        updateSummary();
+    });
+    
+    // Character counter for special instructions
+    const textarea = document.getElementById('specialInstructions');
+    const charCounter = document.getElementById('charCounter');
+    if (textarea && charCounter) {
+        textarea.addEventListener('input', function() {
+            const length = this.value.length;
+            charCounter.textContent = `${length}/500 characters`;
+            if (length > 500) {
+                this.value = this.value.substring(0, 500);
+                charCounter.textContent = `500/500 characters`;
             }
         });
+    }
+    
+    // Add first item by default
+    addNewItem();
+});
+
+function addNewItem() {
+    itemCount++;
+    const itemId = `item_${itemCount}`;
+    
+    // Build item type options with recycle points data
+    let typeOptions = '<option value="">Select Type</option>';
+    eWasteTypes.forEach(type => {
+        typeOptions += `<option value="${type.itemTypeID}" data-points="${type.recycle_points}">${escapeHtml(type.name)}</option>`;
+    });
+    
+    const itemHtml = `
+        <div class="psp-item-card" id="${itemId}">
+            <div class="psp-item-header">
+                <span class="psp-item-title">Item #${itemCount}</span>
+                <button type="button" class="psp-remove-item" onclick="removeItem('${itemId}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="psp-item-grid">
+                <div class="psp-item-field">
+                    <label>Type <span class="required-star">*</span></label>
+                    <select onchange="updateSummary(); hideFieldError('items')">
+                        ${typeOptions}
+                    </select>
+                </div>
+                <div class="psp-item-field">
+                    <label>Brand <span class="required-star">*</span></label>
+                    <select onchange="updateSummary(); hideFieldError('items')">
+                        <option value="">Select Brand</option>
+                        ${brands.map(brand => `<option value="${escapeHtml(brand)}">${escapeHtml(brand)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="psp-item-field">
+                    <label>Model <span class="required-star">*</span></label>
+                    <input type="text" placeholder="e.g., iPhone 12" oninput="updateSummary(); hideFieldError('items')" maxlength="100">
+                </div>
+                <div class="psp-item-field">
+                    <label>Description <span class="required-star">*</span></label>
+                    <input type="text" placeholder="Brief description (e.g., working condition, color)" oninput="updateSummary(); hideFieldError('items')" maxlength="200">
+                </div>
+                <div class="psp-item-field">
+                    <label>Weight (kg) <span class="required-star">*</span></label>
+                    <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
+                </div>
+                <div class="psp-item-field">
+                    <label>Length (cm) <span class="required-star">*</span></label>
+                    <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
+                </div>
+                <div class="psp-item-field">
+                    <label>Width (cm) <span class="required-star">*</span></label>
+                    <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
+                </div>
+                <div class="psp-item-field">
+                    <label>Height (cm) <span class="required-star">*</span></label>
+                    <input type="number" step="0.1" min="0.1" placeholder="0.0" oninput="updateSummary(); hideFieldError('items')" onchange="updateSummary(); hideFieldError('items')">
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('itemsContainer').insertAdjacentHTML('beforeend', itemHtml);
+    updateSummary();
+    hideFieldError('items');
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+function removeItem(itemId) {
+    const itemElement = document.getElementById(itemId);
+    if (itemElement) {
+        itemElement.remove();
+        itemCount--;
+        renumberItems();
+        updateSummary();
+        hideFieldError('items');
+        // If no items left, show error
+        if (document.querySelectorAll('.psp-item-card').length === 0) {
+            showFieldError('items', 'Please add at least one e-waste item');
+        }
+    }
+}
+
+function renumberItems() {
+    const itemCards = document.querySelectorAll('.psp-item-card');
+    itemCards.forEach((card, index) => {
+        const title = card.querySelector('.psp-item-title');
+        if (title) {
+            title.textContent = `Item #${index + 1}`;
+        }
+    });
+}
+
+function handleImageUpload(event) {
+    const files = event.target.files;
+    const preview = document.getElementById('imagePreview');
+    const errorDiv = document.getElementById('imageError');
+    
+    if (uploadedImages.length + files.length > MAX_IMAGES) {
+        errorDiv.textContent = `Maximum ${MAX_IMAGES} images allowed. You can upload ${MAX_IMAGES - uploadedImages.length} more.`;
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    errorDiv.style.display = 'none';
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         
-        return itemsList;
+        // Validate file type
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+            errorDiv.textContent = 'Only JPG and PNG images are allowed';
+            errorDiv.style.display = 'block';
+            continue;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            errorDiv.textContent = 'File size must be less than 5MB';
+            errorDiv.style.display = 'block';
+            continue;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageId = 'img_' + Date.now() + '_' + i;
+            uploadedImages.push({
+                id: imageId,
+                data: e.target.result,
+                file: file
+            });
+            
+            const imageHtml = `
+                <div class="psp-image-preview-item" id="${imageId}">
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" onclick="removeImage('${imageId}')">✕</button>
+                </div>
+            `;
+            preview.insertAdjacentHTML('beforeend', imageHtml);
+        };
+        reader.readAsDataURL(file);
     }
     
-    function redirectToHome() {
-        window.location.href = 'pMainPickup.php';
+    // Clear input to allow re-upload of same files if needed
+    document.getElementById('imageInput').value = '';
+}
+
+function removeImage(imageId) {
+    const imageElement = document.getElementById(imageId);
+    if (imageElement) {
+        imageElement.remove();
+        uploadedImages = uploadedImages.filter(img => img.id !== imageId);
+        document.getElementById('imageError').style.display = 'none';
+    }
+}
+
+function updateSummary() {
+    const itemCards = document.querySelectorAll('.psp-item-card');
+    let totalWeight = 0;
+    let estimatedPoints = 0;
+    let totalVolume = 0;
+    let itemDetails = [];
+    
+    itemCards.forEach((card, index) => {
+        const inputs = card.querySelectorAll('select, input');
+        const typeSelect = inputs[0];
+        const weightInput = inputs[4];
+        const lengthInput = inputs[5];
+        const widthInput = inputs[6];
+        const heightInput = inputs[7];
+        const brandInput = inputs[1];
+        const modelInput = inputs[2];
+        
+        if (typeSelect && weightInput) {
+            const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+            const typeName = selectedOption ? selectedOption.text : 'Unknown';
+            const typePoints = selectedOption ? parseInt(selectedOption.dataset.points || 0) : 0;
+            const weight = parseFloat(weightInput.value) || 0;
+            const length = parseFloat(lengthInput?.value) || 0;
+            const width = parseFloat(widthInput?.value) || 0;
+            const height = parseFloat(heightInput?.value) || 0;
+            const volume = length * width * height;
+            
+            totalWeight += weight;
+            estimatedPoints += weight * typePoints;
+            totalVolume += volume;
+            
+            if (weight > 0) {
+                itemDetails.push({
+                    number: index + 1,
+                    type: typeName,
+                    brand: brandInput?.value || 'Not specified',
+                    model: modelInput?.value || 'Not specified',
+                    weight: weight,
+                    dimensions: length > 0 && width > 0 && height > 0 ? `${length} × ${width} × ${height} cm` : 'Not specified'
+                });
+            }
+        }
+    });
+    
+    // Update summary statistics
+    document.getElementById('summaryItemsCount').textContent = itemCards.length + ' items';
+    document.getElementById('summaryTotalWeight').textContent = totalWeight.toFixed(2) + ' kg';
+    document.getElementById('estimatedPoints').textContent = Math.round(estimatedPoints);
+    
+    // Add more detailed summary information
+    const summaryCard = document.querySelector('.psp-summary-card');
+    
+    // Remove existing dynamic summary items if any (keep the static ones)
+    const existingDynamicItems = summaryCard.querySelectorAll('.dynamic-summary-item');
+    existingDynamicItems.forEach(item => item.remove());
+    
+    // Add total volume if available
+    if (totalVolume > 0) {
+        const volumeDiv = document.createElement('div');
+        volumeDiv.className = 'psp-summary-item dynamic-summary-item';
+        volumeDiv.innerHTML = `
+            <span>Total Volume</span>
+            <span>${totalVolume.toFixed(2)} cm³</span>
+        `;
+        const pointsEstimate = summaryCard.querySelector('.psp-points-estimate');
+        pointsEstimate.parentNode.insertBefore(volumeDiv, pointsEstimate);
     }
     
-    // Add event listeners for all input fields to update summary in real-time
-    document.getElementById('preferredDate').addEventListener('change', updateSummary);
-    document.getElementById('preferredTime').addEventListener('change', updateSummary);
-    document.getElementById('pickupAddress').addEventListener('input', updateSummary);
-    document.getElementById('pickupState').addEventListener('change', updateSummary);
-    document.getElementById('pickupPostcode').addEventListener('input', updateSummary);
+    // Add item details section
+    if (itemDetails.length > 0) {
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'psp-item-details-summary dynamic-summary-item';
+        detailsDiv.style.marginTop = '15px';
+        detailsDiv.style.borderTop = '1px solid #e0e0e0';
+        detailsDiv.style.paddingTop = '12px';
+        
+        let detailsHtml = '<div style="font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Items Details:</div>';
+        itemDetails.forEach(item => {
+            detailsHtml += `
+                <div style="font-size: 0.75rem; margin-bottom: 8px; padding: 6px; background: #f8f9fa; border-radius: 6px;">
+                    <strong>Item #${item.number}:</strong> ${item.type}<br>
+                    ${item.brand !== 'Not specified' ? `Brand: ${item.brand}<br>` : ''}
+                    ${item.model !== 'Not specified' ? `Model: ${item.model}<br>` : ''}
+                    Weight: ${item.weight.toFixed(2)} kg<br>
+                    ${item.dimensions !== 'Not specified' ? `Dimensions: ${item.dimensions}` : ''}
+                </div>
+            `;
+        });
+        
+        detailsDiv.innerHTML = detailsHtml;
+        
+        const submitBtn = summaryCard.querySelector('.psp-submit-btn');
+        submitBtn.parentNode.insertBefore(detailsDiv, submitBtn);
+    }
+    
+    // Update date and time in summary
+    // Update date and time in summary
+    const date = document.getElementById('preferredDate').value;
+    const time = document.getElementById('preferredTime').value;
+
+    if (date) {
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const daysDiff = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
+        
+        let dayNotice = '';
+        if (daysDiff === 10) {
+            dayNotice = ' (Earliest available)';
+        } else if (daysDiff > 10) {
+            dayNotice = ` (in ${daysDiff} days)`;
+        }
+        
+        const formattedDate = selectedDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.getElementById('summaryDate').textContent = formattedDate + dayNotice;
+    } else {
+        document.getElementById('summaryDate').textContent = 'Not set';
+    }
+    
+    if (time) {
+        const timeMap = {
+            '09:00:00': '09:00 AM',
+            '10:00:00': '10:00 AM',
+            '11:00:00': '11:00 AM',
+            '14:00:00': '02:00 PM',
+            '15:00:00': '03:00 PM',
+            '16:00:00': '04:00 PM',
+            '17:00:00': '05:00 PM'
+        };
+        document.getElementById('summaryTime').textContent = timeMap[time] || time.substring(0, 5);
+    } else {
+        document.getElementById('summaryTime').textContent = 'Not set';
+    }
+    
+    // Update address summary
+    const address = document.getElementById('pickupAddress').value.trim();
+    const state = document.getElementById('pickupState').value;
+    const postcode = document.getElementById('pickupPostcode').value.trim();
+    
+    const addressSummary = document.querySelector('.psp-summary-item:first-child');
+    if (addressSummary && address) {
+        const existingAddressDetail = summaryCard.querySelector('.address-detail');
+        if (!existingAddressDetail) {
+            const addressDiv = document.createElement('div');
+            addressDiv.className = 'psp-summary-item address-detail dynamic-summary-item';
+            addressDiv.style.marginTop = '8px';
+            addressDiv.style.fontSize = '0.85rem';
+            addressDiv.style.color = '#666';
+            addressSummary.parentNode.insertBefore(addressDiv, addressSummary.nextSibling);
+        }
+        const addressDetail = summaryCard.querySelector('.address-detail');
+        if (addressDetail) {
+            addressDetail.innerHTML = `<span>Location</span><span>${address}, ${postcode}, ${state}</span>`;
+        }
+    }
+}
+
+function submitPickupRequest(providerId) {
+    // Run validation first
+    if (!validateForm()) {
+        // Scroll to first error
+        const firstError = document.querySelector('.error-message[style*="display: block"]');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    
+    const requestData = {
+        providerID: providerId,
+        pickupAddress: document.getElementById('pickupAddress').value.trim(),
+        pickupState: document.getElementById('pickupState').value,
+        pickupPostcode: document.getElementById('pickupPostcode').value.trim(),
+        preferredDateTime: document.getElementById('preferredDate').value + ' ' + document.getElementById('preferredTime').value,
+        status: 'Pending',
+        specialInstructions: document.getElementById('specialInstructions').value.trim(),
+        items: collectItemData()
+    };
+    
+    fetch('../../php/submitPickupRequest.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('requestIdDisplay').textContent = data.requestID;
+            document.getElementById('successModal').style.display = 'flex';
+        } else {
+            alert('Error submitting request: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Pickup Request';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the request. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Pickup Request';
+    });
+}
+
+function collectItemData() {
+    const itemsList = [];
+    const itemCards = document.querySelectorAll('.psp-item-card');
+    
+    itemCards.forEach(card => {
+        const inputs = card.querySelectorAll('select, input');
+        
+        // Get all field values
+        const typeValue = inputs[0] ? inputs[0].value : '';
+        const brandValue = inputs[1] ? inputs[1].value : '';
+        const modelValue = inputs[2] ? inputs[2].value.trim() : '';
+        const descriptionValue = inputs[3] ? inputs[3].value.trim() : '';
+        const weightValue = inputs[4] ? parseFloat(inputs[4].value) : 0;
+        const lengthValue = inputs[5] ? parseFloat(inputs[5].value) : 0;
+        const widthValue = inputs[6] ? parseFloat(inputs[6].value) : 0;
+        const heightValue = inputs[7] ? parseFloat(inputs[7].value) : 0;
+        
+        // Only include items that have ALL required fields filled
+        if (typeValue && typeValue !== '' && 
+            brandValue && brandValue !== '' && 
+            modelValue && 
+            descriptionValue && 
+            weightValue > 0 && 
+            lengthValue > 0 && 
+            widthValue > 0 && 
+            heightValue > 0) {
+            itemsList.push({
+                itemTypeID: typeValue,
+                brand: brandValue,
+                model: modelValue,
+                description: descriptionValue,
+                weight: weightValue,
+                length: lengthValue,
+                width: widthValue,
+                height: heightValue,
+                status: 'Pending'
+            });
+        }
+    });
+    
+    return itemsList;
+}
+
+function redirectToHome() {
+    window.location.href = 'pMainPickup.php';
+}
+
+// Add event listeners for all input fields to update summary in real-time
+document.getElementById('preferredDate').addEventListener('change', updateSummary);
+document.getElementById('preferredTime').addEventListener('change', updateSummary);
+document.getElementById('pickupAddress').addEventListener('input', updateSummary);
+document.getElementById('pickupState').addEventListener('change', updateSummary);
+document.getElementById('pickupPostcode').addEventListener('input', updateSummary);
 </script>
 </body>
 </html>
