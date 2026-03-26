@@ -1,5 +1,5 @@
 <?php
-// session_start();
+session_start();
 include("../../php/dbConn.php");
 
 // // check if user is logged in
