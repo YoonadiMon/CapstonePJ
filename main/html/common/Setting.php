@@ -87,7 +87,7 @@ $conn->close();
 $homeUrl = "";
 switch($userType) {
     case 'admin':
-        $homeUrl = "../../html/admin/aHome.html";
+        $homeUrl = "../../html/admin/aHome.php";
         break;
     case 'collector':
         $homeUrl = "../../html/collector/cHome.php";
@@ -527,7 +527,7 @@ switch($userType) {
                         <a href="../../html/collector/cCompletedJobs.php">History</a>
                         <a href="../../html/common/About.html">About</a>
                     <?php elseif ($userType == 'admin'): ?>
-                        <a href="../../html/admin/aHome.html">Home</a>
+                        <a href="../../html/admin/aHome.php">Home</a>
                         <a href="../../html/admin/aRequests.php">Requests</a>
                         <a href="../../html/admin/aJobs.php">Jobs</a>
                         <a href="../../html/admin/aIssue.html">Issue</a>
@@ -553,7 +553,7 @@ switch($userType) {
                 <a href="../../html/collector/cCompletedJobs.php">History</a>
                 <a href="../../html/common/About.html">About</a>
             <?php elseif ($userType == 'admin'): ?>
-                <a href="../../html/admin/aHome.html">Home</a>
+                <a href="../../html/admin/aHome.php">Home</a>
                 <a href="../../html/admin/aRequests.php">Requests</a>
                 <a href="../../html/admin/aJobs.php">Jobs</a>
                 <a href="../../html/admin/aIssue.html">Issue</a>

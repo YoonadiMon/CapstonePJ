@@ -54,7 +54,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
 
                     <?php if ($userType === 'admin'): ?>
                         <!-- Admin Mobile Menu -->
-                        <a href="../../html/admin/aHome.html">Home</a>
+                        <a href="../../html/admin/aHome.php">Home</a>
                         <a href="../../html/admin/aRequests.html">Requests</a>
                         <a href="../../html/admin/aJobs.html">Jobs</a>
                         <a href="../../html/admin/aIssue.html">Issue</a>
@@ -85,7 +85,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
         <nav class="c-navbar-desktop">
             <?php if ($userType === 'admin'): ?>
                 <!-- Admin Desktop Menu -->
-                <a href="../../html/admin/aHome.html">Home</a>
+                <a href="../../html/admin/aHome.php">Home</a>
                 <a href="../../html/admin/aRequests.html">Requests</a>
                 <a href="../../html/admin/aJobs.html">Jobs</a>
                 <a href="../../html/admin/aIssue.html">Issue</a>

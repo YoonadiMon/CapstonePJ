@@ -592,7 +592,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
     
     <header>
         <section class="c-logo-section">
-            <a href="../../html/admin/aHome.html" class="c-logo-link">
+            <a href="../../html/admin/aHome.php" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -611,7 +611,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <a href="../../html/admin/aHome.html">Home</a>
+                    <a href="../../html/admin/aHome.php">Home</a>
                     <a href="../../html/admin/aRequests.html">Requests</a>
                     <a href="../../html/admin/aJobs.html">Jobs</a>
                     <a href="../../html/admin/aIssue.html">Issue</a>
@@ -622,7 +622,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
         </nav>
 
         <nav class="c-navbar-desktop">
-            <a href="../../html/admin/aHome.html">Home</a>
+            <a href="../../html/admin/aHome.php">Home</a>
             <a href="../../html/admin/aRequests.html">Requests</a>
             <a href="../../html/admin/aJobs.html">Jobs</a>
             <a href="../../html/admin/aIssue.html">Issue</a>
@@ -913,7 +913,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
 
     <footer>
         <section class="c-footer-info-section">
-            <a href="../../html/admin/aHome.html">
+            <a href="../../html/admin/aHome.php">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
