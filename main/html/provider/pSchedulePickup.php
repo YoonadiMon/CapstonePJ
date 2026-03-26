@@ -1518,7 +1518,7 @@ if ($result) {
             let detailsHtml = '<div style="font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Items Details:</div>';
             itemDetails.forEach(item => {
                 detailsHtml += `
-                    <div style="font-size: 0.75rem; margin-bottom: 8px; padding: 6px; background: #f8f9fa; border-radius: 6px;">
+                    <div style="font-size: 0.75rem; color: #333; margin-bottom: 8px; padding: 6px; background: #f8f9fa; border-radius: 6px;">
                         <strong>Item #${item.number}:</strong> ${item.type}<br>
                         ${item.brand !== 'Not specified' ? `Brand: ${item.brand}<br>` : ''}
                         ${item.model !== 'Not specified' ? `Model: ${item.model}<br>` : ''}
@@ -1610,12 +1610,16 @@ if ($result) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting...';
         
+        const preferredDate = document.getElementById('preferredDate').value;
+        const preferredTime = document.getElementById('preferredTime').value;
+        const itemsCount = document.querySelectorAll('.psp-item-card').length;
+        
         const requestData = {
             providerID: providerId,
             pickupAddress: document.getElementById('pickupAddress').value.trim(),
             pickupState: document.getElementById('pickupState').value,
             pickupPostcode: document.getElementById('pickupPostcode').value.trim(),
-            preferredDateTime: document.getElementById('preferredDate').value + ' ' + document.getElementById('preferredTime').value,
+            preferredDateTime: preferredDate + ' ' + preferredTime,
             status: 'Pending',
             specialInstructions: document.getElementById('specialInstructions').value.trim(),
             items: collectItemData()
@@ -1629,6 +1633,31 @@ if ($result) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // After successful request submission, log the activity
+                const activityData = {
+                    requestID: data.requestID,
+                    userID: providerId,
+                    userType: 'provider',
+                    action: 'Create Request',
+                    description: `Provider created a new collection request with ${itemsCount} item(s) for ${preferredDate} at ${preferredTime}`
+                };
+                
+                // Send activity log to server
+                fetch('../../php/logActivity.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(activityData)
+                })
+                .then(logResponse => logResponse.json())
+                .then(logData => {
+                    if (!logData.success) {
+                        console.warn('Activity log failed:', logData.message);
+                    }
+                })
+                .catch(logError => {
+                    console.error('Error logging activity:', logError);
+                });
+                
                 document.getElementById('requestIdDisplay').textContent = data.requestID;
                 document.getElementById('successModal').style.display = 'flex';
             } else {
