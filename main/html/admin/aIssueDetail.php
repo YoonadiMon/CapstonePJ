@@ -253,6 +253,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['errorMsg'] = 'A new collector and vehicle are required.';
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
+        
+        if (!empty($newDate) && $newDate < date('Y-m-d')) {
+            $_SESSION['errorMsg'] = 'Scheduled date cannot be in the past.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
 
         $jRow = $conn->query("SELECT scheduledDate, scheduledTime, estimatedEndTime, requestID FROM tbljob WHERE jobID=$jobID")->fetch_assoc();
         if (!$jRow) {
@@ -347,6 +352,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($jobID <= 0 || !$newDate || !$newTime || $newCollectorID <= 0 || $newVehicleID <= 0) {
             $_SESSION['errorMsg'] = 'Date, time, collector, and vehicle are required.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        if ($newDate < date('Y-m-d')) {
+            $_SESSION['errorMsg'] = 'Scheduled date cannot be in the past.';
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
 
@@ -447,6 +457,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
 
+        if (strtotime($newDateTime) < time()) {
+            $_SESSION['errorMsg'] = 'Preferred date and time cannot be in the past.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
         $iRow = $conn->query("SELECT requestID, jobID FROM tblissue WHERE issueID=$issueID")->fetch_assoc();
 
         $conn->begin_transaction();
@@ -484,6 +499,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($requestID <= 0 || !$newDateTime || $jobID <= 0 || !$newDate || !$newTime || $newCollectorID <= 0 || $newVehicleID <= 0) {
             $_SESSION['errorMsg'] = 'All fields are required.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+
+        if ($newDate < date('Y-m-d')) {
+            $_SESSION['errorMsg'] = 'Scheduled date cannot be in the past.';
+            header("Location: aIssueDetail.php?id=$issueID"); exit;
+        }
+        if (strtotime($newDateTime) < time()) {
+            $_SESSION['errorMsg'] = 'Preferred date and time cannot be in the past.';
             header("Location: aIssueDetail.php?id=$issueID"); exit;
         }
 
@@ -1860,6 +1884,21 @@ $canAct         = $isAssigned && $isAssignedToMe;
             margin-bottom: 0.75rem;
         }
 
+        .field-error {
+            font-size: 0.8rem;
+            color: red;
+            margin-top: 0.2rem;
+            display: none;
+        }
+
+        .field-error.show {
+            display: block;
+        }
+
+        .input-error {
+            border-color: red !important;
+        }
+
     </style>
 </head>
 <body>
@@ -2062,7 +2101,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                     <div class="info-field">
                         <span class="info-label">Linked Request</span>
                         <span class="info-value">
-                            <a class="linked-id" href="../../html/admin/aRequests.php?id=<?php echo $reqRow['requestID'];?>">
+                            <a class="linked-id" href="../../html/admin/aCollectionRequests.php">
                                 REQ #<?php echo $reqRow['requestID']; ?>
                             </a>
                         </span>
@@ -2314,70 +2353,6 @@ $canAct         = $isAssigned && $isAssignedToMe;
 
     <?php if ($canAct && $jobRow): ?>
 
-    <!-- Reassign Collector (pickup not done only) -->
-    <div class="modal-overlay" id="modalReassignCollector">
-        <div class="modal">
-            <div class="modal-title">Reassign Collector</div>
-            <?php if (empty($availCollectors)): ?>
-                <p class="modal-desc">No active collectors are available on <?php echo date('d M Y', strtotime($jobRow['scheduledDate'])); ?>.</p>
-                <div class="modal-actions">
-                    <button class="cancel-btn c-btn-small" onclick="closeModal('modalReassignCollector')">Close</button>
-                </div>
-            <?php else: ?>
-                <p class="modal-desc">Select a collector who is free on <?php echo date('d M Y', strtotime($jobRow['scheduledDate'])); ?>. The current job will be cancelled and a new one created.</p>
-                <form method="POST">
-                    <input type="hidden" name="action" value="reassign_collector">
-                    <input type="hidden" name="jobID"  value="<?php echo $jobRow['jobID']; ?>">
-                    <div class="form-group">
-                        <label class="form-label">Select New Collector</label>
-                        <select class="form-select" name="collectorID" required>
-                            <option value="">-- Select Collector --</option>
-                            <?php foreach ($availCollectors as $col): ?>
-                                <option value="<?php echo $col['collectorID']; ?>"><?php echo sanitize($col['fullname']); ?> — <?php echo sanitize($col['phone']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="modal-actions">
-                        <button type="button" class="cancel-btn c-btn-small" onclick="closeModal('modalReassignCollector')">Cancel</button>
-                        <button type="submit" class="c-btn-primary c-btn-small">Confirm</button>
-                    </div>
-                </form>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- Reassign Vehicle (pickup not done only) -->
-    <div class="modal-overlay" id="modalReassignVehicle">
-        <div class="modal">
-            <div class="modal-title">Reassign Vehicle</div>
-            <?php if (empty($availVehicles)): ?>
-                <p class="modal-desc">No available vehicles found for <?php echo date('d M Y', strtotime($jobRow['scheduledDate'])); ?>.</p>
-                <div class="modal-actions">
-                    <button class="cancel-btn c-btn-small" onclick="closeModal('modalReassignVehicle')">Close</button>
-                </div>
-            <?php else: ?>
-                <p class="modal-desc">Select a vehicle that is free on <?php echo date('d M Y', strtotime($jobRow['scheduledDate'])); ?>. The current job will be cancelled and a new one created.</p>
-                <form method="POST">
-                    <input type="hidden" name="action"  value="reassign_vehicle">
-                    <input type="hidden" name="jobID"   value="<?php echo $jobRow['jobID']; ?>">
-                    <div class="form-group">
-                        <label class="form-label">Select New Vehicle</label>
-                        <select class="form-select" name="vehicleID" required>
-                            <option value="">-- Select Vehicle --</option>
-                            <?php foreach ($availVehicles as $veh): ?>
-                                <option value="<?php echo $veh['vehicleID']; ?>"><?php echo sanitize($veh['plateNum'] . ' — ' . $veh['model'] . ' (' . $veh['type'] . ', ' . number_format($veh['capacityWeight'], 0) . ' kg)'); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="modal-actions">
-                        <button type="button" class="cancel-btn c-btn-small" onclick="closeModal('modalReassignVehicle')">Cancel</button>
-                        <button type="submit" class="c-btn-primary c-btn-small">Confirm</button>
-                    </div>
-                </form>
-            <?php endif; ?>
-        </div>
-    </div>
-
     <?php if (!$pickupDone): ?>
 
     <!-- Reschedule Collection -->
@@ -2389,16 +2364,20 @@ $canAct         = $isAssigned && $isAssignedToMe;
             </button>
             <div class="modal-title">Reschedule Collection</div>
             <p class="modal-desc">The current job will be cancelled and a new one created. You may keep the same collector, vehicle, and item centres or change them.</p>
-            <form method="POST">
+
+            <form method="POST" onsubmit="return validateReschedule()">
                 <input type="hidden" name="action" value="reschedule">
                 <input type="hidden" name="jobID"  value="<?php echo $jobRow['jobID']; ?>">
                 <div class="form-group">
                     <label class="form-label">New Date <span class="required-star">*</span></label>
-                    <input type="date" class="form-input" name="new_date" required min="<?php echo date('Y-m-d'); ?>">
+
+                    <input type="date" class="form-input" name="new_date" id="reschedule_date" required min="<?php echo date('Y-m-d'); ?>">
+                    <span class="field-error" id="err_reschedule_date"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">New Start Time <span class="required-star">*</span></label>
-                    <input type="time" class="form-input" name="new_time" required>
+                    <input type="time" class="form-input" name="new_time" id="reschedule_time" required>
+                    <span class="field-error" id="err_reschedule_time"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Estimated End Time</label>
@@ -2406,7 +2385,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                 </div>
                 <div class="form-group">
                     <label class="form-label">Collector <span class="required-star">*</span></label>
-                    <select class="form-select" name="collectorID" required>
+                    <select class="form-select" name="collectorID" id="reschedule_collector" required>
                         <option value="<?php echo $jobRow['collectorID']; ?>" selected>
                             <?php echo sanitize($jobRow['collectorName']); ?> (current)
                         </option>
@@ -2414,10 +2393,11 @@ $canAct         = $isAssigned && $isAssignedToMe;
                             <option value="<?php echo $col['collectorID']; ?>"><?php echo sanitize($col['fullname']); ?> — <?php echo sanitize($col['phone']); ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="field-error" id="err_reschedule_collector"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Vehicle <span class="required-star">*</span></label>
-                    <select class="form-select" name="vehicleID" required>
+                    <select class="form-select" name="vehicleID" id="reschedule_vehicle" required>
                         <option value="<?php echo $jobRow['vehicleID']; ?>" selected>
                             <?php echo sanitize($jobRow['vehiclePlate'] . ' — ' . $jobRow['vehicleModel'] . ' (' . $jobRow['vehicleType'] . ')'); ?> (current)
                         </option>
@@ -2425,6 +2405,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                             <option value="<?php echo $veh['vehicleID']; ?>"><?php echo sanitize($veh['plateNum'] . ' — ' . $veh['model'] . ' (' . $veh['type'] . ', ' . number_format($veh['capacityWeight'], 0) . ' kg)'); ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="field-error" id="err_reschedule_vehicle"></span>
                 </div>
                 
                 <?php
@@ -2498,13 +2479,16 @@ $canAct         = $isAssigned && $isAssignedToMe;
         <div class="modal">
             <div class="modal-title">Cancel Request #<?php echo $reqRow ? $reqRow['requestID'] : ''; ?></div>
             <p class="modal-desc">This will cancel the linked job and reject the collection request. This action cannot be undone.</p>
-            <form method="POST">
+
+            <form method="POST" onsubmit="return validateCancelRequest()">
                 <input type="hidden" name="action"    value="cancel_request">
                 <input type="hidden" name="jobID"     value="<?php echo $jobRow['jobID']; ?>">
                 <input type="hidden" name="requestID" value="<?php echo $reqRow ? $reqRow['requestID'] : 0; ?>">
                 <div class="form-group">
                     <label class="form-label">Reason for Cancellation <span class="required-star">*</span></label>
-                    <textarea class="form-textarea" name="reason" placeholder="Describe why this request is being cancelled..." required></textarea>
+
+                    <textarea class="form-textarea" name="reason" id="cancel_reason" placeholder="Describe why this request is being cancelled..." required></textarea>
+                    <span class="field-error" id="err_cancel_reason"></span>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn c-btn-small" onclick="closeModal('modalCancelRequest')">Back</button>
@@ -2529,31 +2513,36 @@ $canAct         = $isAssigned && $isAssignedToMe;
             <?php endif; ?>
 
             <p class="modal-desc">Select a new collector and vehicle available today. The new job will be set to <strong>Scheduled</strong> immediately. You may also choose a different date if needed.</p>
-            <form method="POST">
+
+            <form method="POST" onsubmit="return validateReassignDropoff()">
                 <input type="hidden" name="action"          value="reassign_dropoff">
                 <input type="hidden" name="jobID"           value="<?php echo $jobRow['jobID']; ?>">
                 <input type="hidden" name="cancel_prev_id"  value="<?php echo $prevDropoffJobID; ?>">
                 <div class="form-group">
                     <label class="form-label">New Collector <span class="required-star">*</span></label>
-                    <select class="form-select" name="collectorID" required>
+
+                    <select class="form-select" name="collectorID" id="dropoff_collector" required>
                         <option value="">-- Select Collector --</option>
                         <?php foreach ($dropoffAvailCollectors as $col): ?>
                             <option value="<?php echo $col['collectorID']; ?>"><?php echo sanitize($col['fullname']); ?> — <?php echo sanitize($col['phone']); ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="field-error" id="err_dropoff_collector"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">New Vehicle <span class="required-star">*</span></label>
-                    <select class="form-select" name="vehicleID" required>
+                    <select class="form-select" name="vehicleID" id="dropoff_vehicle" required>
                         <option value="">-- Select Vehicle --</option>
                         <?php foreach ($dropoffAvailVehicles as $veh): ?>
                             <option value="<?php echo $veh['vehicleID']; ?>"><?php echo sanitize($veh['plateNum'] . ' — ' . $veh['model'] . ' (' . $veh['type'] . ', ' . number_format($veh['capacityWeight'], 0) . ' kg)'); ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="field-error" id="err_dropoff_vehicle"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Scheduled Date <span class="label-note">(leave blank for today — <?php echo date('d M Y'); ?>)</span></label>
-                    <input type="date" class="form-input" name="new_date" min="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" class="form-input" name="new_date" id="dropoff_date" min="<?php echo date('Y-m-d'); ?>">
+                    <span class="field-error" id="err_dropoff_date"></span>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn c-btn-small" onclick="closeModal('modalReassignDropoff')">Cancel</button>
@@ -2646,18 +2635,21 @@ $canAct         = $isAssigned && $isAssignedToMe;
                 <li>All other Pending / Scheduled jobs for this collector will be cancelled automatically.</li>
                 <li>Replacement collector availability is checked within <strong>±1 day</strong> of each job's scheduled date.</li>
             </ul>
-            <form method="POST">
+
+            <form method="POST" onsubmit="return validateSuspendCollector()">
                 <input type="hidden" name="action"            value="suspend_collector">
                 <input type="hidden" name="targetCollectorID" value="<?php echo $jobRow['collectorID']; ?>">
                 <input type="hidden" name="linkedJobID"       value="<?php echo $jobRow['jobID']; ?>">
                 <div class="form-group">
                     <label class="form-label">Replacement Collector for JOB #<?php echo $jobRow['jobID']; ?> <span class="required-star">*</span></label>
-                    <select class="form-select" name="linkedNewCollector" required>
+
+                    <select class="form-select" name="linkedNewCollector" id="suspend_collector" required>
                         <option value="">-- Select Replacement Collector --</option>
                         <?php foreach ($suspendAvailCollectors as $col): ?>
                             <option value="<?php echo $col['collectorID']; ?>"><?php echo sanitize($col['fullname']); ?> — <?php echo sanitize($col['phone']); ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="field-error" id="err_suspend_collector"></span>
                 </div>
                 <?php if (!empty($suspendAvailVehicles)): ?>
                 <div class="form-group">
@@ -2717,13 +2709,16 @@ $canAct         = $isAssigned && $isAssignedToMe;
         <div class="modal">
             <div class="modal-title">Cancel Request #<?php echo $reqRow['requestID']; ?></div>
             <p class="modal-desc">This will reject the collection request. This action cannot be undone.</p>
-            <form method="POST">
+
+            <form method="POST" onsubmit="return validateCancelRequest()">
                 <input type="hidden" name="action"    value="cancel_request">
                 <input type="hidden" name="jobID"     value="0">
                 <input type="hidden" name="requestID" value="<?php echo $reqRow['requestID']; ?>">
                 <div class="form-group">
                     <label class="form-label">Reason for Cancellation <span class="required-star">*</span></label>
-                    <textarea class="form-textarea" name="reason" placeholder="Describe why this request is being cancelled..." required></textarea>
+
+                    <textarea class="form-textarea" name="reason" id="cancel_reason" placeholder="Describe why this request is being cancelled..." required></textarea>
+                    <span class="field-error" id="err_cancel_reason"></span>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn c-btn-small" onclick="closeModal('modalCancelRequest')">Back</button>
@@ -2753,7 +2748,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                 Current preferred datetime: <strong><?php echo fmtDateTime($reqRow['preferredDateTime']); ?></strong>
             </p>
 
-            <form method="POST">
+            <form method="POST" onsubmit="return validateRescheduleRequest()">
                 <input type="hidden" name="action" value="<?php echo $pendingJobForReq ? 'reschedule_request_with_job' : 'reschedule_request'; ?>">
                 <input type="hidden" name="requestID" value="<?php echo $reqRow['requestID']; ?>">
                 <?php if ($pendingJobForReq): ?>
@@ -2762,19 +2757,23 @@ $canAct         = $isAssigned && $isAssignedToMe;
 
                 <div class="form-group">
                     <label class="form-label">New Preferred Date &amp; Time <span class="required-star">*</span></label>
-                    <input type="datetime-local" class="form-input" name="new_datetime" required
+
+                    <input type="datetime-local" class="form-input" name="new_datetime" id="reqreschedule_datetime" required
                         min="<?php echo date('Y-m-d\TH:i'); ?>"
                         value="<?php echo date('Y-m-d\TH:i', strtotime($reqRow['preferredDateTime'])); ?>">
+                    <span class="field-error" id="err_reqreschedule_datetime"></span>
                 </div>
 
                 <?php if ($pendingJobForReq): ?>
                 <div class="form-group">
                     <label class="form-label">New Scheduled Date <span class="required-star">*</span></label>
-                    <input type="date" class="form-input" name="new_date" required min="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" class="form-input" name="new_date" id="reqreschedule_date" required min="<?php echo date('Y-m-d'); ?>">
+                    <span class="field-error" id="err_reqreschedule_date"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">New Start Time <span class="required-star">*</span></label>
-                    <input type="time" class="form-input" name="new_time" required>
+                    <input type="time" class="form-input" name="new_time" id="reqreschedule_time" required>
+                    <span class="field-error" id="err_reqreschedule_time"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Estimated End Time</label>
@@ -2782,7 +2781,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                 </div>
                 <div class="form-group">
                     <label class="form-label">Collector <span class="required-star">*</span></label>
-                    <select class="form-select" name="collectorID" required>
+                    <select class="form-select" name="collectorID" id="reqreschedule_collector" required>
                         <option value="<?php echo $pendingJobForReq['collectorID']; ?>" selected>
                             <?php echo sanitize($pendingJobForReq['collectorName']); ?> (current)
                         </option>
@@ -2792,10 +2791,11 @@ $canAct         = $isAssigned && $isAssignedToMe;
                         </option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="field-error" id="err_reqreschedule_collector"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Vehicle <span class="required-star">*</span></label>
-                    <select class="form-select" name="vehicleID" required>
+                    <select class="form-select" name="vehicleID" id="reqreschedule_vehicle" required>
                         <option value="<?php echo $pendingJobForReq['vehicleID']; ?>" selected>
                             <?php echo sanitize($pendingJobForReq['vehiclePlate'] . ' — ' . $pendingJobForReq['vehicleModel'] . ' (' . $pendingJobForReq['vehicleType'] . ')'); ?> (current)
                         </option>
@@ -2805,6 +2805,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                         </option>
                         <?php endforeach; ?>
                     </select>
+                    <span class="field-error" id="err_reqreschedule_vehicle"></span>
                 </div>
                 <?php endif; ?>
 
@@ -2853,11 +2854,14 @@ $canAct         = $isAssigned && $isAssignedToMe;
             <p class="modal-desc">
                 Please provide resolution notes before marking this issue as resolved.
             </p>
-            <form method="POST">
+
+            <form method="POST" onsubmit="return validateResolve()">
                 <input type="hidden" name="action" value="resolve">
                 <div class="form-group">
                     <label class="form-label">Resolution Notes <span class="required-star">*</span></label>
-                    <textarea class="form-textarea" name="resolve_notes" placeholder="Describe how this issue was resolved..." required></textarea>
+
+                    <textarea class="form-textarea" name="resolve_notes" id="resolve_notes" placeholder="Describe how this issue was resolved..." required></textarea>
+                    <span class="field-error" id="err_resolve_notes"></span>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn c-btn-small" onclick="closeModal('modalMarkResolved')">Cancel</button>
@@ -2878,10 +2882,17 @@ $canAct         = $isAssigned && $isAssignedToMe;
         }
 
         function closeModal(id) { 
-            document.getElementById(id).classList.remove("active"); 
+            document.getElementById(id).classList.remove("active");
+            // Clear all errors inside the modal when closing
+            document.querySelectorAll('#' + id + ' .field-error').forEach(el => {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
+            document.querySelectorAll('#' + id + ' .input-error').forEach(el => {
+                el.classList.remove('input-error');
+            });
         }
 
-        // For dropoff reassignment — show confirmation prompt if re-reassigning
         function openModalReassignDropoff(isReAssign) {
             if (isReAssign) {
                 if (!confirm('A previous reassignment already exists. Confirming will cancel that job and create a new one. Continue?')) return;
@@ -2889,11 +2900,171 @@ $canAct         = $isAssigned && $isAssignedToMe;
             openModal('modalReassignDropoff');
         }
 
-        const successMsg = <?php echo json_encode($successMsg); ?>;
-        const errorMsg = <?php echo json_encode($errorMsg); ?>;
+        // --- Field error helpers ---
+        function showFieldError(inputId, errorId, msg) {
+            const input = document.getElementById(inputId);
+            const err   = document.getElementById(errorId);
+            if (input) input.classList.add('input-error');
+            if (err)   { err.textContent = msg; err.classList.add('show'); }
+        }
 
-        // Show toast for PHP session flash messages already rendered in banner,
-        // but also show as toast for quicker feedback
+        function clearFieldError(inputId, errorId) {
+            const input = document.getElementById(inputId);
+            const err   = document.getElementById(errorId);
+            if (input) input.classList.remove('input-error');
+            if (err)   { err.textContent = ''; err.classList.remove('show'); }
+        }
+
+        function clearAllErrors(modalId) {
+            document.querySelectorAll('#' + modalId + ' .field-error').forEach(el => {
+                el.classList.remove('show'); el.textContent = '';
+            });
+            document.querySelectorAll('#' + modalId + ' .input-error').forEach(el => {
+                el.classList.remove('input-error');
+            });
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const nowTs  = Date.now();
+
+        // --- Validate: Reschedule Collection ---
+        function validateReschedule() {
+            clearAllErrors('modalReschedule');
+            let valid = true;
+
+            const date = document.getElementById('reschedule_date');
+            const time = document.getElementById('reschedule_time');
+            const col  = document.getElementById('reschedule_collector');
+            const veh  = document.getElementById('reschedule_vehicle');
+
+            if (!date.value) {
+                showFieldError('reschedule_date', 'err_reschedule_date', 'Date is required.'); valid = false;
+            } else if (date.value < today) {
+                showFieldError('reschedule_date', 'err_reschedule_date', 'Date cannot be in the past.'); valid = false;
+            }
+
+            if (!time.value) {
+                showFieldError('reschedule_time', 'err_reschedule_time', 'Start time is required.'); valid = false;
+            }
+
+            if (!col.value) {
+                showFieldError('reschedule_collector', 'err_reschedule_collector', 'Please select a collector.'); valid = false;
+            }
+
+            if (!veh.value) {
+                showFieldError('reschedule_vehicle', 'err_reschedule_vehicle', 'Please select a vehicle.'); valid = false;
+            }
+
+            return valid;
+        }
+
+        // --- Validate: Reassign Dropoff ---
+        function validateReassignDropoff() {
+            clearAllErrors('modalReassignDropoff');
+            let valid = true;
+
+            const col  = document.getElementById('dropoff_collector');
+            const veh  = document.getElementById('dropoff_vehicle');
+            const date = document.getElementById('dropoff_date');
+
+            if (!col.value) {
+                showFieldError('dropoff_collector', 'err_dropoff_collector', 'Please select a collector.'); valid = false;
+            }
+
+            if (!veh.value) {
+                showFieldError('dropoff_vehicle', 'err_dropoff_vehicle', 'Please select a vehicle.'); valid = false;
+            }
+
+            if (date && date.value && date.value < today) {
+                showFieldError('dropoff_date', 'err_dropoff_date', 'Date cannot be in the past.'); valid = false;
+            }
+
+            return valid;
+        }
+
+        // --- Validate: Reschedule Request ---
+        function validateRescheduleRequest() {
+            clearAllErrors('modalRescheduleRequest');
+            let valid = true;
+
+            const dt = document.getElementById('reqreschedule_datetime');
+            if (!dt.value) {
+                showFieldError('reqreschedule_datetime', 'err_reqreschedule_datetime', 'Date and time is required.'); valid = false;
+            } else if (new Date(dt.value).getTime() < nowTs) {
+                showFieldError('reqreschedule_datetime', 'err_reqreschedule_datetime', 'Date and time cannot be in the past.'); valid = false;
+            }
+
+            // Only present when pendingJobForReq exists
+            const date = document.getElementById('reqreschedule_date');
+            const time = document.getElementById('reqreschedule_time');
+            const col  = document.getElementById('reqreschedule_collector');
+            const veh  = document.getElementById('reqreschedule_vehicle');
+
+            if (date) {
+                if (!date.value) {
+                    showFieldError('reqreschedule_date', 'err_reqreschedule_date', 'Scheduled date is required.'); valid = false;
+                } else if (date.value < today) {
+                    showFieldError('reqreschedule_date', 'err_reqreschedule_date', 'Date cannot be in the past.'); valid = false;
+                }
+            }
+
+            if (time && !time.value) {
+                showFieldError('reqreschedule_time', 'err_reqreschedule_time', 'Start time is required.'); valid = false;
+            }
+
+            if (col && !col.value) {
+                showFieldError('reqreschedule_collector', 'err_reqreschedule_collector', 'Please select a collector.'); valid = false;
+            }
+
+            if (veh && !veh.value) {
+                showFieldError('reqreschedule_vehicle', 'err_reqreschedule_vehicle', 'Please select a vehicle.'); valid = false;
+            }
+
+            return valid;
+        }
+
+        // --- Validate: Cancel Request ---
+        function validateCancelRequest() {
+            clearAllErrors('modalCancelRequest');
+            let valid = true;
+
+            const reason = document.getElementById('cancel_reason');
+            if (!reason.value.trim()) {
+                showFieldError('cancel_reason', 'err_cancel_reason', 'A reason is required.'); valid = false;
+            }
+
+            return valid;
+        }
+
+        // --- Validate: Mark Resolved ---
+        function validateResolve() {
+            clearAllErrors('modalMarkResolved');
+            let valid = true;
+
+            const notes = document.getElementById('resolve_notes');
+            if (!notes.value.trim()) {
+                showFieldError('resolve_notes', 'err_resolve_notes', 'Resolution notes are required.'); valid = false;
+            }
+
+            return valid;
+        }
+
+        // --- Validate: Suspend Collector ---
+        function validateSuspendCollector() {
+            clearAllErrors('modalSuspendCollector');
+            let valid = true;
+
+            const col = document.getElementById('suspend_collector');
+            if (!col.value) {
+                showFieldError('suspend_collector', 'err_suspend_collector', 'Please select a replacement collector.'); valid = false;
+            }
+
+            return valid;
+        }
+
+        // --- Server-side error fallback: re-open the relevant modal ---
+        const successMsg = <?php echo json_encode($successMsg); ?>;
+        const errorMsg   = <?php echo json_encode($errorMsg); ?>;
 
         function showToast(msg, type) {
             var t = document.getElementById("toast");
@@ -2901,12 +3072,32 @@ $canAct         = $isAssigned && $isAssignedToMe;
             t.className = 'toast ' + (type || '');
             t.classList.add("show");
             setTimeout(function() { t.classList.remove("show"); }, 3500);
-            
         }
 
         if (successMsg) showToast(successMsg, 'success');
-        if (errorMsg) showToast(errorMsg,   'error');
+        if (errorMsg)   showToast(errorMsg, 'error');
 
+        // Re-open the modal that caused the server error based on the POST action
+        <?php if ($errorMsg && isset($_POST['action'])): ?>
+        (function() {
+            const action = <?php echo json_encode($_POST['action']); ?>;
+            const modalMap = {
+                'reschedule':                 'modalReschedule',
+                'reschedule_request':         'modalRescheduleRequest',
+                'reschedule_request_with_job':'modalRescheduleRequest',
+                'reassign_dropoff':           'modalReassignDropoff',
+                'reassign_centre':            'modalReassignCentre',
+                'cancel_request':             'modalCancelRequest',
+                'resolve':                    'modalMarkResolved',
+                'suspend_collector':          'modalSuspendCollector',
+                'suspend_provider':           'modalSuspendProvider',
+            };
+            const modalId = modalMap[action];
+            if (modalId && document.getElementById(modalId)) {
+                openModal(modalId);
+            }
+        })();
+        <?php endif; ?>
     </script>
 </body>
 </html>
