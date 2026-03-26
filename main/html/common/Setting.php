@@ -2,9 +2,15 @@
 session_start();
 include("../../php/dbConn.php");
 
-// For testing, we'll use userID 1 (admin) - you can change this to the logged-in user
-// In production, this should come from session
-$userID = 1; // Hardcoded for testing
+// Check if user is logged in
+if (!isset($_SESSION['userID'])) {
+    header("Location: ../../index.html");
+    exit();
+}
+
+// Get the actual logged-in user ID from session
+$userID = $_SESSION['userID'];
+$userType = $_SESSION['userType']; // Get user type from session
 
 // Fetch current user data
 $userQuery = "SELECT userID, username, fullname, email, phone, userType FROM tblusers WHERE userID = ?";
@@ -14,7 +20,10 @@ $stmt->execute();
 $userResult = $stmt->get_result();
 
 if ($userResult->num_rows === 0) {
-    die("User not found");
+    // User not found in database, logout
+    session_destroy();
+    header("Location: ../../index.html");
+    exit();
 }
 
 $userData = $userResult->fetch_assoc();
@@ -36,14 +45,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
     $passResult = $passStmt->get_result();
     $passData = $passResult->fetch_assoc();
     
-    // Verify current password (plain text for now, but should use password_verify in production)
-    if ($currentPassword === $passData['password']) {
+    // Verify current password using password_verify (since registration uses hashed passwords)
+    if (password_verify($currentPassword, $passData['password'])) {
         if ($newPassword === $confirmPassword) {
             if (strlen($newPassword) >= 8) {
+                // Hash the new password
+                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                
                 // Update password
                 $updateQuery = "UPDATE tblusers SET password = ? WHERE userID = ?";
                 $updateStmt = $conn->prepare($updateQuery);
-                $updateStmt->bind_param("si", $newPassword, $userID);
+                $updateStmt->bind_param("si", $hashedPassword, $userID);
                 
                 if ($updateStmt->execute()) {
                     $message = "Password updated successfully!";
@@ -70,6 +82,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_password'])) {
 
 $stmt->close();
 $conn->close();
+
+// Determine home URL based on user type
+$homeUrl = "";
+switch($userType) {
+    case 'admin':
+        $homeUrl = "../../html/admin/aHome.html";
+        break;
+    case 'collector':
+        $homeUrl = "../../html/collector/cHome.php";
+        break;
+    case 'provider':
+        $homeUrl = "../../html/provider/pHome.php";
+        break;
+    default:
+        $homeUrl = "../../index.html";
+}
 ?>
 
 <!DOCTYPE html>
@@ -78,7 +106,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Settings</title>
+    <title>Settings - AfterVolt</title>
     <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
 
     <link rel="stylesheet" href="../../style/style.css">
@@ -88,8 +116,7 @@ $conn->close();
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
     <style>
-        /* ── PAGE-SPECIFIC STYLES ── */
-
+        /* Keep your existing styles here */
         main {
             display: flex;
             flex-direction: column;
@@ -467,7 +494,7 @@ $conn->close();
     <header>
         <!-- Logo + Name -->
         <section class="c-logo-section">
-            <a href="../../html/provider/pHome.php" class="c-logo-link">
+            <a href="<?php echo $homeUrl; ?>" class="c-logo-link">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
                 <div class="c-text">AfterVolt</div>
             </a>
@@ -487,22 +514,52 @@ $conn->close();
                             <img src="../../assets/images/setting-light.svg" alt="Settings" id="settingImgM">
                         </a>
                     </section>
-                    <a href="../../html/provider/pHome.php">Home</a>
-                    <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
-                    <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-                    <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-                    <a href="../../html/common/About.html">About</a>
+                    <?php if ($userType == 'provider'): ?>
+                        <a href="../../html/provider/pHome.php">Home</a>
+                        <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
+                        <a href="../../html/provider/pMainPickup.php">My Pickup</a>
+                        <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
+                        <a href="../../html/common/About.html">About</a>
+                    <?php elseif ($userType == 'collector'): ?>
+                        <a href="../../html/collector/cHome.php">Home</a>
+                        <a href="../../html/collector/cMyJobs.php">My Jobs</a>
+                        <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
+                        <a href="../../html/collector/cCompletedJobs.php">History</a>
+                        <a href="../../html/common/About.html">About</a>
+                    <?php elseif ($userType == 'admin'): ?>
+                        <a href="../../html/admin/aHome.html">Home</a>
+                        <a href="../../html/admin/aRequests.php">Requests</a>
+                        <a href="../../html/admin/aJobs.php">Jobs</a>
+                        <a href="../../html/admin/aIssue.html">Issue</a>
+                        <a href="../../html/admin/aOperations.html">Operations</a>
+                        <a href="../../html/admin/aReport.html">Report</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </nav>
 
         <!-- Menu Links Desktop + Tablet -->
         <nav class="c-navbar-desktop">
-            <a href="../../html/provider/pHome.php">Home</a>
-            <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
-            <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-            <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
-            <a href="../../html/common/About.html">About</a>
+            <?php if ($userType == 'provider'): ?>
+                <a href="../../html/provider/pHome.php">Home</a>
+                <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a>
+                <a href="../../html/provider/pMainPickup.php">My Pickup</a>
+                <a href="../../html/provider/pEwasteGuide.php">E-waste Guide</a>
+                <a href="../../html/common/About.html">About</a>
+            <?php elseif ($userType == 'collector'): ?>
+                <a href="../../html/collector/cHome.php">Home</a>
+                <a href="../../html/collector/cMyJobs.php">My Jobs</a>
+                <a href="../../html/collector/cInProgress.php">Ongoing Jobs</a>
+                <a href="../../html/collector/cCompletedJobs.php">History</a>
+                <a href="../../html/common/About.html">About</a>
+            <?php elseif ($userType == 'admin'): ?>
+                <a href="../../html/admin/aHome.html">Home</a>
+                <a href="../../html/admin/aRequests.php">Requests</a>
+                <a href="../../html/admin/aJobs.php">Jobs</a>
+                <a href="../../html/admin/aIssue.html">Issue</a>
+                <a href="../../html/admin/aOperations.html">Operations</a>
+                <a href="../../html/admin/aReport.html">Report</a>
+            <?php endif; ?>
         </nav>
         <section class="c-navbar-more">
             <button id="themeToggleDesktop">
@@ -549,7 +606,7 @@ $conn->close();
 
                 <div class="sidebar-divider"></div>
 
-                <a href="/main/html/common/Profile.php" class="sidebar-item edit-profile">
+                <a href="Profile.php" class="sidebar-item edit-profile">
                     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="8" r="4"/>
                         <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
@@ -666,7 +723,7 @@ $conn->close();
     <footer>
         <!-- Column 1 -->
         <section class="c-footer-info-section">
-            <a href="../../html/provider/pHome.php">
+            <a href="<?php echo $homeUrl; ?>">
                 <img src="../../assets/images/logo.png" alt="Logo" class="c-logo">
             </a>
             <div class="c-text">AfterVolt</div>
@@ -684,19 +741,14 @@ $conn->close();
         <!-- Column 2 -->
         <section class="c-footer-links-section">
             <div>
-                <b>Recycling</b><br>
-                <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a>
+                <b>Quick Links</b><br>
+                <a href="<?php echo $homeUrl; ?>">Home</a><br>
+                <a href="../../html/common/About.html">About</a>
             </div>
             <div>
-                <b>My Activity</b><br>
-                <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br>
-                <a href="../../html/provider/pMainPickup.php">My Pickup</a>
-            </div>
-            <div>
-                <b>Proxy</b><br>
-                <a href="../../html/common/About.html">About</a><br>
-                <a href="../../html/common/Profile.php">Edit Profile</a><br>
-                <a href="../../html/common/Setting.php">Setting</a>
+                <b>Account</b><br>
+                <a href="Profile.php">Edit Profile</a><br>
+                <a href="Setting.php">Settings</a>
             </div>
         </section>
     </footer>
@@ -711,6 +763,8 @@ $conn->close();
         // ── SIDEBAR TABS ──────────────────────────────────────────────────
         document.querySelectorAll('.sidebar-item').forEach(item => {
             item.addEventListener('click', () => {
+                if (item.classList.contains('logout') || item.classList.contains('edit-profile')) return;
+                
                 document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
                 document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
                 item.classList.add('active');
@@ -804,8 +858,7 @@ $conn->close();
         // ── LOGOUT ───────────────────────────────────────────────────────
         function handleLogout() {
             if (confirm('Are you sure you want to log out?')) {
-                // Clear session and redirect
-                window.location.href = '/main/html/common/Login.html';
+                window.location.href = '../../index.html';
             }
         }
 
