@@ -7,7 +7,7 @@ if (!isset($_SESSION)) {
 
 include("../../php/sessionCheck.php");
 
-// Uncomment for debugging if needed
+// for debugging if needed
 // ini_set('display_errors', 1);
 // ini_set('display_startup_errors', 1);
 // error_reporting(E_ALL);
@@ -203,42 +203,8 @@ function cleanActivityDescription($description) {
     return $text;
 }
 
-// REMOVE USER
+// GET CURRENT ADMIN DETAILS
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_user_id'])) {
-    $removeUserId = (int) $_POST['remove_user_id'];
-
-    $checkSql = "SELECT userID, userType FROM tblusers WHERE userID = ? LIMIT 1";
-    $stmt = mysqli_prepare($conn, $checkSql);
-
-    if ($stmt) {
-        mysqli_stmt_bind_param($stmt, "i", $removeUserId);
-        mysqli_stmt_execute($stmt);
-        $checkResult = mysqli_stmt_get_result($stmt);
-        $userToDelete = mysqli_fetch_assoc($checkResult);
-        mysqli_stmt_close($stmt);
-
-        if ($userToDelete && in_array($userToDelete['userType'], ['provider', 'collector'], true)) {
-            $deleteSql = "DELETE FROM tblusers WHERE userID = ?";
-            $deleteStmt = mysqli_prepare($conn, $deleteSql);
-
-            if ($deleteStmt) {
-                mysqli_stmt_bind_param($deleteStmt, "i", $removeUserId);
-                mysqli_stmt_execute($deleteStmt);
-                mysqli_stmt_close($deleteStmt);
-            }
-        }
-    }
-
-    header("Location: aHome.php");
-    exit();
-}
-
-/*
-|--------------------------------------------------------------------------
-| GET CURRENT ADMIN DETAILS
-|--------------------------------------------------------------------------
-*/
 $sqlAdmin = "
     SELECT u.*
     FROM tblusers u
@@ -255,11 +221,7 @@ if (!$resultAdmin || mysqli_num_rows($resultAdmin) === 0) {
 
 $admin = mysqli_fetch_assoc($resultAdmin);
 
-/*
-|--------------------------------------------------------------------------
-| DASHBOARD STATS
-|--------------------------------------------------------------------------
-*/
+// DASHBOARD STATS
 $totalUsers = 0;
 $totalCollectors = 0;
 $totalItems = 0;
@@ -281,11 +243,7 @@ if ($result) $processingItems = (int) mysqli_fetch_assoc($result)['total'];
 $result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM tblitem WHERE status = 'Recycled'");
 if ($result) $completedItems = (int) mysqli_fetch_assoc($result)['total'];
 
-/*
-|--------------------------------------------------------------------------
-| RECENT ACTIVITY
-|--------------------------------------------------------------------------
-*/
+// RECENT ACTIVITY
 $recentActivities = [];
 
 $sqlActivity = "
@@ -316,47 +274,8 @@ if ($result) {
         $recentActivities[] = $row;
     }
 }
-
-/*
-|--------------------------------------------------------------------------
-| ALL USERS (exclude admins)
-|--------------------------------------------------------------------------
-*/
-$users = [];
-
-$sqlUsers = "
-    SELECT
-        u.userID,
-        u.username,
-        u.fullname,
-        u.email,
-        u.phone,
-        u.userType,
-        u.createdAt,
-        u.lastLogin,
-        c.status AS collectorStatus,
-        p.suspended AS providerSuspended
-    FROM tblusers u
-    LEFT JOIN tblcollector c ON c.collectorID = u.userID
-    LEFT JOIN tblprovider p ON p.providerID = u.userID
-    WHERE u.userType IN ('provider', 'collector')
-    ORDER BY u.createdAt DESC, u.userID DESC
-";
-
-$result = mysqli_query($conn, $sqlUsers);
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $users[] = $row;
-    }
-}
-
-$firstName = $admin['fullname'];
-$nameParts = preg_split('/\s+/', trim((string)$admin['fullname']));
-if (!empty($nameParts[0])) {
-    $firstName = $nameParts[0];
-}
-$adminInitials = getInitials($admin['fullname']);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -542,72 +461,6 @@ $adminInitials = getInitials($admin['fullname']);
             cursor: pointer;
         }
 
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th {
-            font-size: 0.66rem; font-weight: 700; color: var(--Gray);
-            text-transform: uppercase; letter-spacing: .05em;
-            padding: 0 10px 8px 0; text-align: left;
-            border-bottom: 1px solid var(--LowMainBlue);
-        }
-        .data-table td {
-            font-size: 0.81rem; color: var(--text-color);
-            padding: 9px 10px 9px 0;
-            border-bottom: 1px solid var(--LowMainBlue);
-            vertical-align: middle;
-        }
-        .data-table tbody tr:last-child td { border-bottom: none; }
-
-        .user-cell { display: flex; align-items: center; gap: 9px; }
-        .u-av {
-            width: 30px; height: 30px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.63rem; font-weight: 700; color: #fff; flex-shrink: 0;
-            background: linear-gradient(135deg,hsl(225,70%,35%),hsl(225,80%,55%));
-        }
-        .u-name  { font-size: 0.81rem; font-weight: 600; color: var(--text-color); }
-        .u-email { font-size: 0.68rem; color: var(--Gray); margin-top: 1px; }
-
-        .remove-user-btn {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: #b91c1c;
-            background: rgba(220,38,38,.08);
-            border: 1.5px solid rgba(220,38,38,.18);
-            border-radius: 16px;
-            padding: 2px 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            cursor: pointer;
-            transition: background 0.15s, border-color 0.15s;
-            text-decoration: none;
-        }
-        .remove-user-btn:hover {
-            background: rgba(220,38,38,.14);
-            border-color: rgba(220,38,38,.3);
-        }
-        .remove-user-btn svg {
-            width: 9px;
-            height: 9px;
-        }
-
-        .pill {
-            font-size: 0.65rem; font-weight: 700;
-            padding: 2px 8px; border-radius: 20px;
-            white-space: nowrap; flex-shrink: 0; display: inline-block;
-        }
-        .pill-active     { background: hsla(145,50%,45%,.13); color: hsl(145,50%,30%); }
-        .pill-inactive   { background: hsla(0,60%,50%,.10);   color: hsl(0,52%,42%); }
-        .pill-scheduled  { background: hsla(225,94%,67%,.13); color: var(--DarkerMainBlue); }
-        .pill-collector  {
-            background: hsla(130,50%,92%,1); color: #2a7032;
-            border: 1px solid hsl(130,38%,72%);
-        }
-        .pill-provider   {
-            background: hsla(260,50%,93%,1); color: #3a6fd4;
-            border: 1px solid hsl(260,38%,78%);
-        }
-
         @media (max-width: 1100px) {
             .stats-row { grid-template-columns: repeat(3, 1fr); }
         }
@@ -741,7 +594,7 @@ $adminInitials = getInitials($admin['fullname']);
                     </div>
                     <div>
                         <div class="stat-value"><?= e($totalCollectors) ?></div>
-                        <div class="stat-label">Total Collectors / Drivers</div>
+                        <div class="stat-label">Total Collectors</div>
                     </div>
                 </div>
 
@@ -896,77 +749,6 @@ $adminInitials = getInitials($admin['fullname']);
                 </div>
             </div>
         </div>
-
-        <div>
-            <div class="section-heading">
-                <h3>
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                    All Users
-                </h3>
-            </div>
-
-            <div class="c-card">
-                <div class="c-card-body">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($users)): ?>
-                                <tr>
-                                    <td colspan="4">No users found.</td>
-                                </tr>
-                            <?php else: ?>
-                                <?php foreach ($users as $user): ?>
-                                    <tr>
-                                        <td>
-                                            <div class="user-cell">
-                                                <div class="u-av"><?= e(getInitials($user['fullname'])) ?></div>
-                                                <div>
-                                                    <div class="u-name"><?= e($user['fullname']) ?></div>
-                                                    <div class="u-email"><?= e($user['email']) ?></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="pill <?= e(rolePillClass($user['userType'])) ?>">
-                                                <?= e(roleLabel($user['userType'])) ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="pill <?= e(userStatusClass($user)) ?>">
-                                                <?= e(userStatusLabel($user)) ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button
-                                                type="button"
-                                                class="remove-user-btn"
-                                                onclick="openRemoveModal('<?= e($user['userID']) ?>', '<?= e($user['fullname']) ?>', '<?= e($user['userType']) ?>')"
-                                            >
-                                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                                                    <path d="M3 6h18"/>
-                                                    <path d="M8 6V4h8v2"/>
-                                                    <path d="M19 6l-1 14H6L5 6"/>
-                                                    <path d="M10 11v6"/>
-                                                    <path d="M14 11v6"/>
-                                                </svg>
-                                                Remove
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     </main>
 
     <hr>
@@ -1008,65 +790,12 @@ $adminInitials = getInitials($admin['fullname']);
         </section>
     </footer>
 
-    <div id="removeUserModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-        <div style="width:100%; max-width:420px; background:var(--bg-color); border:1px solid var(--LowMainBlue); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.18); padding:1.2rem 1.2rem 1rem;">
-            <div style="font-size:1rem; font-weight:700; color:var(--text-color); margin-bottom:.5rem;">
-                Remove User
-            </div>
-
-            <div style="font-size:.85rem; color:var(--Gray); line-height:1.5; margin-bottom:1rem;">
-                Are you sure you want to remove
-                <strong id="removeUserName"></strong>
-                (<span id="removeUserType"></span>)?
-                This action cannot be undone.
-            </div>
-
-            <form method="POST">
-                <input type="hidden" name="remove_user_id" id="removeUserId">
-
-                <div style="display:flex; justify-content:flex-end; gap:.6rem;">
-                    <button
-                        type="button"
-                        onclick="closeRemoveModal()"
-                        style="border:1px solid var(--LowMainBlue); background:transparent; color:var(--text-color); border-radius:12px; padding:.55rem .9rem; font-weight:600; cursor:pointer;"
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        type="submit"
-                        style="border:1px solid rgba(220,38,38,.25); background:rgba(220,38,38,.10); color:#b91c1c; border-radius:12px; padding:.55rem .9rem; font-weight:700; cursor:pointer;"
-                    >
-                        Remove
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script src="../../javascript/mainScript.js"></script>
+
 <script>
     let activityExpanded = false;
     const activityFilters = ['all', 'job', 'request', 'item'];
     let activityFilterIndex = 0;
-
-    function openRemoveModal(userId, fullname, userType) {
-        document.getElementById('removeUserId').value = userId;
-        document.getElementById('removeUserName').textContent = fullname;
-        document.getElementById('removeUserType').textContent = userType;
-        document.getElementById('removeUserModal').style.display = 'flex';
-    }
-
-    function closeRemoveModal() {
-        document.getElementById('removeUserModal').style.display = 'none';
-    }
-
-    window.addEventListener('click', function(event) {
-        const modal = document.getElementById('removeUserModal');
-        if (event.target === modal) {
-            closeRemoveModal();
-        }
-    });
 
     function currentActivityFilter() {
         return activityFilters[activityFilterIndex];
