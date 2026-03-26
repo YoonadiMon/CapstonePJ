@@ -941,7 +941,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
             </div>
             <div>
                 <b>Proxy</b><br>
-                <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                <a href="../../html/common/Profile.php">Edit Profile</a><br>
                 <a href="../../html/common/Setting.html">Setting</a>
             </div>
         </section>

@@ -969,7 +969,7 @@
                     </div>
                 </div>
 
-                <a href="../common/Profile.html" class="ph-edit-link">✏ Edit Profile</a>
+                <a href="../common/Profile.php" class="ph-edit-link">✏ Edit Profile</a>
             </aside>
 
             <!-- RIGHT: Content Column -->
@@ -1163,7 +1163,7 @@
             <div>
                 <b>Proxy</b><br>
                 <a href="../../html/common/About.html">About</a><br>
-                <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                <a href="../../html/common/Profile.php">Edit Profile</a><br>
                 <a href="../../html/common/Setting.html">Setting</a>
             </div>
         </section>

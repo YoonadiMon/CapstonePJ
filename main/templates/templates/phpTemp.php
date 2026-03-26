@@ -168,7 +168,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 </div>
                 <div>
                     <b>Proxy</b><br>
-                    <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                    <a href="../../html/common/Profile.php">Edit Profile</a><br>
                     <a href="../../html/common/Setting.html">Setting</a>
                 </div>
             
@@ -187,7 +187,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <div>
                     <b>Proxy</b><br>
                     <a href="../../html/common/About.html">About</a><br>
-                    <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                    <a href="../../html/common/Profile.php">Edit Profile</a><br>
                     <a href="../../html/common/Setting.html">Setting</a>
                 </div>
             
@@ -205,7 +205,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                 <div>
                     <b>Proxy</b><br>
                     <a href="../../html/common/About.html">About</a><br>
-                    <a href="../../html/common/Profile.html">Edit Profile</a><br>
+                    <a href="../../html/common/Profile.php">Edit Profile</a><br>
                     <a href="../../html/common/Setting.html">Setting</a>
                 </div>
             <?php endif; ?>

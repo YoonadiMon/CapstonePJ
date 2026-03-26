@@ -1604,7 +1604,7 @@ function getItemImage($itemName, $itemImageMap) {
         <section class="c-footer-links-section">
             <div><b>Recycling</b><br><a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a></div>
             <div><b>My Activity</b><br><a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br><a href="../../html/provider/pMainPickup.php">My Pickup</a></div>
-            <div><b>Proxy</b><br><a href="../../html/common/About.html">About</a><br><a href="../../html/common/Profile.html">Edit Profile</a><br><a href="../../html/common/Setting.html">Setting</a></div>
+            <div><b>Proxy</b><br><a href="../../html/common/About.html">About</a><br><a href="../../html/common/Profile.php">Edit Profile</a><br><a href="../../html/common/Setting.html">Setting</a></div>
         </section>
     </footer>
 

@@ -899,12 +899,12 @@
 
         // ── Edit Sarah Lim's own profile (logged-in admin) ──────────────
         function editSarahProfile() {
-            window.location.href = '../../html/common/Profile.html?user=admin1';
+            window.location.href = '../../html/common/Profile.php?user=admin1';
         }
 
         // ── Edit another user's profile (admin view) ────────────────────
         function editUserProfile(userId, name, role, email, phone, staffId, department, rating, status) {
-            const url = '../../html/common/UserProfile.html'
+            const url = '../../html/common/UserProfile.php'
                 + '?user='       + encodeURIComponent(userId)
                 + '&name='       + encodeURIComponent(name)
                 + '&role='       + encodeURIComponent(role)
