@@ -934,10 +934,10 @@ if (isset($_GET['export']) && $_GET['export'] == 'true') {
             <div>
                 <b>System Operation</b><br>
                 <a href="../../html/admin/aProviders.php">Providers</a><br>
-                <a href="../../html/admin/aCollectors.html">Collectors</a><br>
-                <a href="../../html/admin/aVehicles.html">Vehicles</a><br>
-                <a href="../../html/admin/aCentres.html">Collection Centres</a><br>
-                <a href="../../html/admin/aItemProcessing.html">Item Processing</a>
+                <a href="../../html/admin/aCollectors.php">Collectors</a><br>
+                <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
+                <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
+                <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
             </div>
             <div>
                 <b>Proxy</b><br>
