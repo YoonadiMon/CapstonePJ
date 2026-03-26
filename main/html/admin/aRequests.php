@@ -198,7 +198,7 @@ $requestsJson = json_encode(
     <link rel="icon" type="image/png" href="../../assets/images/bolt-lightning-icon.svg">
 
     <link rel="stylesheet" href="../../style/style.css">
-    <link rel="stylesheet" href="../../style/aRequests.css">
+    <link rel="stylesheet" href="../../style/aRequests.css?v=<?php echo time(); ?>">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
@@ -396,8 +396,8 @@ $requestsJson = json_encode(
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
-                <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
+                <a href="../../html/admin/aCollectionRequests.php">Collection Requests</a><br>
+                <a href="../../html/admin/aCollectionJobs.php">Collection Jobs</a><br>
                 <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
@@ -424,6 +424,6 @@ $requestsJson = json_encode(
         window.successMsg = <?php echo json_encode($successMsg); ?>;
         window.errorMsg = <?php echo json_encode($errorMsg); ?>;
     </script>
-    <script src="../../javascript/aRequests.js?v=2"></script>
+    <script src="../../javascript/aRequests.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

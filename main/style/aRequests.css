@@ -1149,3 +1149,41 @@ hr {
         width: 100%;
     }
 }
+
+.view-all-requests-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.view-all-requests-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 0;
+    background: transparent;
+    border: none;
+    color: var(--DarkBlue);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.view-all-requests-btn:hover {
+    color: var(--MainBlue);
+    transform: translateX(2px);
+}
+
+.view-all-requests-btn i {
+    font-size: 0.85rem;
+}
+
+.dark-mode .view-all-requests-btn {
+    color: var(--White);
+}
+
+.dark-mode .view-all-requests-btn:hover {
+    color: #b8ccff;
+}

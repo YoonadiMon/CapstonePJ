@@ -143,6 +143,15 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
         });
 
+        html += `
+    <div class="view-all-requests-wrap">
+        <a href="../../html/admin/aCollectionRequests.php" class="view-all-requests-btn">
+            <span>View All Requests</span>
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+`;
+
         requestsContainer.innerHTML = html;
         attachCardEventListeners();
     }
