@@ -61,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             SELECT jobID
             FROM tbljob
             WHERE requestID = ?
+            AND status NOT IN ('Cancelled', 'Rejected')
             LIMIT 1
         ";
         $stmt = mysqli_prepare($conn, $checkJobSql);
@@ -121,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             SELECT jobID, scheduledDate
             FROM tbljob
             WHERE collectorID = ?
-              AND status = 'Scheduled'
+              AND status IN ('Scheduled', 'Pending', 'Ongoing')
               AND ABS(DATEDIFF(scheduledDate, ?)) <= 1
         ";
         $stmt = mysqli_prepare($conn, $checkCollectorJobsSql);
@@ -181,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             SELECT jobID, scheduledDate
             FROM tbljob
             WHERE vehicleID = ?
-              AND status = 'Scheduled'
+              AND status IN ('Scheduled', 'Pending', 'Ongoing')
               AND ABS(DATEDIFF(scheduledDate, ?)) <= 1
         ";
         $stmt = mysqli_prepare($conn, $checkVehicleJobsSql);
@@ -300,17 +301,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         $jobID = mysqli_insert_id($conn);
 
-        $updateRequestSql = "
-            UPDATE tblcollection_request
-            SET status = 'Scheduled'
-            WHERE requestID = ?
-        ";
-        $stmt = mysqli_prepare($conn, $updateRequestSql);
-        mysqli_stmt_bind_param($stmt, "i", $requestID);
+        // $updateRequestSql = "
+        //     UPDATE tblcollection_request
+        //     SET status = 'Scheduled'
+        //     WHERE requestID = ?
+        // ";
+        // $stmt = mysqli_prepare($conn, $updateRequestSql);
+        // mysqli_stmt_bind_param($stmt, "i", $requestID);
 
-        if (!mysqli_stmt_execute($stmt)) {
-            throw new Exception('Failed to update request status.');
-        }
+        // if (!mysqli_stmt_execute($stmt)) {
+        //     throw new Exception('Failed to update request status.');
+        // }
 
         $updateItemsSql = "
             UPDATE tblitem
@@ -343,23 +344,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception('Failed to log request assignment.');
         }
 
-        $requestStatusDescription = "Changed from Approved to Scheduled";
-        $logRequestStatusSql = "
-            INSERT INTO tblactivity_log (
-                requestID,
-                jobID,
-                userID,
-                type,
-                action,
-                description
-            ) VALUES (?, ?, ?, 'Request', 'Status Change', ?)
-        ";
-        $stmt = mysqli_prepare($conn, $logRequestStatusSql);
-        mysqli_stmt_bind_param($stmt, "iiis", $requestID, $jobID, $adminUserID, $requestStatusDescription);
+        // $requestStatusDescription = "Changed from Approved to Scheduled";
+        // $logRequestStatusSql = "
+        //     INSERT INTO tblactivity_log (
+        //         requestID,
+        //         jobID,
+        //         userID,
+        //         type,
+        //         action,
+        //         description
+        //     ) VALUES (?, ?, ?, 'Request', 'Status Change', ?)
+        // ";
+        // $stmt = mysqli_prepare($conn, $logRequestStatusSql);
+        // mysqli_stmt_bind_param($stmt, "iiis", $requestID, $jobID, $adminUserID, $requestStatusDescription);
 
-        if (!mysqli_stmt_execute($stmt)) {
-            throw new Exception('Failed to log request status change.');
-        }
+        // if (!mysqli_stmt_execute($stmt)) {
+        //     throw new Exception('Failed to log request status change.');
+        // }
 
         $jobCreateDescription = "Job awaiting collector acceptance";
         $logJobCreateSql = "
@@ -409,7 +410,9 @@ $requestSql = "
         ON i.requestID = cr.requestID
     LEFT JOIN tbljob j
         ON j.requestID = cr.requestID
+        AND j.status NOT IN ('Cancelled', 'Rejected')
     WHERE cr.status = 'Approved'
+    AND j.jobID IS NULL
       AND j.jobID IS NULL
     GROUP BY 
         cr.requestID,
@@ -600,7 +603,7 @@ $vehicleJobSql = "
     SELECT jobID, vehicleID, scheduledDate, status
     FROM tbljob
     WHERE vehicleID IS NOT NULL
-      AND status = 'Scheduled'
+      AND status IN ('Scheduled', 'Pending', 'Ongoing')
 ";
 $vehicleJobResult = mysqli_query($conn, $vehicleJobSql);
 
