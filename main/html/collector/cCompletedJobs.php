@@ -7,12 +7,12 @@ if (!isset($_SESSION['userID']) || $_SESSION['userType'] !== 'collector') {
     exit();
 }
 
-// ── Fetch completed/cancelled jobs for this collector ────────────────
+// ── Fetch completed/cancelled/rejected jobs for this collector ────────────────
 $collectorUserID = (int) $_SESSION['userID'];
 
 /*
  * Pull every job that belongs to this collector and is in a
- * terminal state (Completed or Cancelled).
+ * terminal state (Completed, Cancelled, or Rejected).
  * We also join through to the provider's user row for their name,
  * and to the collection request for the pickup address / date.
  */
@@ -33,7 +33,7 @@ $sqlJobs = "
     JOIN tblprovider           p  ON p.providerID  = cr.providerID
     JOIN tblusers              u  ON u.userID       = p.providerID
     WHERE j.collectorID = $collectorUserID
-      AND j.status IN ('Completed', 'Cancelled')
+      AND j.status IN ('Completed', 'Cancelled', 'Rejected')
     ORDER BY j.scheduledDate DESC
 ";
 
@@ -155,6 +155,7 @@ if ($jobsResult && mysqli_num_rows($jobsResult) > 0) {
         $statusMap = [
             'Completed' => 'completed',
             'Cancelled' => 'cancelled',
+            'Rejected' => 'rejected',
         ];
         $displayStatus = $statusMap[$job['jobStatus']] ?? strtolower($job['jobStatus']);
 
@@ -173,13 +174,13 @@ if ($jobsResult && mysqli_num_rows($jobsResult) > 0) {
     }
 }
 
-// Calculate statistics - ONLY for COMPLETED jobs (exclude cancelled)
+// Calculate statistics - ONLY for COMPLETED jobs (exclude cancelled and rejected)
 $totalJobs = 0;
 $totalItems = 0;
 $totalWeight = 0;
 
 foreach ($historyData as $job) {
-    // Only count if the job status is 'completed' (not cancelled)
+    // Only count if the job status is 'completed' (not cancelled or rejected)
     if ($job['status'] === 'completed') {
         $totalJobs++;
         foreach ($job['items'] as $item) {
@@ -421,7 +422,7 @@ $historyJson = json_encode($historyData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX
 
     <!-- ── Inject PHP data into JS ── -->
     <script>
-        // Real data from database — all jobs (both completed and cancelled)
+        // Real data from database — all jobs (completed, cancelled, and rejected)
         const historyData = <?php echo $historyJson; ?>;
         
         // Statistics for completed jobs only
@@ -432,7 +433,7 @@ $historyJson = json_encode($historyData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX
         };
 
         // Force correct stats immediately — prevents cCompletedJobs.js from
-        // recounting and accidentally including cancelled jobs
+        // recounting and accidentally including cancelled/rejected jobs
         document.addEventListener('DOMContentLoaded', function () {
             const jobEl    = document.getElementById('statJobs');
             const itemEl   = document.getElementById('statItems');

@@ -2,13 +2,28 @@
 session_start();
 include("../../php/dbConn.php");
 
-// REPLACE BOTH WITH just one clean guard:
 if (!isset($_SESSION['userID']) || $_SESSION['userType'] !== 'collector') {
     header("Location: /CapstonePJ/signIn.php");
     exit();
 }
 
 $collectorID = $_SESSION['userID'];
+
+// ── AUTO-EXPIRY: Pending jobs whose scheduledDate has already passed ──────────
+// Move them to Rejected so they disappear from My Jobs and appear in History.
+$sqlExpire = "
+    UPDATE tbljob
+    SET    status          = 'Rejected',
+           rejectionReason = 'Expired – job was not accepted before the scheduled date'
+    WHERE  collectorID  = ?
+      AND  status       = 'Pending'
+      AND  scheduledDate < CURDATE()
+";
+$stmtExp = $conn->prepare($sqlExpire);
+$stmtExp->bind_param("i", $collectorID);
+$stmtExp->execute();
+$stmtExp->close();
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Fetch active jobs for this collector
 $sql = "
@@ -200,10 +215,6 @@ $conn->close();
                 <a href="../../html/collector/cInProgress.php">In Progress</a><br>
                 <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
             </div>
-            <!-- <div>
-                <b>Support</b><br>
-                <a href="../../html/collector/cReportIssues.html">Report Issue</a>
-            </div> -->
             <div>
                 <b>Proxy</b><br>
                 <a href="../../html/common/About.php">About</a><br>
