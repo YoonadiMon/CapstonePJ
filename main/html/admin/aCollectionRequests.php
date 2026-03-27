@@ -3,7 +3,7 @@ session_start();
 include("../../php/dbConn.php");
 
 // // check if user is logged in
-// include("../../php/sessionCheck.php");
+include("../../php/sessionCheck.php");
 
 if (!isset($conn)) {
     die("Database connection not found.");
@@ -106,15 +106,17 @@ while ($row = mysqli_fetch_assoc($result)) {
             $status = 'scheduled';
         }
     } else {
-        if (in_array($status, ['pending', 'approved'])) {
-            $status = 'scheduled';
+        if ($status === 'pending') {
+            $status = 'pending';
+        } elseif ($status === 'approved') {
+            $status = 'approved';
         }
     }
 
     $collectionRequests[] = [
         'id' => 'REQ' . str_pad($row['requestID'], 3, '0', STR_PAD_LEFT),
-        'requestID' => (int)$row['requestID'],
-        'jobID' => !empty($row['jobID']) ? (int)$row['jobID'] : null,
+    'requestID' => (int)$row['requestID'],
+    'jobID' => !empty($row['jobID']) ? (int)$row['jobID'] : null,
         'title' => !empty($row['itemTypes']) ? $row['itemTypes'] : 'Collection Request',
         'items' => !empty($row['itemTypes']) ? explode(', ', $row['itemTypes']) : [],
         'itemDescriptions' => !empty($row['itemDescriptions']) ? explode(', ', $row['itemDescriptions']) : [],
@@ -217,10 +219,16 @@ while ($row = mysqli_fetch_assoc($result)) {
 
     <main>
         <div class="ops-page-header">
-            <div>
-                <h1 class="ops-title">Collection Requests</h1>
-            </div>
-        </div>
+        <h1 class="ops-title">Collection Requests</h1>
+    </div>
+
+    <div class="back-btn-container">
+    <a href="../../html/admin/aRequests.php" class="page-back-btn">
+        <i class="fas fa-arrow-left"></i>
+        <span>Back</span>    
+    </a>
+</div>
+</div>
 
         <div class="dashboard-container">
             <!-- Left Sidebar -->
@@ -302,6 +310,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                         <span class="filter-chip" data-filter="high-weight">High Weight (&gt;20kg)</span>
                         <span class="filter-chip" data-filter="needs-review">Needs Review</span>
                     </div>
+                    <button type="button" class="reset-filters-btn" id="resetFiltersBtn">Reset</button>
                 </div>
             </div>
 
@@ -556,8 +565,8 @@ while ($row = mysqli_fetch_assoc($result)) {
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aCollectionRequests.php">Collection Requests</a><br>
-                <a href="../../html/admin/aCollectionJobs.php">Collection Jobs</a><br>
+                <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
+                <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
                 <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>

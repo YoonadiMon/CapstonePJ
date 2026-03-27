@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('searchInput');
     const toggleBtns = document.querySelectorAll('.toggle-btn');
     const filterChips = document.querySelectorAll('.filter-chip');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
     const resultCountSpan = document.getElementById('resultCount');
     const totalCountSpan = document.getElementById('totalCount');
     const exportBtn = document.getElementById('exportBtn');
@@ -591,50 +592,61 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function updateActionButtons(request) {
-        if (!detailFooter) return;
+function updateActionButtons(request) {
+    if (!detailFooter) return;
 
-        let buttons = '';
+    let buttons = '';
 
-        switch (request.status) {
-            case 'scheduled':
-            case 'ongoing':
-                buttons = `
-                    <button class="detail-btn primary" onclick="window.location.href='/main/html/admin/aJobs.php?job=${request.id}'">
-                        <i class="fas fa-eye"></i> View Job
-                    </button>
-                    <button class="detail-btn secondary" onclick="contactCollector('${request.id}')">
-                        <i class="fas fa-phone"></i> Contact Collector
-                    </button>
-                `;
-                break;
+    if (request.status === 'scheduled' || request.status === 'ongoing') {
+        if (request.jobID) {
+            buttons = `
+                <button class="detail-btn primary" onclick="window.location.href='../../html/admin/aJobs.php?jobID=${encodeURIComponent(request.jobID)}'">
+                    <i class="fas fa-eye"></i> View Job
+                </button>
+            `;
+        } else if (request.requestID) {
 
-            case 'completed':
-                buttons = `
-                    <button class="detail-btn primary" onclick="window.location.href='/main/html/admin/aReport.php?request=${request.id}'">
-                        <i class="fas fa-file-alt"></i> View Report
-                    </button>
-                    <button class="detail-btn secondary" onclick="viewCompletionDetails('${request.id}')">
-                        <i class="fas fa-clipboard-list"></i> Details
-                    </button>
-                `;
-                break;
-
-            case 'cancelled':
-            case 'rejected':
-                buttons = `
-                    <button class="detail-btn primary" onclick="contactProvider('${request.id}')">
-                        <i class="fas fa-envelope"></i> Contact Provider
-                    </button>
-                    <button class="detail-btn secondary" onclick="viewHistory('${request.id}')">
-                        <i class="fas fa-history"></i> View History
-                    </button>
-                `;
-                break;
+            buttons = `
+                <button class="detail-btn primary" onclick="window.location.href='../../html/admin/aJobs.php?requestID=${encodeURIComponent(request.requestID)}'">
+                    <i class="fas fa-eye"></i> View Job
+                </button>
+            `;
+        } else {
+            buttons = `
+                <button class="detail-btn primary" disabled>
+                    <i class="fas fa-eye"></i> Job Not Assigned
+                </button>
+            `;
         }
+    } 
 
-        detailFooter.innerHTML = buttons;
+    else if (request.status === 'completed') {
+        if (request.jobID) {
+            buttons = `
+                <button class="detail-btn primary" onclick="window.location.href='../../html/admin/aReport.php?request=${encodeURIComponent(request.id)}'">
+                    <i class="fas fa-file-alt"></i> View Report
+                </button>
+                <button class="detail-btn secondary" onclick="viewCompletionDetails('${request.id}')">
+                    <i class="fas fa-clipboard-list"></i> Details
+                </button>
+            `;
+        } else {
+            buttons = `
+                <button class="detail-btn primary" onclick="window.location.href='../../html/admin/aReport.php?request=${encodeURIComponent(request.id)}'">
+                    <i class="fas fa-file-alt"></i> View Report
+                </button>
+                <button class="detail-btn secondary" onclick="viewCompletionDetails('${request.id}')">
+                    <i class="fas fa-clipboard-list"></i> Details
+                </button>
+            `;
+        }
     }
+    else if (request.status === 'cancelled' || request.status === 'rejected') {
+        buttons = ``;
+    }
+
+    detailFooter.innerHTML = buttons;
+}
 
     function updateNotes(request) {
         if (!detailNotes) return;
@@ -749,6 +761,40 @@ document.addEventListener('DOMContentLoaded', function () {
             renderCurrentView();
         });
     });
+
+    if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', () => {
+        currentFilter = 'all';
+        currentSearch = '';
+        currentQuickFilter = 'all';
+        currentSort = 'date-desc';
+
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        document.querySelectorAll('.status-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+
+        filterChips.forEach(chip => {
+            chip.classList.remove('active');
+        });
+
+        document.querySelectorAll('.sort-dropdown-content a').forEach(a => {
+            a.classList.remove('active-sort');
+            if (a.dataset.sort === 'date-desc') {
+                a.classList.add('active-sort');
+                if (selectedSortSpan) {
+                    selectedSortSpan.textContent = a.textContent.trim();
+                }
+            }
+        });
+
+        filterRequests();
+        renderCurrentView();
+    });
+}
 
     toggleBtns.forEach(btn => {
         btn.addEventListener('click', () => {

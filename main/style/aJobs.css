@@ -1,5 +1,5 @@
 .jobs-main {
-    margin: 1rem 2rem;
+    margin: 0.5rem 2rem;
     padding: 0 2rem;
     max-width: 1600px;
     width: calc(100% - 4rem);
@@ -16,7 +16,7 @@
 
 /* Header */
 .jobs-header {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -56,7 +56,7 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .stat-card-modern {
@@ -128,18 +128,18 @@
 .filter-dropdown-btn {
     background: var(--MainBlue);
     color: var(--White);
-    height: 40px;
-    padding: 0 16px;
+    height: 38px;
+    padding: 0 14px;
     border: none;
     border-radius: 999px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     transition: background-color 0.2s ease;
-    min-width: 140px;
+    min-width: 130px;
     justify-content: space-between;
     box-shadow: 0 2px 8px var(--shadow-color);
 }
@@ -149,11 +149,11 @@
 }
 
 .filter-dropdown-btn i:first-child {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .filter-dropdown-btn i:last-child {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 .filter-dropdown-content {
@@ -204,15 +204,15 @@
     color: var(--White);
 }
 
-/* Search bar */
+/* Search box */
 .search-box {
     display: flex;
     align-items: center;
-    height: 40px;
+    height: 38px;
     background: var(--White);
     border-radius: 999px;
-    padding: 0 18px;
-    gap: 10px;
+    padding: 0 16px;
+    gap: 8px;
     border: 1px solid var(--BlueGray);
     flex: 1;
     width: 100%;
@@ -222,7 +222,7 @@
 
 .search-box i {
     color: var(--DarkBlue);
-    font-size: 1rem;
+    font-size: 0.9rem;
     flex-shrink: 0;
 }
 
@@ -234,7 +234,7 @@
     height: 100%;
     padding: 0;
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--text-color);
     min-width: 0;
 }
@@ -242,6 +242,7 @@
 .search-box input::placeholder {
     color: var(--Gray);
     font-style: italic;
+    font-size: 0.85rem;
 }
 
 .dark-mode .search-box {
@@ -253,13 +254,22 @@
     color: var(--MainBlue);
 }
 
+/* Actions Row */
+.actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0 1.5rem 0;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 /* Sort Options */
 .sort-container {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    margin: 0.5rem 0 1.5rem 0;
     gap: 1rem;
+    margin: 0;
 }
 
 .sort-slider {
@@ -267,7 +277,7 @@
     background: var(--sec-bg-color);
     border: 1px solid var(--BlueGray);
     border-radius: 40px;
-    padding: 3px;
+    padding: 2px;
     width: fit-content;
     box-shadow: 0 2px 8px var(--shadow-color);
 }
@@ -276,20 +286,20 @@
     background: transparent;
     border: none;
     border-radius: 30px;
-    padding: 0.5rem 1.5rem;
-    font-size: 0.9rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: var(--text-color);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .sort-slider-btn i {
     color: var(--MainBlue);
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 .sort-slider-btn.active {
@@ -311,6 +321,38 @@
 
 .sort-slider-btn:hover:not(.active) {
     background: var(--LightBlue);
+}
+
+/* Collections Button */
+.collections-nav-btn {
+    background: var(--MainBlue);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    white-space: nowrap;
+}
+
+.collections-nav-btn i {
+    font-size: 0.85rem;
+}
+
+.collections-nav-btn:hover {
+    background: var(--DarkerMainBlue);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 119, 255, 0.3);
+}
+
+.collections-nav-btn:active {
+    transform: translateY(0);
 }
 
 /* Timeline container */
@@ -766,27 +808,6 @@ body.dark-mode .detail-status-modern.pending,
     line-height: 1;
 }
 
-.detail-request-link-modern {
-    background: var(--MainBlue);
-    color: var(--White);
-    border: none;
-    border-radius: 24px;
-    padding: 0.8rem 1.4rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    box-shadow: 0 6px 16px rgba(0, 119, 255, 0.18);
-}
-
-.detail-request-link-modern:hover {
-    background: var(--DarkerMainBlue);
-    transform: translateY(-1px);
-}
-
 .info-grid-modern {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -968,7 +989,6 @@ body.dark-mode .detail-status-modern.pending,
     min-width: 70px;
 }
 
-/* Improved item name styling */
 .job-detail-item-name {
     font-size: 1.2rem;
     font-weight: 700;
@@ -985,7 +1005,6 @@ body.dark-mode .detail-status-modern.pending,
     font-size: 1.1rem;
 }
 
-/* Better brand styling */
 .job-detail-item-brand {
     font-size: 0.98rem;
     color: var(--text-color);
@@ -1011,7 +1030,6 @@ body.dark-mode .detail-status-modern.pending,
     font-size: 1rem;
 }
 
-/* Weight pill styling */
 .job-detail-item-weight {
     font-weight: 700;
     font-size: 0.92rem;
@@ -1041,7 +1059,6 @@ body.dark-mode .detail-status-modern.pending,
     line-height: 1;
 }
 
-/* Improved animation */
 .job-detail-item-body {
     max-height: 0;
     opacity: 0;
@@ -1157,7 +1174,6 @@ body.dark-mode .detail-status-modern.pending,
     align-self: flex-start;
 }
 
-/* Smaller view image button */
 .view-image-btn {
     background: var(--LightBlue);
     color: var(--DarkBlue);
@@ -1226,7 +1242,6 @@ body.dark-mode .detail-status-modern.pending,
     font-size: 0.75rem;
 }
 
-/* Drop-off location section */
 .job-detail-item-details {
     margin-top: 0.3rem;
     padding-top: 0.2rem;
@@ -1349,19 +1364,6 @@ body.dark-mode .detail-status-modern.pending,
     background: rgba(0,0,0,0.5);
     padding: 0.3rem 1rem;
     border-radius: 20px;
-}
-
-/* Dark mode adjustments */
-.dark-mode .status-card-modern {
-    background: rgba(30, 30, 30, 0.6);
-}
-
-.dark-mode .job-cards-modern::-webkit-scrollbar-track {
-    background: var(--DarkBlue);
-}
-
-.dark-mode .job-detail-item-card {
-    background: rgba(30,30,30,0.8);
 }
 
 /* Timeline (detail) */
@@ -1534,101 +1536,6 @@ body.dark-mode .detail-status-modern.pending,
     font-size: 1rem;
 }
 
-/* Reassign Modal */
-.reassign-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background: var(--bg-color);
-    border-radius: 24px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 20px 40px var(--shadow-color);
-    animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.modal-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--BlueGray);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-header h3 {
-    margin: 0;
-    color: var(--text-color);
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--Gray);
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.modal-footer {
-    padding: 1.5rem;
-    border-top: 1px solid var(--BlueGray);
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-}
-
-.form-group {
-    margin-bottom: 1.2rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--text-color);
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid var(--BlueGray);
-    border-radius: 12px;
-    background: var(--bg-color);
-    color: var(--text-color);
-    font-family: 'Inter', sans-serif;
-}
-
-.form-group textarea {
-    min-height: 80px;
-    resize: vertical;
-}
-
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: var(--MainBlue);
-}
-
 /* Responsive */
 @media (max-width: 1200px) {
     .status-cards-grid {
@@ -1669,6 +1576,33 @@ body.dark-mode .detail-status-modern.pending,
 
     .filter-dropdown-btn {
         width: 100%;
+    }
+
+    .actions-row {
+        flex-direction: column;
+        align-items: stretch;
+        margin: 0.75rem 0 1.25rem 0;
+    }
+    
+    .sort-container {
+        width: 100%;
+    }
+    
+    .sort-slider {
+        width: 100%;
+    }
+    
+    .sort-slider-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    .collections-nav-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.5rem 1rem;
     }
 
     .status-cards-grid {
@@ -1731,28 +1665,9 @@ body.dark-mode .detail-status-modern.pending,
     }
 
     .btn-modern-primary,
-    .btn-modern-outline,
-    .btn-modern-report {
+    .btn-modern-outline {
         width: 100%;
         justify-content: center;
-    }
-
-    .report-issue-content {
-        max-width: 100%;
-    }
-
-    .report-issue-footer {
-        flex-direction: column;
-    }
-
-    .report-issue-footer .btn-modern-outline,
-    .report-issue-footer .btn-modern-primary {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .issue-priority {
-        flex-direction: column;
     }
 }
 
@@ -1761,17 +1676,13 @@ body.dark-mode .detail-status-modern.pending,
         grid-template-columns: 1fr;
     }
 
-    .sort-container {
-        justify-content: stretch;
-    }
-
-    .sort-slider {
-        width: 100%;
-    }
-
     .sort-slider-btn {
-        flex: 1;
-        justify-content: center;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.7rem;
+    }
+    
+    .sort-slider-btn i {
+        font-size: 0.65rem;
     }
 
     .job-detail-container-modern,

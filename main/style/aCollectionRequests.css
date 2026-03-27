@@ -117,6 +117,7 @@
     flex-direction: column;
     gap: 0.65rem;
     margin-bottom: 1.5rem;
+    margin-top: 0.05rem;
 }
 
 .status-panel {
@@ -1672,4 +1673,73 @@
         width: 100%;
         justify-content: center;
     }
+}
+
+.back-btn-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 0.02rem auto;
+    padding: 0; 
+}
+
+.page-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: transparent;
+    border: none;
+    color: var(--DarkBlue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.75;
+    transition: all 0.2s ease;
+    margin-left: -2.5rem; 
+}
+
+.page-back-btn:hover {
+    opacity: 1;
+    color: var(--MainBlue);
+    transform: translateX(-2px);
+}
+
+.page-back-btn i {
+    font-size: 0.8rem;
+}
+
+/* Dark mode */
+.dark-mode .page-back-btn {
+    color: var(--White);
+}
+
+.dark-mode .page-back-btn:hover {
+    color: #b8ccff;
+}
+
+.reset-filters-btn {
+    margin-top: 0.7rem;
+    padding: 0.38rem 0.9rem;
+    border-radius: 20px;
+    border: 1px solid var(--BlueGray);
+    background: transparent;
+    color: var(--text-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.reset-filters-btn:hover {
+    background: var(--LightBlue);
+    border-color: var(--MainBlue);
+}
+
+.dark-mode .reset-filters-btn {
+    background: transparent;
+    border-color: var(--MainBlue);
+    color: var(--White);
+}
+
+.dark-mode .reset-filters-btn:hover {
+    background: var(--DarkerBlue);
 }

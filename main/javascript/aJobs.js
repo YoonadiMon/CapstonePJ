@@ -164,104 +164,30 @@ function setupEventListeners() {
     }
 
     if (backBtn) {
-        backBtn.addEventListener('click', renderListView);
+        backBtn.addEventListener('click', function () {
+            renderListView();
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        });
+    }
+
+    const goToCollectionsBtn = document.getElementById('goToCollectionsBtn');
+    if (goToCollectionsBtn) {
+        goToCollectionsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Navigate to the collection jobs (operations) page
+            window.location.href = '../../html/admin/aCollectionJobs.php';
+        });
     }
 
     if (sortDescBtn) {
         sortDescBtn.classList.add('active');
     }
-
-    document.querySelectorAll('.priority-option input[type="radio"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            document.querySelectorAll('.priority-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-
-            const parent = this.closest('.priority-option');
-            if (parent) {
-                parent.classList.add('selected');
-            }
-        });
-    });
-
-    if (issueType) {
-        issueType.addEventListener('change', function () {
-            if (this.value === 'Other') {
-                if (otherIssueGroup) otherIssueGroup.style.display = 'block';
-                if (otherIssueText) otherIssueText.setAttribute('required', true);
-            } else {
-                if (otherIssueGroup) otherIssueGroup.style.display = 'none';
-                if (otherIssueText) {
-                    otherIssueText.removeAttribute('required');
-                    otherIssueText.value = '';
-                }
-            }
-        });
-    }
-
-    if (reportIssueForm) {
-        reportIssueForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            let selectedIssue = issueType ? issueType.value : '';
-
-            if (selectedIssue === 'Other') {
-                selectedIssue = otherIssueText ? otherIssueText.value.trim() : '';
-            }
-
-            const selectedPriority = document.querySelector('input[name="priority"]:checked');
-
-            const formData = {
-                jobId: issueJobId ? issueJobId.value : '',
-                requestId: issueRequestId ? issueRequestId.value : '',
-                issueType: selectedIssue,
-                priority: selectedPriority ? selectedPriority.value : '',
-                description: issueDescription ? issueDescription.value.trim() : ''
-            };
-
-            if (!formData.issueType || !formData.priority || !formData.description) {
-                alert('Please complete all fields.');
-                return;
-            }
-
-            console.log('Issue form submitted:', formData);
-            alert('Issue reported successfully.');
-            closeReportIssueModal();
-        });
-    }
 }
 
 function renderStats() {
-    const jobsData = getJobsData();
-
-    const pre = jobsData.filter(j => j && j.stage === 'pre-execution').length;
-    const exe = jobsData.filter(j => j && j.stage === 'execution').length;
-    const res = jobsData.filter(j => j && j.stage === 'resolution').length;
-
     if (statsContainer) {
-        statsContainer.innerHTML = `
-            <div class="stat-card-modern">
-                <div class="stat-icon-modern"><i class="fas fa-hourglass-half"></i></div>
-                <div class="stat-content-modern">
-                    <div class="stat-value-modern">${pre}</div>
-                    <div class="stat-label-modern">Pre-Execution</div>
-                </div>
-            </div>
-            <div class="stat-card-modern">
-                <div class="stat-icon-modern"><i class="fas fa-truck"></i></div>
-                <div class="stat-content-modern">
-                    <div class="stat-value-modern">${exe}</div>
-                    <div class="stat-label-modern">Execution</div>
-                </div>
-            </div>
-            <div class="stat-card-modern">
-                <div class="stat-icon-modern"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-content-modern">
-                    <div class="stat-value-modern">${res}</div>
-                    <div class="stat-label-modern">Resolution</div>
-                </div>
-            </div>
-        `;
+        statsContainer.innerHTML = '';
     }
 }
 
@@ -400,6 +326,7 @@ function renderStage(title, icon, jobs) {
 function renderListView() {
     if (!listContainer || !detailContainer || !backBtn || !pageTitle || !timelineContainer) return;
 
+    currentSelectedJob = null;
     listContainer.style.display = 'block';
     detailContainer.style.display = 'none';
     backBtn.style.display = 'none';
@@ -441,6 +368,8 @@ function showJobDetail(jobId) {
     const job = jobsData.find(j => j && j.id === jobId);
 
     if (!job || !job.fullData) return;
+
+    currentSelectedJob = job;
 
     listContainer.style.display = 'none';
     detailContainer.style.display = 'block';
@@ -587,15 +516,61 @@ function showJobDetail(jobId) {
     }
 
     if (detailActionButtons) {
-    detailActionButtons.innerHTML = '';
+        detailActionButtons.innerHTML = '';
+    }
+
+    if (job.jobID) {
+        const newUrl = `${window.location.pathname}?jobID=${encodeURIComponent(job.jobID)}`;
+        window.history.replaceState({ jobID: job.jobID }, document.title, newUrl);
+    } else if (job.requestIDRaw) {
+        const newUrl = `${window.location.pathname}?requestID=${encodeURIComponent(job.requestIDRaw)}`;
+        window.history.replaceState({ requestID: job.requestIDRaw }, document.title, newUrl);
+    }
 }
 
-//     const viewRequestBtn = document.getElementById('viewRequestBtn');
-//     if (viewRequestBtn) {
-//         viewRequestBtn.onclick = function () {
-//             window.location.href = `aRequests.php?request=${job.requestIDRaw || ''}`;
-//         };
-//     }
+function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+function openJobFromUrl() {
+    const jobIDParam = getQueryParam('jobID');
+    const requestIDParam = getQueryParam('requestID');
+
+    const jobsData = getJobsData();
+    if (!Array.isArray(jobsData) || !jobsData.length) return;
+
+    let matchedJob = null;
+
+    if (jobIDParam) {
+        const cleanJobID = String(jobIDParam).trim();
+
+        matchedJob = jobsData.find(j =>
+            j &&
+            (
+                String(j.jobID) === cleanJobID ||
+                String(j.id) === cleanJobID ||
+                String(j.id).replace(/^JOB/i, '') === cleanJobID.replace(/^JOB/i, '')
+            )
+        );
+    }
+
+    if (!matchedJob && requestIDParam) {
+        const cleanRequestID = String(requestIDParam).trim();
+
+        matchedJob = jobsData.find(j =>
+            j &&
+            (
+                String(j.requestIDRaw) === cleanRequestID ||
+                String(j.requestID) === cleanRequestID ||
+                String(j.requestID).replace(/^REQ/i, '') === cleanRequestID.replace(/^REQ/i, '')
+            )
+        );
+    }
+
+    if (matchedJob) {
+        showJobDetail(matchedJob.id);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -603,4 +578,5 @@ document.addEventListener('DOMContentLoaded', function () {
     setupEventListeners();
     renderStats();
     renderListView();
+    openJobFromUrl();
 });

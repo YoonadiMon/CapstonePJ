@@ -3,7 +3,7 @@ session_start();
 include("../../php/dbConn.php");
 
 // // check if user is logged in
-// include("../../php/sessionCheck.php"); 
+include("../../php/sessionCheck.php"); 
 
 function sanitize($val) {
     return htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
@@ -362,11 +362,16 @@ $debugJson = json_encode($debug_info);
                         </div>
                     </div>
                 </div>
-                <div class="sort-container">
-                    <div class="sort-slider">
-                        <button class="sort-slider-btn" id="sortDescBtn"><i class="fas fa-sort-amount-down"></i> Newest</button>
-                        <button class="sort-slider-btn" id="sortAscBtn"><i class="fas fa-sort-amount-up"></i> Oldest</button>
+                <div class="actions-row">
+                    <div class="sort-container">
+                        <div class="sort-slider">
+                            <button class="sort-slider-btn" id="sortDescBtn"><i class="fas fa-sort-amount-down"></i> Newest</button>
+                            <button class="sort-slider-btn" id="sortAscBtn"><i class="fas fa-sort-amount-up"></i> Oldest</button>
+                        </div>
                     </div>
+                    <button class="collections-nav-btn" id="goToCollectionsBtn">
+    <i class="fas fa-truck"></i> View Ongoing Jobs
+</button>
                 </div>
                 <div class="jobs-timeline-container" id="timelineContainer"></div>
             </div>
@@ -378,9 +383,6 @@ $debugJson = json_encode($debug_info);
                             <h2 id="detailJobId"></h2>
                             <span class="detail-status-modern" id="detailJobStatus"></span>
                         </div>
-                        <!-- <button class="detail-request-link-modern" id="viewRequestBtn" type="button">
-                            <i class="fas fa-external-link-alt"></i> View Request <span id="detailRequestId"></span>
-                        </button> -->
                     </div>
                     <div class="info-grid-modern">
                         <div class="info-card-modern">
