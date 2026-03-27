@@ -180,10 +180,7 @@ $userType = 'provider'; // for testing only, will be replaced by session variabl
                     <a href="../../html/collector/cInProgress.php">In Progress</a><br>
                     <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
                 </div>
-                <div>
-                    <b>Support</b><br>
-                    <a href="../../html/collector/cReportIssues.php">Report Issue</a>
-                </div>
+                
                 <div>
                     <b>Proxy</b><br>
                     <a href="../../html/common/About.php">About</a><br>

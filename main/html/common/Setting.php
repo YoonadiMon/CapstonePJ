@@ -738,18 +738,64 @@ switch($userType) {
             </div>
         </section>
 
-        <!-- Column 2 -->
+        <!-- Column 2 - Dynamic Footer Links Based on User Type -->
         <section class="c-footer-links-section">
-            <div>
-                <b>Quick Links</b><br>
-                <a href="<?php echo $homeUrl; ?>">Home</a><br>
-                <a href="../../html/common/About.php">About</a>
-            </div>
-            <div>
-                <b>Account</b><br>
-                <a href="Profile.php">Edit Profile</a><br>
-                <a href="Setting.php">Settings</a>
-            </div>
+            <?php if ($userType === 'admin'): ?>
+                <!-- Admin Footer Links -->
+                <div>
+                    <b>Management</b><br>
+                    <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
+                    <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
+                    <a href="../../html/admin/aIssue.php">Issue</a>
+                </div>
+                <div>
+                    <b>System Operation</b><br>
+                    <a href="../../html/admin/aProviders.php">Providers</a><br>
+                    <a href="../../html/admin/aCollectors.php">Collectors</a><br>
+                    <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
+                    <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
+                    <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
+                </div>
+                <div>
+                    <b>Proxy</b><br>
+                    <a href="../../html/common/Profile.php">Edit Profile</a><br>
+                    <a href="../../html/common/Setting.php">Setting</a>
+                </div>
+            
+            <?php elseif ($userType === 'collector'): ?>
+                <!-- Collector Footer Links -->
+                <div>
+                    <b>My Jobs</b><br>
+                    <a href="../../html/collector/cMyJobs.php">My Jobs</a><br>
+                    <a href="../../html/collector/cInProgress.php">In Progress</a><br>
+                    <a href="../../html/collector/cCompletedJobs.php">Completed Jobs</a>
+                </div>
+                
+                <div>
+                    <b>Proxy</b><br>
+                    <a href="../../html/common/About.php">About</a><br>
+                    <a href="../../html/common/Profile.php">Edit Profile</a><br>
+                    <a href="../../html/common/Setting.php">Setting</a>
+                </div>
+            
+            <?php elseif ($userType === 'provider'): ?>
+                <!-- Provider Footer Links -->
+                <div>
+                    <b>Recycling</b><br>
+                    <a href="../../html/provider/pEwasteGuide.php">E-Waste Guide</a>
+                </div>
+                <div>
+                    <b>My Activity</b><br>
+                    <a href="../../html/provider/pSchedulePickup.php">Schedule Pickup</a><br>
+                    <a href="../../html/provider/pMainPickup.php">My Pickup</a>
+                </div>
+                <div>
+                    <b>Proxy</b><br>
+                    <a href="../../html/common/About.php">About</a><br>
+                    <a href="../../html/common/Profile.php">Edit Profile</a><br>
+                    <a href="../../html/common/Setting.php">Setting</a>
+                </div>
+            <?php endif; ?>
         </section>
     </footer>
 
