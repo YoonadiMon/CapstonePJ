@@ -1544,15 +1544,22 @@ function confirmCancel() {
 function openRescheduleModal(requestId) {
     currentRequestId = requestId;
     
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById('rescheduleDate').min = tomorrow.toISOString().split('T')[0];
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + 10); // Set to 10 days from today
+    document.getElementById('rescheduleDate').min = minDate.toISOString().split('T')[0];
     
     const pickup = pickups.find(p => p.requestID === requestId);
     if (pickup) {
         const currentDate = new Date(pickup.preferredDateTime);
         const dateStr = currentDate.toISOString().split('T')[0];
-        document.getElementById('rescheduleDate').value = dateStr;
+        
+        // Optional: Check if current date is before the minimum allowed date
+        // If it is, set to the minimum date instead
+        if (currentDate < minDate) {
+            document.getElementById('rescheduleDate').value = minDate.toISOString().split('T')[0];
+        } else {
+            document.getElementById('rescheduleDate').value = dateStr;
+        }
     }
     
     document.getElementById('rescheduleModal').style.display = 'flex';
