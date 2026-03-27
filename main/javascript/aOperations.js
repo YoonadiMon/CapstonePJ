@@ -10,12 +10,36 @@ function getCollectors() {
     return Array.isArray(window.collectorsData) ? window.collectorsData : [];
 }
 
+function getCollectorScheduledJobs() {
+    return window.collectorScheduledJobsData && typeof window.collectorScheduledJobsData === 'object'
+        ? window.collectorScheduledJobsData
+        : {};
+}
+
 function getVehicles() {
     return Array.isArray(window.vehiclesData) ? window.vehiclesData : [];
 }
 
+function getVehicleMaintenance() {
+    return window.vehicleMaintenanceData && typeof window.vehicleMaintenanceData === 'object'
+        ? window.vehicleMaintenanceData
+        : {};
+}
+
+function getVehicleScheduledJobs() {
+    return window.vehicleScheduledJobsData && typeof window.vehicleScheduledJobsData === 'object'
+        ? window.vehicleScheduledJobsData
+        : {};
+}
+
 function getCentres() {
     return Array.isArray(window.centresData) ? window.centresData : [];
+}
+
+function getCentreAcceptedTypes() {
+    return window.centreAcceptedTypesData && typeof window.centreAcceptedTypesData === 'object'
+        ? window.centreAcceptedTypesData
+        : {};
 }
 
 function getRecentAssignments() {
@@ -27,64 +51,305 @@ function getRequestIdFromURL() {
     return params.get('requestID');
 }
 
-// ==== Helper Functions ====
-function determineEwasteType(items) {
-    const itemString = (items || []).join(' ').toLowerCase();
+function getSelectedRequest() {
+    const selectedCard = document.querySelector('.request-card.selected');
+    if (!selectedCard) return null;
+    const requestId = selectedCard.dataset.id;
+    return getRequests().find(r => String(r.id) === String(requestId)) || null;
+}
 
-    if (itemString.includes('battery') || itemString.includes('power bank')) {
-        return 'batteries';
-    } else if (
-        itemString.includes('tv') ||
-        itemString.includes('television') ||
-        itemString.includes('refrigerator') ||
-        itemString.includes('fridge') ||
-        itemString.includes('washing machine') ||
-        itemString.includes('electric kitchen appliances') ||
-        itemString.includes('electric home appliances')
-    ) {
-        return 'appliances';
-    } else {
-        return 'electronics';
+function getSelectedDateOnly() {
+    const datetime = document.getElementById('scheduledDateTime')?.value || '';
+    return datetime ? datetime.split('T')[0] : '';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text ?? '';
+    return div.innerHTML;
+}
+
+function formatRequestCode(id) {
+    if (!id && id !== 0) return '';
+    return `#REQ${String(id).padStart(3, '0')}`;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr;
+    return date.toLocaleDateString('en-MY', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+}
+
+function formatMaintenanceDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr;
+    return date.toLocaleDateString('en-MY', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+function getMaintenanceStatusClass(status) {
+    const value = String(status || '').toLowerCase().replace(/\s+/g, '-');
+    if (value === 'scheduled') return 'scheduled';
+    if (value === 'in-progress' || value === 'in progress') return 'in-progress';
+    if (value === 'completed') return 'completed';
+    if (value === 'cancelled') return 'cancelled';
+    return '';
+}
+
+function toDateOnly(dateStr) {
+    if (!dateStr) return null;
+    const date = new Date(`${dateStr}T00:00:00`);
+    return isNaN(date) ? null : date;
+}
+
+function hasDateConflictWithinOneDay(existingDateStr, selectedDateStr) {
+    const existingDate = toDateOnly(existingDateStr);
+    const selectedDate = toDateOnly(selectedDateStr);
+
+    if (!existingDate || !selectedDate) return false;
+
+    const diffMs = Math.abs(existingDate - selectedDate);
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+    return diffDays <= 1;
+}
+
+function collectorHasScheduledConflict(collectorId, scheduledDate) {
+    if (!collectorId || !scheduledDate) return false;
+
+    const jobsData = getCollectorScheduledJobs();
+    const jobs = Array.isArray(jobsData[String(collectorId)]) ? jobsData[String(collectorId)] : [];
+
+    return jobs.some(job => {
+        const status = String(job.status || '').toLowerCase();
+        return (status === 'scheduled' || status === 'pending') &&
+            hasDateConflictWithinOneDay(job.scheduledDate, scheduledDate);
+    });
+}
+
+function vehicleHasBlockingMaintenance(vehicleId, scheduledDate) {
+    if (!vehicleId || !scheduledDate) return false;
+
+    const maintenanceData = getVehicleMaintenance();
+    const records = Array.isArray(maintenanceData[String(vehicleId)]) ? maintenanceData[String(vehicleId)] : [];
+
+    const selectedDate = new Date(`${scheduledDate}T00:00:00`);
+    if (isNaN(selectedDate)) return false;
+
+    return records.some(record => {
+        const status = String(record.status || '').toLowerCase();
+        if (status !== 'scheduled' && status !== 'in progress') return false;
+
+        const startDate = new Date(`${record.startDate}T00:00:00`);
+        if (isNaN(startDate)) return false;
+
+        return startDate <= selectedDate;
+    });
+}
+
+function vehicleHasScheduledConflict(vehicleId, scheduledDate) {
+    if (!vehicleId || !scheduledDate) return false;
+
+    const jobsData = getVehicleScheduledJobs();
+    const jobs = Array.isArray(jobsData[String(vehicleId)]) ? jobsData[String(vehicleId)] : [];
+
+    return jobs.some(job =>
+        String(job.status || '').toLowerCase() === 'scheduled' &&
+        hasDateConflictWithinOneDay(job.scheduledDate, scheduledDate)
+    );
+}
+
+function centreAcceptsRequestItems(centreId, request) {
+    if (!centreId || !request) return false;
+
+    const acceptedData = getCentreAcceptedTypes();
+    const acceptedTypeIds = Array.isArray(acceptedData[String(centreId)])
+        ? acceptedData[String(centreId)]
+        : [];
+
+    const itemDetails = Array.isArray(request.itemDetails) ? request.itemDetails : [];
+
+    return itemDetails.every(item => {
+        const itemName = String(item.name || '').trim().toLowerCase();
+
+        if (itemName === 'other electronics') {
+            return true;
+        }
+
+        return acceptedTypeIds.includes(Number(item.itemTypeID));
+    });
+}
+
+function getCollectorReason(collector, selectedDateOnly) {
+    const collectorStatus = String(collector.status || '').toLowerCase();
+
+    if (collectorStatus === 'suspended' || collectorStatus === 'inactive') {
+        return 'Suspended / Inactive';
+    }
+
+    if (selectedDateOnly && collectorHasScheduledConflict(collector.id, selectedDateOnly)) {
+        return 'Scheduled job within ±1 day';
+    }
+
+    return '';
+}
+
+function getVehicleReason(vehicle, selectedDateOnly) {
+    const vehicleStatus = String(vehicle.status || '').toLowerCase();
+
+    if (vehicleStatus === 'maintenance' || vehicleStatus === 'inactive') {
+        return 'Maintenance / Inactive';
+    }
+
+    if (selectedDateOnly && vehicleHasBlockingMaintenance(vehicle.id, selectedDateOnly)) {
+        return 'Maintenance before/on selected date';
+    }
+
+    if (selectedDateOnly && vehicleHasScheduledConflict(vehicle.id, selectedDateOnly)) {
+        return 'Scheduled job within ±1 day';
+    }
+
+    return '';
+}
+
+function getCentreReason(centre, request) {
+    const centreStatus = String(centre.status || '').toLowerCase();
+
+    if (centreStatus !== 'active') {
+        return 'Centre inactive';
+    }
+
+    if (request && !centreAcceptsRequestItems(centre.id, request)) {
+        return 'Item type not accepted';
+    }
+
+    return '';
+}
+
+function setMinDateTime() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const datetimeInput = document.getElementById('scheduledDateTime');
+    if (datetimeInput) {
+        datetimeInput.min = now.toISOString().slice(0, 16);
     }
 }
 
-function initCustomDropdowns() {
-    setupCustomDropdown('collectorDropdown', 'collectorMenu', 'selectedCollectorText', getCollectors(), 'collector');
-    setupCustomDropdown('vehicleDropdown', 'vehicleMenu', 'selectedVehicleText', getVehicles(), 'vehicle');
-    setupCustomDropdown('centreDropdown', 'centreMenu', 'selectedCentreText', getCentres(), 'centre');
+function setMinPopupDates() {
+    const today = new Date();
+    today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+    const todayStr = today.toISOString().slice(0, 10);
+
+    const vehicleDatePicker = document.getElementById('vehicleAvailabilityDatePicker');
+    const collectorDatePicker = document.getElementById('availabilityDatePicker');
+
+    if (vehicleDatePicker) vehicleDatePicker.min = todayStr;
+    if (collectorDatePicker) collectorDatePicker.min = todayStr;
 }
 
-function setupCustomDropdown(dropdownId, menuId, textId, items, type) {
-    const dropdown = document.getElementById(dropdownId);
-    const menu = document.getElementById(menuId);
-    const selectedText = document.getElementById(textId);
+function checkRequiredFields() {
+    const collector = document.getElementById('collectorDropdown')?.dataset.selectedValue || '';
+    const vehicle = document.getElementById('vehicleDropdown')?.dataset.selectedValue || '';
+    const centre = document.getElementById('centreDropdown')?.dataset.selectedValue || '';
+    const datetime = document.getElementById('scheduledDateTime')?.value || '';
+    const selectedRequest = getSelectedRequest();
 
-    if (!dropdown || !menu || !selectedText) return;
+    const confirmBtn = document.getElementById('confirmAssignmentBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = !(collector && vehicle && centre && datetime && selectedRequest);
+    }
+}
 
-    const selectBtn = dropdown.querySelector('.custom-dropdown-select');
-    if (!selectBtn) return;
+function clearCollectorSelection() {
+    const collectorDropdown = document.getElementById('collectorDropdown');
+    const selectedCollectorText = document.getElementById('selectedCollectorText');
+    const collectorHint = document.getElementById('collectorHint');
+
+    if (collectorDropdown) delete collectorDropdown.dataset.selectedValue;
+    if (selectedCollectorText) selectedCollectorText.textContent = 'Select a collector';
+    if (collectorHint) collectorHint.textContent = '';
+}
+
+function clearVehicleSelection() {
+    const vehicleDropdown = document.getElementById('vehicleDropdown');
+    const selectedVehicleText = document.getElementById('selectedVehicleText');
+    const vehicleHint = document.getElementById('vehicleHint');
+
+    if (vehicleDropdown) delete vehicleDropdown.dataset.selectedValue;
+    if (selectedVehicleText) selectedVehicleText.textContent = 'Select a vehicle';
+    if (vehicleHint) vehicleHint.textContent = '';
+}
+
+function clearCentreSelection() {
+    const centreDropdown = document.getElementById('centreDropdown');
+    const selectedCentreText = document.getElementById('selectedCentreText');
+
+    if (centreDropdown) delete centreDropdown.dataset.selectedValue;
+    if (selectedCentreText) selectedCentreText.textContent = 'Select a collection centre';
+    updateCapacityCircle(0);
+}
+
+function refreshSelectionsAfterDateChange() {
+    const selectedDateOnly = getSelectedDateOnly();
+
+    const collectorId = document.getElementById('collectorDropdown')?.dataset.selectedValue || '';
+    if (collectorId) {
+        const collector = getCollectors().find(c => String(c.id) === String(collectorId));
+        if (!collector || getCollectorReason(collector, selectedDateOnly)) {
+            clearCollectorSelection();
+        }
+    }
+
+    const vehicleId = document.getElementById('vehicleDropdown')?.dataset.selectedValue || '';
+    if (vehicleId) {
+        const vehicle = getVehicles().find(v => String(v.id) === String(vehicleId));
+        if (!vehicle || getVehicleReason(vehicle, selectedDateOnly)) {
+            clearVehicleSelection();
+        }
+    }
+
+    const centreId = document.getElementById('centreDropdown')?.dataset.selectedValue || '';
+    const request = getSelectedRequest();
+    if (centreId) {
+        const centre = getCentres().find(c => String(c.id) === String(centreId));
+        if (!centre || getCentreReason(centre, request)) {
+            clearCentreSelection();
+        }
+    }
+
+    buildCentreDropdownMenu();
+    checkRequiredFields();
+}
+
+function buildCentreDropdownMenu() {
+    const menu = document.getElementById('centreMenu');
+    const selectedRequest = getSelectedRequest();
+    if (!menu) return;
 
     menu.innerHTML = '';
 
-    items.forEach(item => {
+    getCentres().forEach(centre => {
         const menuItem = document.createElement('div');
         menuItem.className = 'custom-dropdown-item';
-        menuItem.dataset.value = item.id;
+        menuItem.dataset.value = centre.id;
 
-        let isAvailable = true;
-        let dotColor = 'green';
+        const reason = getCentreReason(centre, selectedRequest);
+        const isAvailable = !reason;
 
-        if (type === 'collector') {
-            isAvailable = !!item.available;
-            dotColor = item.available ? 'green' : 'red';
-            menuItem.innerHTML = `<span class="status-dot ${dotColor}"></span> ${item.name}`;
-        } else if (type === 'vehicle') {
-            isAvailable = item.status === 'Available';
-            dotColor = isAvailable ? 'green' : 'red';
-            menuItem.innerHTML = `<span class="status-dot ${dotColor}"></span> ${item.model}`;
-        } else if (type === 'centre') {
-            menuItem.textContent = item.name;
-        }
+        menuItem.innerHTML = `
+            <div>${escapeHtml(centre.name)}</div>
+            ${reason ? `<small class="centre-reason-text">${escapeHtml(reason)}</small>` : ''}
+        `;
 
         if (!isAvailable) {
             menuItem.style.opacity = '0.5';
@@ -94,39 +359,37 @@ function setupCustomDropdown(dropdownId, menuId, textId, items, type) {
 
         menuItem.addEventListener('click', function (e) {
             e.stopPropagation();
-
             if (!isAvailable) return;
 
-            if (type === 'collector') {
-                selectedText.innerHTML = `<span class="status-dot ${dotColor}"></span> ${item.name}`;
-                const hint = document.getElementById('collectorHint');
-                if (hint) {
-                    hint.textContent = '';
-                }
-            } else if (type === 'vehicle') {
-                selectedText.innerHTML = `<span class="status-dot ${dotColor}"></span> ${item.model}`;
-                const hint = document.getElementById('vehicleHint');
-                if (hint) hint.textContent = item.capacity || '';
-            } else if (type === 'centre') {
-                selectedText.textContent = item.name;
-                updateCapacityCircle(Number(item.capacity) || 0);
-            }
-
-            dropdown.dataset.selectedValue = item.id;
+            document.getElementById('centreDropdown').dataset.selectedValue = centre.id;
+            document.getElementById('selectedCentreText').textContent = centre.name;
+            updateCapacityCircle(Number(centre.capacity) || 0);
             menu.classList.remove('show');
             checkRequiredFields();
         });
 
         menu.appendChild(menuItem);
     });
+}
 
-    selectBtn.addEventListener('click', function (e) {
+function initCentreDropdown() {
+    const dropdown = document.getElementById('centreDropdown');
+    const menu = document.getElementById('centreMenu');
+    const selectBtn = dropdown?.querySelector('.custom-dropdown-select');
+
+    if (!dropdown || !menu || !selectBtn) return;
+
+    const newSelectBtn = selectBtn.cloneNode(true);
+    selectBtn.parentNode.replaceChild(newSelectBtn, selectBtn);
+
+    buildCentreDropdownMenu();
+
+    newSelectBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-
         document.querySelectorAll('.custom-dropdown-menu').forEach(m => {
             if (m !== menu) m.classList.remove('show');
         });
-
+        buildCentreDropdownMenu();
         menu.classList.toggle('show');
     });
 
@@ -141,24 +404,17 @@ document.addEventListener('click', function () {
     });
 });
 
-function checkRequiredFields() {
-    const collectorDropdown = document.getElementById('collectorDropdown');
-    const vehicleDropdown = document.getElementById('vehicleDropdown');
-    const centreDropdown = document.getElementById('centreDropdown');
-    const datetime = document.getElementById('scheduledDateTime')?.value;
+function updateCapacityCircle(capacity) {
+    const circle = document.getElementById('capacityCircle');
+    const percentageSpan = document.getElementById('capacityPercentage');
 
-    const collector = collectorDropdown?.dataset.selectedValue;
-    const vehicle = vehicleDropdown?.dataset.selectedValue;
-    const centre = centreDropdown?.dataset.selectedValue;
+    if (!circle || !percentageSpan) return;
 
-    const allFieldsFilled = collector && vehicle && centre && datetime;
-    const confirmBtn = document.getElementById('confirmAssignmentBtn');
-    if (confirmBtn) confirmBtn.disabled = !allFieldsFilled;
-}
+    const safeCapacity = Math.max(0, Math.min(100, Number(capacity) || 0));
+    const degrees = (safeCapacity / 100) * 360;
 
-// ===== CORE FUNCTIONS =====
-function loadPendingRequests() {
-    filterRequests();
+    circle.style.background = `conic-gradient(var(--MainBlue) ${degrees}deg, var(--LightBlue) 0deg)`;
+    percentageSpan.textContent = `${safeCapacity}%`;
 }
 
 function createRequestCard(request, index) {
@@ -179,15 +435,15 @@ function createRequestCard(request, index) {
 
     card.innerHTML = `
         <div class="card-header">
-            <span class="request-id">#${request.id}</span>
+            <span class="request-id">${formatRequestCode(request.id)}</span>
         </div>
         <div class="card-body">
-            <div class="provider-name">${request.provider}</div>
+            <div class="provider-name">${escapeHtml(request.provider)}</div>
             <div class="e-waste-items">
-                ${(request.items || []).map(item => `<span class="item-chip">${item}</span>`).join('')}
+                ${(request.items || []).map(item => `<span class="item-chip">${escapeHtml(item)}</span>`).join('')}
             </div>
             <div class="card-footer">
-                <span>${request.weight || '0 kg'}</span>
+                <span>${escapeHtml(request.weight || '0 kg')}</span>
                 <span class="preferred-date">${formattedDate}</span>
             </div>
         </div>
@@ -197,9 +453,14 @@ function createRequestCard(request, index) {
         document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
 
-        resetAssignmentForm(false);
+        clearCollectorSelection();
+        clearVehicleSelection();
+        clearCentreSelection();
+
         updateAssignmentPanel(request);
         updateSelectedRequestId(request);
+        buildCentreDropdownMenu();
+        checkRequiredFields();
     });
 
     return card;
@@ -228,50 +489,20 @@ function updateAssignmentPanel(request) {
     summaryDiv.innerHTML = `
         <div class="summary-row">
             <span class="summary-label">Provider:</span>
-            <span class="summary-value">${request.provider}</span>
+            <span class="summary-value">${escapeHtml(request.provider)}</span>
         </div>
         <div class="summary-row">
             <span class="summary-label">Items:</span>
-            <span class="summary-value">${(request.items || []).join(', ')} (${request.weight || '0 kg'})</span>
+            <span class="summary-value">${escapeHtml((request.items || []).join(', '))} (${escapeHtml(request.weight || '0 kg')})</span>
         </div>
         <div class="summary-row">
             <span class="summary-label">Preferred:</span>
             <span class="summary-value">${dateStr}</span>
         </div>
         <div class="summary-address">
-            📍 ${request.address || '-'}
+            📍 ${escapeHtml(request.address || '-')}
         </div>
     `;
-
-    const confirmBtn = document.getElementById('confirmAssignmentBtn');
-    if (confirmBtn) confirmBtn.disabled = true;
-}
-
-function loadCollectors() {
-    const hint = document.getElementById('collectorHint');
-    if (hint) hint.textContent = '';
-}
-
-function loadVehicles() {
-    const hint = document.getElementById('vehicleHint');
-    if (hint) hint.textContent = '';
-}
-
-function loadCentres() {
-    updateCapacityCircle(0);
-}
-
-function updateCapacityCircle(capacity) {
-    const circle = document.getElementById('capacityCircle');
-    const percentageSpan = document.getElementById('capacityPercentage');
-
-    if (!circle || !percentageSpan) return;
-
-    const safeCapacity = Math.max(0, Math.min(100, Number(capacity) || 0));
-    const degrees = (safeCapacity / 100) * 360;
-
-    circle.style.background = `conic-gradient(var(--MainBlue) ${degrees}deg, var(--LightBlue) 0deg)`;
-    percentageSpan.textContent = `${safeCapacity}%`;
 }
 
 function updateSelectedRequestId(request) {
@@ -279,7 +510,7 @@ function updateSelectedRequestId(request) {
     if (!badge) return;
 
     if (request) {
-        badge.textContent = `#${request.id}`;
+        badge.textContent = formatRequestCode(request.id);
         badge.style.display = 'inline-block';
     } else {
         badge.textContent = '';
@@ -289,7 +520,6 @@ function updateSelectedRequestId(request) {
 
 function cleanTimelineEventText(text, requestId) {
     let cleaned = String(text || 'Assignment recorded');
-
     cleaned = cleaned.replace(/\s*\(ID:\s*\d+\)/gi, '');
     cleaned = cleaned.replace(/,\s*centre\s+/gi, ', ');
     cleaned = cleaned.replace(/,\s*vehicle\s+/gi, ', Vehicle ');
@@ -297,7 +527,7 @@ function cleanTimelineEventText(text, requestId) {
     cleaned = cleaned.replace(/^#\d+\s*/i, '');
 
     if (requestId) {
-        cleaned = `<strong>#REQ${requestId}</strong> ${cleaned}`;
+        cleaned = `<strong>${formatRequestCode(requestId)}</strong> ${cleaned}`;
     }
 
     return cleaned.trim();
@@ -321,49 +551,10 @@ function loadRecentAssignments() {
     timeline.innerHTML = assignments.map(a => `
         <div class="timeline-item">
             <span class="timeline-time">${a.time || '-'}</span>
-            <span class="timeline-event">
-                ${cleanTimelineEventText(a.event, a.requestID)}
-            </span>
+            <span class="timeline-event">${cleanTimelineEventText(a.event, a.requestID)}</span>
             <span class="timeline-date">${a.date || ''}</span>
         </div>
     `).join('');
-}
-
-function setMinDateTime() {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-
-    const datetimeInput = document.getElementById('scheduledDateTime');
-    if (datetimeInput) {
-        datetimeInput.min = now.toISOString().slice(0, 16);
-    }
-}
-
-function setupEventListeners() {
-    const prevBtn = document.querySelector('.pagination-controls .c-btn-small:first-child');
-    const nextBtn = document.querySelector('.pagination-controls .c-btn-small:last-child');
-
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => changePage('prev'));
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => changePage('next'));
-    }
-
-    document.getElementById('requestFilter')?.addEventListener('change', filterRequests);
-    document.getElementById('requestSearch')?.addEventListener('input', filterRequests);
-    document.getElementById('scheduledDateTime')?.addEventListener('change', checkRequiredFields);
-    document.getElementById('confirmAssignmentBtn')?.addEventListener('click', confirmAssignment);
-    document.getElementById('resetAssignmentBtn')?.addEventListener('click', () => resetAssignmentForm(true));
-
-    document.getElementById('viewCollectorAvailability')?.addEventListener('click', () => {
-        alert('Collector availability comes from the database records loaded on this page.');
-    });
-
-    document.getElementById('viewVehicleStatus')?.addEventListener('click', () => {
-        alert('Vehicle status comes from the database records loaded on this page.');
-    });
 }
 
 function getFilteredRequests() {
@@ -380,16 +571,14 @@ function getFilteredRequests() {
         filteredRequests = filteredRequests.filter(req =>
             (req.provider || '').toLowerCase().includes(search) ||
             String(req.id || '').toLowerCase().includes(search) ||
-            (req.items || []).some(item => item.toLowerCase().includes(search))
+            (req.items || []).some(item => String(item).toLowerCase().includes(search))
         );
     }
 
     return filteredRequests;
 }
 
-function filterRequests(resetToFirstPage = true) {
-    if (resetToFirstPage) currentPage = 1;
-
+function filterRequests() {
     const filteredRequests = getFilteredRequests();
     const container = document.getElementById('requestCardsContainer');
     if (!container) return;
@@ -402,38 +591,23 @@ function filterRequests(resetToFirstPage = true) {
             </div>
         `;
         updateSelectedRequestId(null);
-
         const summaryDiv = document.getElementById('selectedRequestSummary');
         if (summaryDiv) summaryDiv.innerHTML = '';
-
-        updatePagination(filteredRequests.length);
+        checkRequiredFields();
         return;
     }
 
-    totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
-
-    if (currentPage > totalPages) {
-        currentPage = totalPages;
-    }
-
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    const paginatedRequests = filteredRequests.slice(start, end);
-
     container.innerHTML = '';
-    paginatedRequests.forEach((req, index) => {
-        const card = createRequestCard(req, start + index);
-        container.appendChild(card);
+    filteredRequests.forEach((req, index) => {
+        container.appendChild(createRequestCard(req, index));
     });
 
-    let selectedRequest = paginatedRequests[0];
-
+    let selectedRequest = filteredRequests[0];
     const requestIdFromURL = getRequestIdFromURL();
+
     if (requestIdFromURL) {
-        const urlRequest = paginatedRequests.find(r => String(r.id) === String(requestIdFromURL));
-        if (urlRequest) {
-            selectedRequest = urlRequest;
-        }
+        const urlRequest = filteredRequests.find(r => String(r.id) === String(requestIdFromURL));
+        if (urlRequest) selectedRequest = urlRequest;
     }
 
     if (selectedRequest) {
@@ -441,11 +615,10 @@ function filterRequests(resetToFirstPage = true) {
         if (selectedCard) selectedCard.classList.add('selected');
         updateAssignmentPanel(selectedRequest);
         updateSelectedRequestId(selectedRequest);
-    } else {
-        updateSelectedRequestId(null);
     }
 
-    updatePagination(filteredRequests.length);
+    buildCentreDropdownMenu();
+    checkRequiredFields();
 }
 
 function autoSelectRequestFromURL() {
@@ -455,12 +628,7 @@ function autoSelectRequestFromURL() {
     const request = getRequests().find(r => String(r.id) === String(requestId));
     if (!request) return;
 
-    const filtered = getFilteredRequests();
-    const requestIndex = filtered.findIndex(r => String(r.id) === String(requestId));
-    if (requestIndex === -1) return;
-
-    currentPage = Math.floor(requestIndex / itemsPerPage) + 1;
-    filterRequests(false);
+    filterRequests();
 
     setTimeout(() => {
         const card = document.querySelector(`.request-card[data-id="${requestId}"]`);
@@ -469,59 +637,500 @@ function autoSelectRequestFromURL() {
         document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
 
+        clearCollectorSelection();
+        clearVehicleSelection();
+        clearCentreSelection();
+
         updateAssignmentPanel(request);
         updateSelectedRequestId(request);
+        buildCentreDropdownMenu();
+        checkRequiredFields();
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
 }
 
-async function confirmAssignment() {
-    const collectorDropdown = document.getElementById('collectorDropdown');
-    const vehicleDropdown = document.getElementById('vehicleDropdown');
-    const centreDropdown = document.getElementById('centreDropdown');
-    const datetime = document.getElementById('scheduledDateTime')?.value;
-    const notes = document.getElementById('assignmentNotes')?.value || '';
+let selectedAvailabilityDate = null;
+let selectedVehicleAvailabilityDate = null;
 
-    const collector = collectorDropdown?.dataset.selectedValue;
-    const vehicle = vehicleDropdown?.dataset.selectedValue;
-    const centre = centreDropdown?.dataset.selectedValue;
+function updateCollectorDateDisplay() {
+    const dateDisplay = document.getElementById('selectedDateDisplay');
+    if (!dateDisplay) return;
+
+    if (selectedAvailabilityDate) {
+        dateDisplay.innerHTML = `<i class="fas fa-calendar-day"></i> ${selectedAvailabilityDate.toLocaleDateString('en-MY', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })}`;
+    } else {
+        dateDisplay.innerHTML = 'No date selected';
+    }
+}
+
+function closeCollectorAvailabilityModal() {
+    const modal = document.getElementById('collectorAvailabilityModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function renderAllCollectorsAvailability(selectedDate = null) {
+    const contentDiv = document.getElementById('collectorAvailabilityContent');
+    const countBadge = document.getElementById('availableCountBadge');
+    if (!contentDiv) return;
+
+    const collectors = getCollectors();
+    const selectedDateOnly = selectedDate ? selectedDate.toISOString().slice(0, 10) : '';
+
+    let availableCollectors = [];
+    if (selectedDateOnly) {
+        availableCollectors = collectors.filter(collector => !getCollectorReason(collector, selectedDateOnly));
+    }
+
+    if (countBadge) {
+        if (selectedDateOnly) {
+            countBadge.style.display = 'inline-flex';
+            countBadge.innerHTML = `<i class="fas fa-users"></i> ${availableCollectors.length} Available`;
+            countBadge.style.background = availableCollectors.length > 0 ? 'var(--MainBlue)' : '#e74c3c';
+        } else {
+            countBadge.style.display = 'none';
+        }
+    }
+
+    if (!selectedDateOnly) {
+        contentDiv.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-calendar-alt"></i>
+                <p>Select a date to see collector availability.</p>
+            </div>
+        `;
+        return;
+    }
+
+    if (availableCollectors.length === 0) {
+        contentDiv.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No Collectors Available</h3>
+                <p>No collectors are available on ${selectedDate.toLocaleDateString('en-MY')}</p>
+            </div>
+        `;
+        return;
+    }
+
+    const collectorJobsData = getCollectorScheduledJobs();
+
+    contentDiv.innerHTML = `
+        <div class="collectors-grid">
+            ${availableCollectors.map(collector => {
+                const jobs = Array.isArray(collectorJobsData[String(collector.id)])
+                    ? collectorJobsData[String(collector.id)]
+                    : [];
+
+                const scheduledJobs = jobs
+                    .filter(job => {
+                        const status = String(job.status || '').toLowerCase();
+                        return status === 'scheduled' || status === 'pending';
+                    })
+                    .sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate));
+
+                return `
+                    <div class="collector-availability-card available">
+                        <div class="collector-header">
+                            <div class="collector-name">
+                                <span class="status-dot green"></span>
+                                ${escapeHtml(collector.name)}
+                            </div>
+                            <div class="collector-stats">
+                                <span class="stat-badge">📋 ${scheduledJobs.length} Assigned Jobs</span>
+                            </div>
+                        </div>
+
+                        <div class="scheduled-jobs-section">
+                            <div class="section-title">
+                                <i class="fas fa-list"></i>
+                                Job Schedule
+                            </div>
+
+                            ${scheduledJobs.length > 0 ? `
+                                <div class="scheduled-jobs-list">
+                                    ${scheduledJobs.map(job => `
+                                        <div class="scheduled-job-item">
+                                            <div class="job-id-display">
+                                                <span class="job-id-mini">Job #${String(job.jobID).padStart(3, '0')}</span>
+                                                <span class="job-date-simple">${formatDate(job.scheduledDate)}</span>
+                                                <span class="job-status-mini">${escapeHtml(job.status || '-')}</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `
+                                <div class="empty-jobs">
+                                    <p>No assigned jobs</p>
+                                </div>
+                            `}
+                        </div>
+
+                        <button class="select-collector-btn" onclick="selectCollectorFromModal('${collector.id}', '${escapeHtml(collector.name)}')">
+                            <i class="fas fa-check-circle"></i> Select Collector
+                        </button>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function openCollectorAvailabilityModal() {
+    const scheduledDateInput = document.getElementById('scheduledDateTime')?.value;
+    if (scheduledDateInput) {
+        selectedAvailabilityDate = new Date(scheduledDateInput);
+        selectedAvailabilityDate.setHours(0, 0, 0, 0);
+    } else {
+        selectedAvailabilityDate = null;
+    }
+
+    let modal = document.getElementById('collectorAvailabilityModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'collectorAvailabilityModal';
+        modal.className = 'ops-modal-overlay';
+        modal.style.display = 'none';
+        document.body.appendChild(modal);
+
+        modal.innerHTML = `
+            <div class="ops-modal ops-modal-large nicer-modal">
+                <div class="ops-modal-header nicer-modal-header">
+                    <div>
+                        <h3>Collector Availability</h3>
+                        <p class="ops-modal-subtitle" id="selectedDateDisplay">No date selected</p>
+                    </div>
+                    <button type="button" class="ops-modal-close plain-close-btn" id="closeCollectorAvailabilityModal">&times;</button>
+                </div>
+                <div class="ops-modal-body">
+                    <div class="availability-controls cleaner-toolbar">
+                        <div class="availability-date-picker">
+                            <input type="date" id="availabilityDatePicker" class="date-picker-small">
+                        </div>
+                        <div class="available-count-badge" id="availableCountBadge"></div>
+                    </div>
+                    <div id="collectorAvailabilityContent"></div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('closeCollectorAvailabilityModal')?.addEventListener('click', closeCollectorAvailabilityModal);
+
+        modal.addEventListener('click', function (e) {
+            if (e.target.id === 'collectorAvailabilityModal') {
+                closeCollectorAvailabilityModal();
+            }
+        });
+
+        document.getElementById('availabilityDatePicker')?.addEventListener('change', function (e) {
+            if (e.target.value) {
+                selectedAvailabilityDate = new Date(e.target.value);
+                selectedAvailabilityDate.setHours(0, 0, 0, 0);
+            } else {
+                selectedAvailabilityDate = null;
+            }
+            updateCollectorDateDisplay();
+            renderAllCollectorsAvailability(selectedAvailabilityDate);
+        });
+    }
+
+    setMinPopupDates();
+
+    const datePicker = document.getElementById('availabilityDatePicker');
+    if (datePicker && selectedAvailabilityDate) {
+        const year = selectedAvailabilityDate.getFullYear();
+        const month = String(selectedAvailabilityDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedAvailabilityDate.getDate()).padStart(2, '0');
+        datePicker.value = `${year}-${month}-${day}`;
+    } else if (datePicker) {
+        datePicker.value = '';
+    }
+
+    updateCollectorDateDisplay();
+    renderAllCollectorsAvailability(selectedAvailabilityDate);
+    modal.style.display = 'flex';
+}
+
+function selectCollectorFromModal(collectorId, collectorName) {
+    const collector = getCollectors().find(c => String(c.id) === String(collectorId));
+    const selectedDateOnly = getSelectedDateOnly();
 
     if (!collector) {
-        alert('Please select a collector');
+        alert('Selected collector not found.');
         return;
     }
+
+    const reason = getCollectorReason(collector, selectedDateOnly);
+    if (reason) {
+        alert(`This collector cannot be selected: ${reason}`);
+        return;
+    }
+
+    const selectedCollectorText = document.getElementById('selectedCollectorText');
+    const collectorDropdown = document.getElementById('collectorDropdown');
+
+    if (selectedCollectorText && collectorDropdown) {
+        collectorDropdown.dataset.selectedValue = collectorId;
+        selectedCollectorText.innerHTML = `<span class="status-dot green"></span> ${collectorName}`;
+        const hint = document.getElementById('collectorHint');
+        if (hint) hint.textContent = '';
+        closeCollectorAvailabilityModal();
+        checkRequiredFields();
+    }
+}
+
+window.selectCollectorFromModal = selectCollectorFromModal;
+
+function updateVehicleDateDisplay() {
+    const subtitle = document.getElementById('selectedVehicleDateDisplay');
+    if (!subtitle) return;
+
+    if (selectedVehicleAvailabilityDate) {
+        subtitle.innerHTML = `<i class="fas fa-calendar-day"></i> ${selectedVehicleAvailabilityDate.toLocaleDateString('en-MY', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        })}`;
+    } else {
+        subtitle.innerHTML = 'No date selected';
+    }
+}
+
+function openVehicleMaintenanceModal() {
+    const scheduledDateInput = document.getElementById('scheduledDateTime')?.value;
+    if (scheduledDateInput) {
+        selectedVehicleAvailabilityDate = new Date(scheduledDateInput);
+        selectedVehicleAvailabilityDate.setHours(0, 0, 0, 0);
+    } else {
+        selectedVehicleAvailabilityDate = null;
+    }
+
+    const modal = document.getElementById('vehicleMaintenanceModal');
+    if (!modal) return;
+
+    setMinPopupDates();
+
+    const datePicker = document.getElementById('vehicleAvailabilityDatePicker');
+    if (datePicker && selectedVehicleAvailabilityDate) {
+        const year = selectedVehicleAvailabilityDate.getFullYear();
+        const month = String(selectedVehicleAvailabilityDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedVehicleAvailabilityDate.getDate()).padStart(2, '0');
+        datePicker.value = `${year}-${month}-${day}`;
+    } else if (datePicker) {
+        datePicker.value = '';
+    }
+
+    updateVehicleDateDisplay();
+    renderVehicleMaintenanceList();
+    modal.style.display = 'flex';
+}
+
+function closeVehicleMaintenanceModal() {
+    const modal = document.getElementById('vehicleMaintenanceModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function renderVehicleMaintenanceList() {
+    const container = document.getElementById('vehicleMaintenanceCalendar');
+    const countBadge = document.getElementById('availableVehicleCountBadge');
+    if (!container) return;
+
+    const selectedDateOnly = selectedVehicleAvailabilityDate
+        ? selectedVehicleAvailabilityDate.toISOString().slice(0, 10)
+        : '';
+
+    const vehicles = [...getVehicles()].sort((a, b) =>
+        String(a.model || '').localeCompare(String(b.model || ''))
+    );
+
+    const availableCount = vehicles.filter(vehicle => !getVehicleReason(vehicle, selectedDateOnly)).length;
+
+    if (countBadge) {
+        if (selectedDateOnly) {
+            countBadge.style.display = 'inline-flex';
+            countBadge.innerHTML = `<i class="fas fa-truck"></i> ${availableCount} Available`;
+            countBadge.style.background = availableCount > 0 ? 'var(--MainBlue)' : '#e74c3c';
+        } else {
+            countBadge.style.display = 'none';
+        }
+    }
+
+    if (vehicles.length === 0) {
+        container.innerHTML = `
+            <div class="maintenance-empty">
+                No vehicles found.
+            </div>
+        `;
+        return;
+    }
+
+    const maintenanceData = getVehicleMaintenance();
+
+    container.innerHTML = vehicles.map(vehicle => {
+        const records = Array.isArray(maintenanceData[String(vehicle.id)]) ? maintenanceData[String(vehicle.id)] : [];
+        const sortedRecords = [...records].sort((a, b) => new Date(b.startDate || 0) - new Date(a.startDate || 0));
+        const reason = getVehicleReason(vehicle, selectedDateOnly);
+        const isAvailable = !reason;
+
+        return `
+            <div class="maintenance-vehicle-card ${isAvailable ? 'vehicle-available-card' : 'vehicle-blocked-card'}">
+                <div class="maintenance-vehicle-top">
+                    <div>
+                        <div class="maintenance-vehicle-name">
+                            <span class="status-dot ${isAvailable ? 'green' : 'red'}"></span>
+                            ${escapeHtml(vehicle.model || `Vehicle ID ${vehicle.id}`)}
+                        </div>
+                        <div class="maintenance-vehicle-meta">
+                            Status: ${escapeHtml(vehicle.status || '-')} • Capacity: ${escapeHtml(vehicle.capacity || '-')}
+                        </div>
+                    </div>
+                    <span class="maintenance-badge ${isAvailable ? 'has-records' : 'blocked-records'}">
+                        ${escapeHtml(isAvailable ? 'Available' : reason)}
+                    </span>
+                </div>
+
+                ${
+                    sortedRecords.length === 0
+                        ? `<div class="maintenance-empty-small">No maintenance history for this vehicle.</div>`
+                        : `
+                            <div class="maintenance-list">
+                                ${sortedRecords.map(record => `
+                                    <div class="maintenance-item">
+                                        <div class="maintenance-item-top">
+                                            <div class="maintenance-dates">
+                                                <strong>Start:</strong> ${formatMaintenanceDate(record.startDate)}<br>
+                                                <strong>End:</strong> ${record.endDate ? formatMaintenanceDate(record.endDate) : 'Not set'}
+                                            </div>
+                                            <div class="maintenance-status ${getMaintenanceStatusClass(record.status)}">
+                                                ${escapeHtml(record.status || '-')}
+                                            </div>
+                                        </div>
+                                        <div class="maintenance-notes">
+                                            ${escapeHtml((record.notes || '').trim() || 'No description provided.')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `
+                }
+
+                <button
+                    class="select-vehicle-btn small-select-btn"
+                    onclick="selectVehicleFromModal('${vehicle.id}', '${escapeHtml(vehicle.model || '')}')"
+                    ${isAvailable ? '' : 'disabled'}
+                >
+                    <i class="fas fa-check-circle"></i>
+                    ${isAvailable ? 'Select Vehicle' : 'Not Available'}
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function selectVehicleFromModal(vehicleId, vehicleName) {
+    const selectedDateOnly = getSelectedDateOnly();
+    const vehicle = getVehicles().find(v => String(v.id) === String(vehicleId));
 
     if (!vehicle) {
-        alert('Please select a vehicle');
+        alert('Selected vehicle not found.');
         return;
     }
 
-    if (!centre) {
-        alert('Please select a collection centre');
+    const reason = getVehicleReason(vehicle, selectedDateOnly);
+    if (reason) {
+        alert(`This vehicle cannot be selected: ${reason}`);
         return;
     }
 
-    if (!datetime) {
-        alert('Please select a scheduled date and time');
-        return;
+    const vehicleDropdown = document.getElementById('vehicleDropdown');
+    const selectedVehicleText = document.getElementById('selectedVehicleText');
+    const hint = document.getElementById('vehicleHint');
+
+    if (vehicleDropdown) vehicleDropdown.dataset.selectedValue = vehicleId;
+    if (selectedVehicleText) {
+        selectedVehicleText.innerHTML = `<span class="status-dot green"></span> ${vehicleName}`;
+    }
+    if (hint) {
+        hint.textContent = vehicle.capacity || '';
     }
 
-    const selectedCard = document.querySelector('.request-card.selected');
-    if (!selectedCard) {
-        alert('Please select a request');
-        return;
-    }
+    closeVehicleMaintenanceModal();
+    checkRequiredFields();
+}
 
-    const requestId = selectedCard.dataset.id;
-    const assignedRequest = getRequests().find(r => String(r.id) === String(requestId));
+window.selectVehicleFromModal = selectVehicleFromModal;
 
-    if (!assignedRequest) {
-        alert('Selected request not found.');
-        return;
-    }
-
+async function confirmAssignment() {
+    const selectedRequest = getSelectedRequest();
+    const datetime = document.getElementById('scheduledDateTime')?.value || '';
+    const collector = document.getElementById('collectorDropdown')?.dataset.selectedValue || '';
+    const vehicle = document.getElementById('vehicleDropdown')?.dataset.selectedValue || '';
+    const centre = document.getElementById('centreDropdown')?.dataset.selectedValue || '';
+    const notes = document.getElementById('assignmentNotes')?.value || '';
     const confirmBtn = document.getElementById('confirmAssignmentBtn');
-    const originalBtnText = confirmBtn ? confirmBtn.innerHTML : '';
+
+    if (!selectedRequest) {
+        alert('Please select a request.');
+        return;
+    }
+    if (!collector) {
+        alert('Please select a collector.');
+        return;
+    }
+    if (!vehicle) {
+        alert('Please select a vehicle.');
+        return;
+    }
+    if (!centre) {
+        alert('Please select a collection centre.');
+        return;
+    }
+    if (!datetime) {
+        alert('Please select a scheduled date and time.');
+        return;
+    }
+
+    const selectedDateOnly = datetime.split('T')[0];
+
+    const collectorObj = getCollectors().find(c => String(c.id) === String(collector));
+    if (!collectorObj) {
+        alert('Selected collector not found.');
+        return;
+    }
+    const collectorReason = getCollectorReason(collectorObj, selectedDateOnly);
+    if (collectorReason) {
+        alert(`Collector unavailable: ${collectorReason}`);
+        return;
+    }
+
+    const vehicleObj = getVehicles().find(v => String(v.id) === String(vehicle));
+    if (!vehicleObj) {
+        alert('Selected vehicle not found.');
+        return;
+    }
+    const vehicleReason = getVehicleReason(vehicleObj, selectedDateOnly);
+    if (vehicleReason) {
+        alert(`Vehicle unavailable: ${vehicleReason}`);
+        return;
+    }
+
+    const centreObj = getCentres().find(c => String(c.id) === String(centre));
+    if (!centreObj) {
+        alert('Selected collection centre not found.');
+        return;
+    }
+    const centreReason = getCentreReason(centreObj, selectedRequest);
+    if (centreReason) {
+        alert(`Collection centre unavailable: ${centreReason}`);
+        return;
+    }
+
+    const originalBtnText = confirmBtn ? confirmBtn.innerHTML : '✓ Confirm';
 
     try {
         if (confirmBtn) {
@@ -531,7 +1140,7 @@ async function confirmAssignment() {
 
         const formData = new FormData();
         formData.append('action', 'assign_request');
-        formData.append('requestID', requestId);
+        formData.append('requestID', selectedRequest.id);
         formData.append('collectorID', collector);
         formData.append('vehicleID', vehicle);
         formData.append('centreID', centre);
@@ -543,102 +1152,60 @@ async function confirmAssignment() {
             body: formData
         });
 
-        const result = await response.json();
+        let result = null;
+        try {
+            result = await response.json();
+        } catch (e) {
+            throw new Error('Server returned an invalid response.');
+        }
 
-        if (!result.success) {
-            throw new Error(result.message || 'Failed to save assignment.');
+        if (!response.ok || !result || !result.success) {
+            throw new Error(result?.message || 'Failed to save assignment.');
         }
 
         const collectorText = document.getElementById('selectedCollectorText')?.textContent || 'Collector';
-        const vehicleRawText = document.getElementById('selectedVehicleText')?.textContent || '';
+        const vehicleText = document.getElementById('selectedVehicleText')?.textContent || 'Vehicle';
         const centreText = document.getElementById('selectedCentreText')?.textContent || '';
-        const vehicleText = vehicleRawText
-        .replace(/[🟢🔴]/g, '')
-        .trim()
-        .replace(/^Vehicle\s*/i, '');
 
-        alert(
-            `✓ Assignment saved successfully!\n\nRequest: #${requestId}\nCollector: ${collectorText}\nVehicle: ${vehicleText}\nScheduled: ${new Date(datetime).toLocaleString()}`
-        );
+        // alert(
+        //     `✓ Assignment saved successfully!\n\nRequest: ${formatRequestCode(selectedRequest.id)}\nCollector: ${collectorText}\nVehicle: ${vehicleText}\nCentre: ${centreText}\nScheduled: ${new Date(datetime).toLocaleString()}`
+        // );
 
-        addToTimeline(datetime, assignedRequest, collectorText, vehicleText, centreText);
+        addToTimeline(datetime, selectedRequest, collectorText, vehicleText, centreText);
 
         if (Array.isArray(window.requestsData)) {
-            const requestIndex = window.requestsData.findIndex(r => String(r.id) === String(requestId));
-            if (requestIndex !== -1) {
-                window.requestsData.splice(requestIndex, 1);
+            const index = window.requestsData.findIndex(r => String(r.id) === String(selectedRequest.id));
+            if (index !== -1) {
+                window.requestsData.splice(index, 1);
             }
         }
 
-        if (Array.isArray(window.collectorsData)) {
-            const collectorObj = window.collectorsData.find(c => String(c.id) === String(collector));
-            if (collectorObj) {
-                collectorObj.available = false;
-            }
+        if (!window.collectorScheduledJobsData || typeof window.collectorScheduledJobsData !== 'object') {
+            window.collectorScheduledJobsData = {};
         }
 
-        if (Array.isArray(window.vehiclesData)) {   
-            const vehicleObj = window.vehiclesData.find(v => String(v.id) === String(vehicle));  
-            if (vehicleObj) {    
-                vehicleObj.status = 'Pending';
-            }
+        if (!Array.isArray(window.collectorScheduledJobsData[String(collector)])) {
+            window.collectorScheduledJobsData[String(collector)] = [];
         }
+
+        window.collectorScheduledJobsData[String(collector)].push({
+            jobID: result.jobID || '',
+            scheduledDate: datetime.split('T')[0],
+            status: 'Pending'
+        });
 
         resetAssignmentForm(true);
-        initCustomDropdowns();
-        filterRequests(false);
+        filterRequests();
+        buildCentreDropdownMenu();
+        checkRequiredFields();
     } catch (error) {
         alert(error.message || 'Error saving assignment.');
     } finally {
         if (confirmBtn) {
-            confirmBtn.innerHTML = originalBtnText || '✓ Confirm';
+            confirmBtn.innerHTML = originalBtnText;
             checkRequiredFields();
         }
     }
-}
-
-function resetAssignmentForm(clearSelectedRequest = false) {
-    if (clearSelectedRequest) {
-        updateSelectedRequestId(null);
-
-        const summaryDiv = document.getElementById('selectedRequestSummary');
-        if (summaryDiv) {
-            summaryDiv.innerHTML = '';
-        }
-
-        document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
-    }
-
-    const collectorText = document.getElementById('selectedCollectorText');
-    const vehicleText = document.getElementById('selectedVehicleText');
-    const centreText = document.getElementById('selectedCentreText');
-
-    if (collectorText) collectorText.textContent = 'Select a collector';
-    if (vehicleText) vehicleText.textContent = 'Select a vehicle';
-    if (centreText) centreText.textContent = 'Select a collection centre';
-
-    const collectorDropdown = document.getElementById('collectorDropdown');
-    const vehicleDropdown = document.getElementById('vehicleDropdown');
-    const centreDropdown = document.getElementById('centreDropdown');
-
-    if (collectorDropdown) delete collectorDropdown.dataset.selectedValue;
-    if (vehicleDropdown) delete vehicleDropdown.dataset.selectedValue;
-    if (centreDropdown) delete centreDropdown.dataset.selectedValue;
-
-    const scheduledDateTime = document.getElementById('scheduledDateTime');
-    const assignmentNotes = document.getElementById('assignmentNotes');
-    if (scheduledDateTime) scheduledDateTime.value = '';
-    if (assignmentNotes) assignmentNotes.value = '';
-
-    const collectorHint = document.getElementById('collectorHint');
-    const vehicleHint = document.getElementById('vehicleHint');
-    if (collectorHint) collectorHint.textContent = '';
-    if (vehicleHint) vehicleHint.textContent = '';
-
-    updateCapacityCircle(0);
-
-    const confirmBtn = document.getElementById('confirmAssignmentBtn');
-    if (confirmBtn) confirmBtn.disabled = true;
 }
 
 function addToTimeline(datetime, request, collectorName, vehicleName, centreName = '') {
@@ -653,9 +1220,9 @@ function addToTimeline(datetime, request, collectorName, vehicleName, centreName
         year: 'numeric'
     });
 
-    const cleanCollector = (collectorName || '').replace(/[🟢🔴]/g, '').trim();
-    const cleanVehicle = (vehicleName || '').replace(/[🟢🔴]/g, '').trim();
-    const cleanCentre = (centreName || '').trim();
+    const cleanCollector = String(collectorName || '').replace(/[🟢🔴]/g, '').trim();
+    const cleanVehicle = String(vehicleName || '').replace(/[🟢🔴]/g, '').trim();
+    const cleanCentre = String(centreName || '').trim();
 
     const details = [
         `assigned to ${cleanCollector}`,
@@ -668,7 +1235,7 @@ function addToTimeline(datetime, request, collectorName, vehicleName, centreName
     newItem.innerHTML = `
         <span class="timeline-time">${timeStr}</span>
         <span class="timeline-event">
-            <strong>#REQ${request?.id || ''}</strong> ${details}
+            <strong>${formatRequestCode(request?.id || '')}</strong> ${details}
         </span>
         <span class="timeline-date">${dateStr}</span>
     `;
@@ -680,47 +1247,471 @@ function addToTimeline(datetime, request, collectorName, vehicleName, centreName
     }
 }
 
-function updatePagination(totalItemsOverride = null) {
-    const totalItems = totalItemsOverride !== null ? totalItemsOverride : getFilteredRequests().length;
-    totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-
-    if (currentPage > totalPages) {
-        currentPage = totalPages;
+function resetAssignmentForm(clearSelectedRequest = false) {
+    if (clearSelectedRequest) {
+        updateSelectedRequestId(null);
+        const summaryDiv = document.getElementById('selectedRequestSummary');
+        if (summaryDiv) summaryDiv.innerHTML = '';
+        document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
     }
 
-    const prevBtn = document.querySelector('.pagination-controls .c-btn-small:first-child');
-    const nextBtn = document.querySelector('.pagination-controls .c-btn-small:last-child');
-    const pageIndicator = document.querySelector('.page-indicator');
+    clearCollectorSelection();
+    clearVehicleSelection();
+    clearCentreSelection();
 
-    if (prevBtn && nextBtn && pageIndicator) {
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.disabled = currentPage === totalPages || totalItems === 0;
-        pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
-    }
+    const scheduledDateTime = document.getElementById('scheduledDateTime');
+    const assignmentNotes = document.getElementById('assignmentNotes');
+
+    if (scheduledDateTime) scheduledDateTime.value = '';
+    if (assignmentNotes) assignmentNotes.value = '';
+
+    closeVehicleMaintenanceModal();
+    closeCollectorAvailabilityModal();
+
+    const confirmBtn = document.getElementById('confirmAssignmentBtn');
+    if (confirmBtn) confirmBtn.disabled = true;
 }
 
-function changePage(direction) {
-    if (direction === 'prev' && currentPage > 1) {
-        currentPage--;
-    } else if (direction === 'next' && currentPage < totalPages) {
-        currentPage++;
-    }
+function setupEventListeners() {
+    document.getElementById('requestFilter')?.addEventListener('change', filterRequests);
+    document.getElementById('requestSearch')?.addEventListener('input', filterRequests);
 
-    filterRequests(false);
+    document.getElementById('scheduledDateTime')?.addEventListener('change', function () {
+        refreshSelectionsAfterDateChange();
+    });
+
+    document.getElementById('confirmAssignmentBtn')?.addEventListener('click', confirmAssignment);
+    document.getElementById('resetAssignmentBtn')?.addEventListener('click', () => resetAssignmentForm(true));
+
+    document.getElementById('viewCollectorAvailability')?.addEventListener('click', openCollectorAvailabilityModal);
+    document.getElementById('viewVehicleStatus')?.addEventListener('click', openVehicleMaintenanceModal);
+    document.getElementById('closeVehicleMaintenanceModal')?.addEventListener('click', closeVehicleMaintenanceModal);
+
+    document.getElementById('vehicleMaintenanceModal')?.addEventListener('click', function (e) {
+        if (e.target.id === 'vehicleMaintenanceModal') {
+            closeVehicleMaintenanceModal();
+        }
+    });
+
+    document.getElementById('vehicleAvailabilityDatePicker')?.addEventListener('change', function (e) {
+        if (e.target.value) {
+            selectedVehicleAvailabilityDate = new Date(e.target.value);
+            selectedVehicleAvailabilityDate.setHours(0, 0, 0, 0);
+        } else {
+            selectedVehicleAvailabilityDate = null;
+        }
+        updateVehicleDateDisplay();
+        renderVehicleMaintenanceList();
+    });
+}
+
+function addOperationsEnhancementStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .popup-only-field {
+            pointer-events: none;
+            width: 100%;
+        }
+
+        .no-arrow-field {
+            justify-content: flex-start !important;
+            cursor: default !important;
+            padding-right: 1rem !important;
+        }
+
+        .popup-action-btn {
+            width: 46px;
+            min-width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .centre-select-field {
+            position: relative;
+            padding-right: 2.2rem !important;
+        }
+
+        .centre-select-field .arrow {
+            position: absolute;
+            right: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text-color);
+            pointer-events: none;
+        }
+
+        .centre-reason-text {
+            display: block;
+            font-size: 0.68rem;
+            margin-top: 0.18rem;
+            color: #d9534f;
+            line-height: 1.15;
+        }
+
+        .nicer-modal {
+            max-width: 980px;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .nicer-modal-header {
+            padding: 1.1rem 1.35rem;
+            background: linear-gradient(180deg, var(--sec-bg-color), var(--bg-color));
+            border-bottom: 1px solid var(--BlueGray);
+        }
+
+        .nicer-modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .plain-close-btn {
+            width: auto !important;
+            height: auto !important;
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            color: var(--Gray) !important;
+            font-size: 1.8rem !important;
+            line-height: 1 !important;
+        }
+
+        .plain-close-btn:hover {
+            background: transparent !important;
+            color: var(--text-color) !important;
+            transform: none !important;
+        }
+
+        .cleaner-toolbar,
+        .availability-controls,
+        .maintenance-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            padding: 0;
+            background: transparent;
+        }
+
+        .date-picker-small {
+            padding: 0.55rem 0.8rem;
+            border-radius: 12px;
+            border: 1px solid var(--BlueGray);
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 0.88rem;
+            outline: none;
+        }
+
+        .available-count-badge {
+            display: none;
+            align-items: center;
+            gap: 0.45rem;
+            border-radius: 999px;
+            padding: 0.45rem 0.8rem;
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .collectors-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .collector-availability-card {
+            background: var(--sec-bg-color);
+            border: 1px solid var(--BlueGray);
+            border-left: 4px solid #2ecc71;
+            border-radius: 20px;
+            padding: 1rem;
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        .collector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.9rem;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .collector-name {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .scheduled-jobs-section {
+            margin-top: 0.4rem;
+        }
+
+        .section-title {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.55rem;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .scheduled-jobs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+
+        .scheduled-job-item {
+            background: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 14px;
+            padding: 0.7rem 0.8rem;
+        }
+
+        .scheduled-job-item .job-status-mini {
+        display: none !important;
+        }
+
+        .job-id-display {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .job-id-mini {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--MainBlue);
+            background: var(--LowMainBlue);
+            padding: 0.22rem 0.65rem;
+            border-radius: 999px;
+        }
+
+        .job-date-simple,
+        .empty-jobs p,
+        .maintenance-empty-small,
+        .maintenance-vehicle-meta,
+        .maintenance-notes {
+            font-size: 0.82rem;
+            color: var(--Gray);
+        }
+
+        .empty-jobs {
+            background: var(--bg-color);
+            border: 1px solid var(--BlueGray);
+            border-radius: 14px;
+            padding: 0.7rem 0.8rem;
+        }
+
+        .select-collector-btn {
+            width: auto;
+            min-width: 142px;
+            padding: 0.5rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-top: 0.8rem;
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            border: none;
+            background: var(--MainBlue);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .maintenance-vehicle-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .maintenance-vehicle-card {
+            border-radius: 20px;
+            padding: 1rem;
+            background: var(--sec-bg-color);
+            border: 1px solid var(--BlueGray);
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        .vehicle-available-card { border-left: 4px solid #2ecc71; }
+        .vehicle-blocked-card { border-left: 4px solid #e74c3c; }
+
+        .maintenance-vehicle-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.8rem;
+        }
+
+        .maintenance-vehicle-name {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .maintenance-badge {
+            border-radius: 999px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .maintenance-badge.blocked-records {
+            background: #fdeaea;
+            color: #c0392b;
+        }
+
+        .maintenance-badge.has-records {
+            background: #eaf6ff;
+            color: var(--MainBlue);
+        }
+
+        .maintenance-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+
+        .maintenance-item {
+            background: var(--bg-color);
+            border-radius: 12px;
+            padding: 0.75rem;
+        }
+
+        .maintenance-item-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.4rem;
+        }
+
+        .maintenance-status {
+            padding: 0.28rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .maintenance-status.scheduled {
+            background: #fff4d6;
+            color: #8a6d1d;
+        }
+
+        .maintenance-status.in-progress {
+            background: #eaf2ff;
+            color: #2853a6;
+        }
+
+        .maintenance-status.completed {
+            background: #e7f8ee;
+            color: #1d7d46;
+        }
+
+        .select-vehicle-btn {
+            border: none;
+            background: var(--MainBlue);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .small-select-btn {
+            width: auto;
+            min-width: 130px;
+            padding: 0.48rem 0.78rem;
+            font-size: 0.78rem;
+            border-radius: 11px;
+            margin-top: 0.8rem;
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .select-vehicle-btn:disabled {
+            background: #c7ced8;
+            cursor: not-allowed;
+        }
+
+        .empty-state,
+        .maintenance-empty {
+            text-align: center;
+            padding: 2.2rem 1rem;
+            color: var(--Gray);
+        }
+
+        .empty-state i,
+        .maintenance-empty i {
+            font-size: 2.3rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.55;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+        }
+
+        .status-dot.green { background: #2ecc71; }
+        .status-dot.red { background: #e74c3c; }
+
+        @media (max-width: 900px) {
+            .maintenance-vehicle-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .collector-header,
+            .maintenance-vehicle-top,
+            .maintenance-item-top,
+            .job-id-display {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    currentPage = 1;
-    itemsPerPage = 5;
-    totalPages = 1;
-
-    initCustomDropdowns();
-    loadPendingRequests();
+    initCentreDropdown();
+    filterRequests();
     autoSelectRequestFromURL();
-    loadCollectors();
-    loadVehicles();
-    loadCentres();
     loadRecentAssignments();
     setupEventListeners();
     setMinDateTime();
+    setMinPopupDates();
+    addOperationsEnhancementStyles();
+    checkRequiredFields();
 });
