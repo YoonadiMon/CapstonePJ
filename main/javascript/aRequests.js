@@ -117,10 +117,19 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderRequestCards() {
         if (!requestsContainer) return;
 
-        if (filteredRequests.length === 0) {
-            requestsContainer.innerHTML = '<div class="no-results">No pending requests found</div>';
-            return;
-        }
+    if (filteredRequests.length === 0) {
+    requestsContainer.innerHTML = `
+        <div class="no-results">No pending requests found</div>
+
+        <div class="view-all-requests-wrap">
+            <a href="../../html/admin/aCollectionRequests.php" class="view-all-requests-btn">
+                <span>View All Requests</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    `;
+    return;
+}
 
         let html = '';
 

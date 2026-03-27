@@ -19,8 +19,7 @@ if (!isset($_SESSION['userType']) || $_SESSION['userType'] !== 'admin') {
 }
 
 // CURRENT ADMIN FROM SESSION
-$_SESSION['admin_id'] = $_SESSION['userID'];
-$admin_id = $_SESSION['admin_id'];
+$admin_id = $_SESSION['userID'];
 
 // HELPERS
 function e($value) {
@@ -209,7 +208,7 @@ $sqlAdmin = "
     SELECT u.*
     FROM tblusers u
     INNER JOIN tbladmin a ON u.userID = a.adminID
-    WHERE u.userID = '$admin_id'
+    WHERE u.userID = " . intval($admin_id) . "
     LIMIT 1
 ";
 
@@ -220,6 +219,9 @@ if (!$resultAdmin || mysqli_num_rows($resultAdmin) === 0) {
 }
 
 $admin = mysqli_fetch_assoc($resultAdmin);
+
+$firstName = explode(' ', $admin['fullname'])[0] ?? 'Admin';
+$adminInitials = getInitials($admin['fullname'] ?? '');
 
 // DASHBOARD STATS
 $totalUsers = 0;

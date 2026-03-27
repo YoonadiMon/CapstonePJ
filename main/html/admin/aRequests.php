@@ -2,8 +2,8 @@
 session_start();
 include("../../php/dbConn.php");
 
-// // check if user is logged in
-// include("../../php/sessionCheck.php");  
+// check if user is logged in
+include("../../php/sessionCheck.php");  
 
 function sanitize($val) {
     return htmlspecialchars(trim((string)$val), ENT_QUOTES, 'UTF-8');
@@ -24,23 +24,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if ($action === 'approve') {
-        $stmt = $conn->prepare("
-            UPDATE tblcollection_request
-            SET status = 'Approved', rejectionReason = NULL
-            WHERE requestID = ? AND status = 'Pending'
-        ");
-        $stmt->bind_param("i", $requestID);
+if ($action === 'approve') {
+    $stmt = $conn->prepare("
+        UPDATE tblcollection_request
+        SET status = 'Approved', rejectionReason = NULL
+        WHERE requestID = ? AND status = 'Pending'
+    ");
+    $stmt->bind_param("i", $requestID);
 
-        if ($stmt->execute() && $stmt->affected_rows > 0) {
-            $_SESSION['successMsg'] = 'Request approved successfully.';
-        } else {
-            $_SESSION['errorMsg'] = 'Failed to approve request or request is no longer pending.';
-        }
-
-        header('Location: ' . $_SERVER['PHP_SELF']);
+    if ($stmt->execute() && $stmt->affected_rows > 0) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'requestID' => $requestID,
+            'message' => 'Request approved successfully.'
+        ]);
+        exit;
+    } else {
+        header('Content-Type: application/json', true, 400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to approve request or request is no longer pending.'
+        ]);
         exit;
     }
+}
 
     if ($action === 'reject') {
         $reason = trim($_POST['reason'] ?? '');
@@ -335,7 +343,7 @@ $requestsJson = json_encode(
                                 <div class="info-value" id="detailAddress">—</div>
                             </div>
                             <div class="info-row">
-                                <div class="info-label">date</div>
+                                <div class="info-label">preffered date</div>
                                 <div class="info-value" id="detailDate">—</div>
                             </div>
                         </div>
@@ -396,8 +404,8 @@ $requestsJson = json_encode(
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aCollectionRequests.php">Collection Requests</a><br>
-                <a href="../../html/admin/aCollectionJobs.php">Collection Jobs</a><br>
+                <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
+                <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
                 <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
