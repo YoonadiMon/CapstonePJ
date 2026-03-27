@@ -1848,3 +1848,134 @@
 .priority-option.high {
     color: #d32f2f;
 }
+
+/* Subject field */
+#issueSubject {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+#issueSubject:focus {
+    border-color: var(--MainBlue);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.12);
+}
+
+.issue-form-group input::placeholder,
+.issue-form-group textarea::placeholder {
+    color: var(--Gray);
+    opacity: 0.7;
+    font-weight: normal;
+}
+
+.issue-form-group label i.fa-asterisk {
+    color: #ff4757;
+    font-size: 0.7rem;
+    margin-left: 0.2rem;
+}
+
+.issue-form-group input:required:invalid,
+.issue-form-group select:required:invalid,
+.issue-form-group textarea:required:invalid {
+    border-left: 3px solid #ff4757;
+}
+
+.issue-form-group input:required:valid,
+.issue-form-group select:required:valid,
+.issue-form-group textarea:required:valid {
+    border-left: 3px solid #2ecc71;
+}
+
+.issue-form-group input:focus,
+.issue-form-group select:focus,
+.issue-form-group textarea:focus {
+    outline: none;
+    border-color: var(--MainBlue);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.12);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.dark-mode .issue-form-group input:required:invalid,
+.dark-mode .issue-form-group select:required:invalid,
+.dark-mode .issue-form-group textarea:required:invalid {
+    border-left: 3px solid #ff6b6b;
+}
+
+.dark-mode .issue-form-group input:required:valid,
+.dark-mode .issue-form-group select:required:valid,
+.dark-mode .issue-form-group textarea:required:valid {
+    border-left: 3px solid #51cf66;
+}
+
+/* ===== FIXES ADDED ===== */
+/* Fix for box-sizing on modal inputs */
+.report-issue-content * {
+    box-sizing: border-box;
+}
+
+/* Fix for responsive modal on small screens */
+@media (max-width: 640px) {
+    .report-issue-content {
+        max-width: 95%;
+        max-height: 90vh;
+    }
+    
+    .report-issue-header {
+        padding: 1rem;
+    }
+    
+    .report-issue-body {
+        padding: 1rem;
+    }
+    
+    .report-issue-footer {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+    }
+    
+    .report-issue-footer .btn-primary,
+    .report-issue-footer .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .issue-priority {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .priority-option {
+        width: 100%;
+    }
+}
+
+.report-issue-modal.active .report-issue-content {
+    animation: modalFadeUp 0.22s ease;
+}
+
+.report-issue-close:focus-visible {
+    outline: 2px solid var(--MainBlue);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary:disabled:hover {
+    transform: none;
+}
+
+.custom-marker {
+    background: none;
+    border: none;
+    font-size: 20px;
+    text-shadow: 0 0 2px white;
+}
+
+.custom-marker i {
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+}

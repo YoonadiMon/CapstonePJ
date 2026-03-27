@@ -3,7 +3,7 @@ session_start();
 include("../../php/dbConn.php");
 
 // // check if user is logged in
-// include("../../php/sessionCheck.php");
+include("../../php/sessionCheck.php");
 
 if (!isset($conn)) {
     die("Database connection not found.");
@@ -70,6 +70,39 @@ function buildAddress(...$parts): string
         }
     }
     return implode(', ', $clean);
+}
+
+function geocodeAddress($address) {
+    static $cache = [];
+    $cacheKey = md5($address);
+    
+    if (isset($cache[$cacheKey])) {
+        return $cache[$cacheKey];
+    }
+    
+    $url = "https://nominatim.openstreetmap.org/search?q=" . urlencode($address) . "&format=json&limit=1";
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'AfterVolt/1.0');
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    if ($response) {
+        $data = json_decode($response, true);
+        if (!empty($data)) {
+            $result = [
+                'lat' => (float)$data[0]['lat'],
+                'lng' => (float)$data[0]['lng']
+            ];
+            $cache[$cacheKey] = $result;
+            return $result;
+        }
+    }
+    
+    return ['lat' => 3.1390, 'lng' => 101.6869];
 }
 
 // Handover Required
@@ -269,8 +302,7 @@ $activeCollectorsSql = "
         centreData.centrePostcode
 
     FROM tblcollector c
-    INNER JOIN tblusers u
-        ON u.userID = c.collectorID
+    INNER JOIN tblusers u ON u.userID = c.collectorID
 
     LEFT JOIN (
         SELECT
@@ -286,16 +318,11 @@ $activeCollectorsSql = "
             SELECT collectorID, MAX(jobID) AS latestJobID
             FROM tbljob
             GROUP BY collectorID
-        ) latest
-            ON latest.latestJobID = j1.jobID
-    ) j
-        ON j.collectorID = c.collectorID
+        ) latest ON latest.latestJobID = j1.jobID
+    ) j ON j.collectorID = c.collectorID
 
-    LEFT JOIN tblvehicle v
-        ON v.vehicleID = j.vehicleID
-
-    LEFT JOIN tblcollection_request cr
-        ON cr.requestID = j.requestID
+    LEFT JOIN tblvehicle v ON v.vehicleID = j.vehicleID
+    LEFT JOIN tblcollection_request cr ON cr.requestID = j.requestID
 
     LEFT JOIN (
         SELECT
@@ -306,78 +333,67 @@ $activeCollectorsSql = "
             c2.state AS centreState,
             c2.postcode AS centrePostcode
         FROM tblitem i
-        INNER JOIN tblcentre c2
-            ON c2.centreID = i.centreID
+        INNER JOIN tblcentre c2 ON c2.centreID = i.centreID
         INNER JOIN (
             SELECT requestID, MIN(itemID) AS firstItemID
             FROM tblitem
             WHERE centreID IS NOT NULL
             GROUP BY requestID
-        ) firstItem
-            ON firstItem.firstItemID = i.itemID
-    ) centreData
-        ON centreData.requestID = j.requestID
+        ) firstItem ON firstItem.firstItemID = i.itemID
+    ) centreData ON centreData.requestID = j.requestID
 
     WHERE c.status IN ('active', 'on duty')
-    ORDER BY
-        CASE
-            WHEN j.status = 'Ongoing' THEN 0
-            ELSE 1
-        END,
-        u.fullname ASC
+    ORDER BY CASE WHEN j.status = 'Ongoing' THEN 0 ELSE 1 END, u.fullname ASC
 ";
+
 $activeCollectorRows = queryAll($conn, $activeCollectorsSql);
 
 $activeCollectors = [];
-$collectorSelectOptions = [];
 
 foreach ($activeCollectorRows as $row) {
-    $jobIdFormatted = !empty($row['jobID'])
-        ? 'JOB' . str_pad((string)$row['jobID'], 3, '0', STR_PAD_LEFT)
-        : null;
-
     $hasActiveJob = ((string)$row['jobStatus'] === 'Ongoing');
-
-    $pickupAddressFull = buildAddress(
+    
+    $pickupFullAddress = buildAddress(
         $row['pickupAddress'] ?? '',
         $row['pickupState'] ?? '',
         $row['pickupPostcode'] ?? '',
         'Malaysia'
     );
-
-    $centreAddressFull = buildAddress(
+    
+    $centreFullAddress = buildAddress(
         $row['centreAddress'] ?? '',
         $row['centreState'] ?? '',
         $row['centrePostcode'] ?? '',
         'Malaysia'
     );
-
+    
+    $pickupCoords = null;
+    $centreCoords = null;
+    
+    if ($hasActiveJob && !empty($pickupFullAddress) && !empty($centreFullAddress)) {
+        $pickupCoords = geocodeAddress($pickupFullAddress);
+        $centreCoords = geocodeAddress($centreFullAddress);
+    }
+    
     $activeCollectors[] = [
         'id' => 'C' . str_pad((string)$row['collectorID'], 3, '0', STR_PAD_LEFT),
         'collectorID' => (int)$row['collectorID'],
         'name' => $row['fullname'],
-        'vehicle' => !empty($row['plateNum'])
-            ? trim(($row['vehicleType'] ?? '') . ' ' . ($row['plateNum'] ?? ''))
-            : 'No vehicle assigned',
+        'vehicle' => !empty($row['plateNum']) ? trim(($row['vehicleType'] ?? '') . ' ' . ($row['plateNum'] ?? '')) : 'No vehicle assigned',
         'status' => $hasActiveJob ? 'busy' : 'online',
-        'jobId' => $hasActiveJob ? $jobIdFormatted : null,
+        'jobId' => $hasActiveJob ? ('JOB' . str_pad((string)$row['jobID'], 3, '0', STR_PAD_LEFT)) : null,
         'requestID' => !empty($row['requestID']) ? (int)$row['requestID'] : null,
         'jobStatus' => $row['jobStatus'] ?? '',
-        'scheduledDate' => $row['scheduledDate'] ?? '',
-        'scheduledTime' => $row['scheduledTime'] ?? '',
-        'pickupAddress' => $pickupAddressFull,
+        'pickupAddress' => $pickupFullAddress,
         'pickupLabel' => buildAddress($row['pickupAddress'] ?? '', $row['pickupState'] ?? '', $row['pickupPostcode'] ?? ''),
+        'pickupLat' => $pickupCoords ? $pickupCoords['lat'] : null,
+        'pickupLng' => $pickupCoords ? $pickupCoords['lng'] : null,
         'centreName' => $row['centreName'] ?? '',
-        'centreAddress' => $centreAddressFull,
+        'centreAddress' => $centreFullAddress,
         'centreLabel' => buildAddress($row['centreAddress'] ?? '', $row['centreState'] ?? '', $row['centrePostcode'] ?? ''),
-        'currentRoad' => $hasActiveJob
-            ? ('Pickup: ' . buildAddress($row['pickupAddress'] ?? '', $row['pickupState'] ?? '', $row['pickupPostcode'] ?? ''))
-            : 'Waiting for assignment'
-    ];
-
-    $collectorSelectOptions[] = [
-        'collectorID' => (int)$row['collectorID'],
-        'name' => $row['fullname']
+        'centreLat' => $centreCoords ? $centreCoords['lat'] : null,
+        'centreLng' => $centreCoords ? $centreCoords['lng'] : null,
+        'currentRoad' => $hasActiveJob ? ('Pickup: ' . buildAddress($row['pickupAddress'] ?? '', $row['pickupState'] ?? '', $row['pickupPostcode'] ?? '')) : 'Waiting for assignment'
     ];
 }
 
@@ -466,8 +482,14 @@ $jsData = [
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+    
+    <!-- Leaflet 1.9.4 - Stable version without CSP issues -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet Routing Machine (compatible with Leaflet 1.9.4) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 </head>
 <body>
     <div id="cover" class="" onclick="hideMenu()"></div>
@@ -522,13 +544,19 @@ $jsData = [
             </a>
         </section>
     </header>
-    <hr>
-
-    <main>
-        <div class="page-container">
-            <div class="ops-header">
-                <h1>Collection Jobs</h1>
-            </div>
+<hr>
+<main>
+    <div class="page-container">
+        <div class="ops-header">
+            <h1>Collection Jobs</h1>
+        </div>
+        
+       <div style="margin-bottom: 0.7rem; margin-top: -1rem;">
+    <button onclick="goBackToJobs()" style="background: none; border: none; color: var(--MainBlue); cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0;">
+        <i class="fas fa-arrow-left"></i>
+        Back to Jobs
+    </button>
+</div>
 
             <div class="dashboard-grid">
                 <div class="jobs-column">
@@ -678,8 +706,8 @@ $jsData = [
         <section class="c-footer-links-section">
             <div>
                 <b>Management</b><br>
-                <a href="../../html/admin/aCollectionRequests.php">Collection Requests</a><br>
-                <a href="../../html/admin/aCollectionJobs.php">Collection Jobs</a><br>
+                <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
+                <a href="../../html/admin/aJobs.php">Collection Jobs</a><br>
                 <a href="../../html/admin/aIssue.php">Issue</a><br>
             </div>
             <div>
@@ -734,94 +762,104 @@ $jsData = [
         </div>
     </div>
 
+    <!-- Report Issue Modal - Updated to match database schema -->
     <div class="report-issue-modal" id="reportIssueModal">
-    <div class="report-issue-content">
-        <div class="report-issue-header">
-            <h3><i class="fas fa-flag"></i> Report Issue</h3>
-            <button type="button" class="report-issue-close" id="closeReportIssueModal">&times;</button>
-        </div>
+        <div class="report-issue-content">
+            <div class="report-issue-header">
+                <h3><i class="fas fa-flag"></i> Report Issue</h3>
+                <button type="button" class="report-issue-close" id="closeReportIssueModal">&times;</button>
+            </div>
 
-        <form id="reportIssueForm">
-            <div class="report-issue-body">
-                <div class="issue-form-group">
-                    <label for="issueJobId">
-                        <i class="fas fa-briefcase"></i> Job ID
-                    </label>
-                    <input type="text" id="issueJobId" name="jobId" readonly>
-                </div>
-
-                <div class="issue-form-group">
-                    <label for="issueRequestId">
-                        <i class="fas fa-file-alt"></i> Request ID
-                    </label>
-                    <input type="text" id="issueRequestId" name="requestId" readonly>
-                </div>
-
-                <div class="issue-form-group">
-                    <label for="issueType">
-                        <i class="fas fa-exclamation-circle"></i> Issue Type
-                    </label>
-                    <select id="issueType" name="issueType" required>
-                        <option value="">-- Select Issue Type --</option>
-                        <option value="Operational">Operational</option>
-                        <option value="Vehicle">Vehicle</option>
-                        <option value="Safety">Safety</option>
-                        <option value="Technical">Technical</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-
-                <div class="issue-form-group" id="otherIssueGroup" style="display: none;">
-                    <label for="otherIssueText">
-                        <i class="fas fa-pen"></i> Specify Issue
-                    </label>
-                    <input type="text" id="otherIssueText" name="otherIssueText" placeholder="Type the issue here...">
-                </div>
-
-                <div class="issue-form-group">
-                    <label>
-                        <i class="fas fa-signal"></i> Priority
-                    </label>
-                    <div class="issue-priority">
-                        <label class="priority-option low">
-                            <input type="radio" name="priority" value="Low" required>
-                            Low
+            <form id="reportIssueForm">
+                <div class="report-issue-body">
+                    <div class="issue-form-group">
+                        <label for="issueJobId">
+                            <i class="fas fa-briefcase"></i> Job ID
                         </label>
-                        <label class="priority-option medium">
-                            <input type="radio" name="priority" value="Medium" required>
-                            Medium
+                        <input type="text" id="issueJobId" name="jobId" readonly>
+                    </div>
+
+                    <div class="issue-form-group">
+                        <label for="issueRequestId">
+                            <i class="fas fa-file-alt"></i> Request ID
                         </label>
-                        <label class="priority-option high">
-                            <input type="radio" name="priority" value="High" required>
-                            High
+                        <input type="text" id="issueRequestId" name="requestId" readonly>
+                    </div>
+
+                    <div class="issue-form-group">
+                        <label for="issueSubject">
+                            <i class="fas fa-heading"></i> Subject <span class="required">*</span>
                         </label>
+                        <input type="text" id="issueSubject" name="subject" placeholder="Brief summary of the issue" required>
+                    </div>
+
+                    <div class="issue-form-group">
+                        <label for="issueType">
+                            <i class="fas fa-exclamation-circle"></i> Issue Type <span class="required">*</span>
+                        </label>
+                        <select id="issueType" name="issueType" required>
+                            <option value="">-- Select Issue Type --</option>
+                            <option value="Operational">Operational</option>
+                            <option value="Vehicle">Vehicle</option>
+                            <option value="Safety">Safety</option>
+                            <option value="Technical">Technical</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="issue-form-group" id="otherIssueGroup" style="display: none;">
+                        <label for="otherIssueText">
+                            <i class="fas fa-pen"></i> Specify Issue
+                        </label>
+                        <input type="text" id="otherIssueText" name="otherIssueText" placeholder="Type the issue here...">
+                    </div>
+
+                    <div class="issue-form-group">
+                        <label>
+                            <i class="fas fa-signal"></i> Severity <span class="required">*</span>
+                        </label>
+                        <div class="issue-priority">
+                            <label class="priority-option low">
+                                <input type="radio" name="severity" value="Low" required>
+                                Low
+                            </label>
+                            <label class="priority-option medium">
+                                <input type="radio" name="severity" value="Medium" required>
+                                Medium
+                            </label>
+                            <label class="priority-option high">
+                                <input type="radio" name="severity" value="High" required>
+                                High
+                            </label>
+                            <label class="priority-option critical">
+                                <input type="radio" name="severity" value="Critical" required>
+                                Critical
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="issue-form-group">
+                        <label for="issueDescription">
+                            <i class="fas fa-pen"></i> Description <span class="required">*</span>
+                        </label>
+                        <textarea id="issueDescription" name="description" placeholder="Describe the issue in detail..." required></textarea>
                     </div>
                 </div>
 
-                <div class="issue-form-group">
-                    <label for="issueDescription">
-                        <i class="fas fa-pen"></i> Description
-                    </label>
-                    <textarea id="issueDescription" name="description" placeholder="Describe the issue..." required></textarea>
+                <div class="report-issue-footer">
+                    <button type="button" class="btn-secondary" id="cancelReportIssueBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit Issue
+                    </button>
                 </div>
-            </div>
-
-            <div class="report-issue-footer">
-                <button type="button" class="btn-secondary" id="cancelReportIssueBtn">Cancel</button>
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-paper-plane"></i> Submit Issue
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
 
     <script>
         window.collectionJobsData = <?php echo json_encode($jsData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     </script>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <script src="/main/javascript/mainScript.js"></script>
     <script src="/main/javascript/aCollectionJobs.js?v=<?php echo time(); ?>"></script>
 </body>

@@ -1,10 +1,22 @@
-let map = null;
-let markersLayer = null;
-let routeLayer = null;
-let selectedCollectorId = null;
-let tilesLayer = null;
+var map = null;
+var markersLayer = null;
+var routeLayer = null;
+var selectedCollectorId = null;
+var tilesLayer = null;
 
-const collectionJobsData = window.collectionJobsData || {
+// GPS Simulation Variables
+var simulationInterval = null;
+var routeLine = null;
+var movingMarker = null;
+var currentPositionIndex = 0;
+var routeCoordinates = [];
+var totalRouteTime = 0;
+var totalRouteDistance = 0;
+
+// Random simulation states for different collectors
+var collectorSimulationStates = {};
+
+var collectionJobsData = window.collectionJobsData || {
     handoverJobs: [],
     delayedJobs: [],
     pendingDropoffJobs: [],
@@ -20,20 +32,366 @@ const collectionJobsData = window.collectionJobsData || {
     centresAvailable: 0
 };
 
-const geocodeCache = {};
-let mapLayersVisible = true;
+var mapLayersVisible = true;
 
-document.addEventListener('DOMContentLoaded', function () {
+// OSRM Routing Service URL
+var OSRM_URL = 'https://router.project-osrm.org/route/v1/driving/';
+var routeCache = {};
+
+// Fetch real road route from OSRM
+async function fetchRealRoute(startLat, startLng, endLat, endLng) {
+    var cacheKey = startLat + ',' + startLng + '|' + endLat + ',' + endLng;
+    
+    if (routeCache[cacheKey]) {
+        return routeCache[cacheKey];
+    }
+    
+    var url = OSRM_URL + startLng + ',' + startLat + ';' + endLng + ',' + endLat + '?overview=full&geometries=geojson';
+    
+    try {
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
+        
+        var response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        var data = await response.json();
+        
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            var route = data.routes[0];
+            var coordinates = route.geometry.coordinates.map(function(coord) { 
+                return [coord[1], coord[0]]; 
+            });
+            var duration = route.duration;
+            var distance = route.distance;
+            
+            var result = {
+                coordinates: coordinates,
+                duration: duration,
+                distance: distance,
+                summary: route.legs[0].summary || 'Route'
+            };
+            
+            routeCache[cacheKey] = result;
+            return result;
+        }
+    } catch (error) {
+        console.error('OSRM error:', error);
+    }
+    
+    return null;
+}
+
+// Generate smooth curve route as fallback (simulates road curves)
+function generateCurvedRoute(startLat, startLng, endLat, endLng, pointsCount) {
+    pointsCount = pointsCount || 50;
+    var coordinates = [];
+    
+    // Add control points to create a realistic curved path
+    var midLat = (startLat + endLat) / 2;
+    var midLng = (startLng + endLng) / 2;
+    
+    // Create a perpendicular offset to simulate road curves
+    var dx = endLng - startLng;
+    var dy = endLat - startLat;
+    var offset = Math.sqrt(dx * dx + dy * dy) * 0.15;
+    
+    // Random curve direction
+    var curveDirection = Math.random() > 0.5 ? 1 : -1;
+    
+    for (var i = 0; i <= pointsCount; i++) {
+        var t = i / pointsCount;
+        
+        // Bezier curve for smooth road-like path
+        var bezierT = t;
+        var lat = Math.pow(1 - bezierT, 2) * startLat + 
+                  2 * (1 - bezierT) * bezierT * (midLat + curveDirection * offset * Math.sin(bezierT * Math.PI)) + 
+                  Math.pow(bezierT, 2) * endLat;
+        var lng = Math.pow(1 - bezierT, 2) * startLng + 
+                  2 * (1 - bezierT) * bezierT * (midLng + curveDirection * offset * Math.cos(bezierT * Math.PI)) + 
+                  Math.pow(bezierT, 2) * endLng;
+        
+        coordinates.push([lat, lng]);
+    }
+    
+    // Calculate distance
+    var R = 6371e3;
+    var totalDist = 0;
+    for (var j = 1; j < coordinates.length; j++) {
+        var lat1 = coordinates[j-1][0] * Math.PI / 180;
+        var lat2 = coordinates[j][0] * Math.PI / 180;
+        var lng1 = coordinates[j-1][1] * Math.PI / 180;
+        var lng2 = coordinates[j][1] * Math.PI / 180;
+        var dLat = lat2 - lat1;
+        var dLng = lng2 - lng1;
+        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1) * Math.cos(lat2) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        totalDist += R * c;
+    }
+    
+    var estimatedSpeed = 13.89;
+    var duration = totalDist / estimatedSpeed;
+    
+    return {
+        coordinates: coordinates,
+        duration: duration,
+        distance: totalDist,
+        summary: 'Road Route'
+    };
+}
+
+// Get random simulation state for a collector
+function getRandomSimulationState(collectorId) {
+    if (!collectorSimulationStates[collectorId]) {
+        var randomValue = Math.random();
+        var isArrived = randomValue < 0.3;
+        collectorSimulationStates[collectorId] = {
+            isArrived: isArrived,
+            progress: isArrived ? 100 : Math.random() * 80,
+            startTime: Date.now()
+        };
+    }
+    return collectorSimulationStates[collectorId];
+}
+
+// Start GPS simulation with real road routing
+async function startGPSSimulation(collector) {
+    if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+    }
+    
+    if (!collector.pickupLat || !collector.pickupLng || !collector.centreLat || !collector.centreLng) {
+        console.warn('Missing coordinates for simulation');
+        return;
+    }
+    
+    var simulationState = getRandomSimulationState(collector.id);
+    var isArrived = simulationState.isArrived;
+    var initialProgress = isArrived ? 100 : simulationState.progress;
+    
+    var routeEta = document.getElementById('routeEta');
+    if (routeEta) {
+        routeEta.textContent = isArrived ? '' : 'Loading route...';
+    }
+    
+    showLoadingSpinner();
+    
+    // Try to fetch real road route from OSRM
+    var routeData = await fetchRealRoute(
+        collector.pickupLat, collector.pickupLng,
+        collector.centreLat, collector.centreLng
+    );
+    
+    // Fallback to curved route if OSRM fails
+    if (!routeData) {
+        console.log('Using curved route fallback');
+        routeData = generateCurvedRoute(
+            collector.pickupLat, collector.pickupLng,
+            collector.centreLat, collector.centreLng
+        );
+    }
+    
+    hideLoadingSpinner();
+    
+    routeCoordinates = routeData.coordinates;
+    totalRouteTime = routeData.duration;
+    totalRouteDistance = routeData.distance;
+    var totalDistanceKm = (totalRouteDistance / 1000).toFixed(1);
+    
+    var startIndex = Math.floor((initialProgress / 100) * (routeCoordinates.length - 1));
+    currentPositionIndex = Math.max(0, Math.min(startIndex, routeCoordinates.length - 1));
+    
+    var remainingTime = totalRouteTime * (1 - (initialProgress / 100));
+    var remainingMinutes = Math.round(remainingTime / 60);
+    var remainingEta = remainingMinutes < 60 ? remainingMinutes + ' min' : Math.floor(remainingMinutes / 60) + 'h ' + (remainingMinutes % 60) + 'm';
+    
+    if (routeEta) {
+        if (isArrived) {
+            routeEta.textContent = '';
+        } else {
+            routeEta.textContent = 'ETA: ' + remainingEta + ' | ' + totalDistanceKm + ' km | ' + Math.round(initialProgress) + '%';
+        }
+    }
+    
+    if (routeLayer) {
+        routeLayer.clearLayers();
+    }
+    
+    var latLngs = [];
+    for (var i = 0; i < routeCoordinates.length; i++) {
+        latLngs.push([routeCoordinates[i][0], routeCoordinates[i][1]]);
+    }
+    
+    routeLine = L.polyline(latLngs, {
+        color: isArrived ? '#4caf50' : '#2196f3',
+        weight: 5,
+        opacity: 0.9,
+        lineJoin: 'round',
+        lineCap: 'round'
+    }).addTo(routeLayer);
+    
+    var startMarker = L.marker([collector.pickupLat, collector.pickupLng], {
+        icon: L.divIcon({
+            className: 'route-marker',
+            html: '<i class="fas fa-circle" style="color: #4caf50; font-size: 12px;"></i>',
+            iconSize: [12, 12]
+        })
+    }).addTo(routeLayer);
+    startMarker.bindPopup(escapeHtml(collector.pickupLabel || ''));
+    
+    var endMarker = L.marker([collector.centreLat, collector.centreLng], {
+        icon: L.divIcon({
+            className: 'route-marker',
+            html: '<i class="fas fa-circle" style="color: #f44336; font-size: 12px;"></i>',
+            iconSize: [12, 12]
+        })
+    }).addTo(routeLayer);
+    endMarker.bindPopup(escapeHtml(collector.centreLabel || 'Centre'));
+    
+    var currentPosition = routeCoordinates[currentPositionIndex];
+    var markerHtml = '';
+    
+    if (isArrived) {
+        markerHtml = '<i class="fas fa-check-circle" style="color: #4caf50; font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>';
+    } else {
+        markerHtml = '<i class="fas fa-truck-moving" style="color: #ff9800; font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); animation: bounce 0.5s ease infinite;"></i>';
+    }
+    
+    movingMarker = L.marker([currentPosition[0], currentPosition[1]], {
+        icon: L.divIcon({
+            className: 'moving-vehicle-marker',
+            html: markerHtml,
+            iconSize: [28, 28]
+        }),
+        zIndexOffset: 1000
+    }).addTo(routeLayer);
+    
+    var vehicleDisplay = collector.vehicle || 'Vehicle';
+    movingMarker.bindPopup(vehicleDisplay).openPopup();
+    
+    if (isArrived) {
+        var routeCurrentLocation = document.getElementById('routeCurrentLocation');
+        if (routeCurrentLocation) routeCurrentLocation.textContent = '';
+        
+        var progressBar = document.getElementById('routeProgressBar');
+        if (progressBar) progressBar.style.width = '100%';
+        
+        showEtaBubble(collector.centreLat, collector.centreLng, '✓ ARRIVED', false);
+        
+        return;
+    }
+    
+    map.setView([currentPosition[0], currentPosition[1]], 13);
+    
+    var elapsedTime = (initialProgress / 100) * totalRouteTime * 1000;
+    var lastTimestamp = Date.now();
+    var routeEtaElement = routeEta;
+    var vehicleText = collector.vehicle || 'Vehicle';
+    var centreLatVal = collector.centreLat;
+    var centreLngVal = collector.centreLng;
+    
+    simulationInterval = setInterval(function() {
+        var now = Date.now();
+        var deltaTime = Math.min(100, now - lastTimestamp);
+        lastTimestamp = now;
+        elapsedTime = elapsedTime + deltaTime;
+        
+        var progress = Math.min(1, elapsedTime / (totalRouteTime * 1000));
+        var targetIndex = Math.floor(progress * (routeCoordinates.length - 1));
+        
+        if (targetIndex > currentPositionIndex && targetIndex < routeCoordinates.length) {
+            currentPositionIndex = targetIndex;
+            var position = routeCoordinates[currentPositionIndex];
+            
+            movingMarker.setLatLng([position[0], position[1]]);
+            
+            var remainingTimeVal = totalRouteTime - (elapsedTime / 1000);
+            var remainingMinutesVal = Math.max(0, Math.round(remainingTimeVal / 60));
+            var remainingEtaVal = remainingMinutesVal < 60 ? remainingMinutesVal + ' min' : Math.floor(remainingMinutesVal / 60) + 'h ' + (remainingMinutesVal % 60) + 'm';
+            var progressPercent = Math.round(progress * 100);
+            var remainingDistanceVal = ((totalRouteTime - (elapsedTime / 1000)) / totalRouteTime) * totalRouteDistance;
+            var remainingDistanceKmVal = (remainingDistanceVal / 1000).toFixed(1);
+            
+            if (routeEtaElement) {
+                routeEtaElement.textContent = 'ETA: ' + remainingEtaVal + ' | ' + remainingDistanceKmVal + ' km | ' + progressPercent + '%';
+            }
+            
+            var routeCurrentLocationElem = document.getElementById('routeCurrentLocation');
+            if (routeCurrentLocationElem) {
+                routeCurrentLocationElem.textContent = progressPercent + '% | ' + remainingDistanceKmVal + ' km';
+            }
+            
+            movingMarker.bindPopup(vehicleText).openPopup();
+            
+            showEtaBubble(position[0], position[1], 'ETA: ' + remainingEtaVal, true);
+            
+            var progressBarElem = document.getElementById('routeProgressBar');
+            if (progressBarElem) {
+                progressBarElem.style.width = progressPercent + '%';
+            }
+        }
+        
+        if (progress >= 1) {
+            stopSimulation();
+            
+            if (routeEtaElement) routeEtaElement.textContent = '';
+            
+            var finalRouteLocation = document.getElementById('routeCurrentLocation');
+            if (finalRouteLocation) finalRouteLocation.textContent = '';
+            
+            movingMarker.bindPopup(vehicleText).openPopup();
+            
+            movingMarker.setIcon(L.divIcon({
+                className: 'arrived-marker',
+                html: '<i class="fas fa-check-circle" style="color: #4caf50; font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>',
+                iconSize: [28, 28]
+            }));
+            
+            showEtaBubble(centreLatVal, centreLngVal, '✓ ARRIVED', false);
+            
+            var finalProgressBar = document.getElementById('routeProgressBar');
+            if (finalProgressBar) finalProgressBar.style.width = '100%';
+        }
+    }, 100);
+}
+
+function showLoadingSpinner() {
+    var mapContainer = document.getElementById('mapContainer');
+    if (mapContainer && !document.getElementById('mapLoadingSpinner')) {
+        var spinner = document.createElement('div');
+        spinner.id = 'mapLoadingSpinner';
+        spinner.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 12px 20px; border-radius: 8px; z-index: 2000; display: flex; align-items: center; gap: 10px; font-size: 14px;';
+        spinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading route...';
+        mapContainer.appendChild(spinner);
+    }
+}
+
+function hideLoadingSpinner() {
+    var spinner = document.getElementById('mapLoadingSpinner');
+    if (spinner) spinner.remove();
+}
+
+function stopSimulation() {
+    if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
     initMap();
     loadAllData();
 
-    const reportIssueModal = document.getElementById('reportIssueModal');
-    const reportIssueForm = document.getElementById('reportIssueForm');
-    const closeReportIssueModalBtn = document.getElementById('closeReportIssueModal');
-    const cancelReportIssueBtn = document.getElementById('cancelReportIssueBtn');
-    const issueType = document.getElementById('issueType');
-    const otherIssueGroup = document.getElementById('otherIssueGroup');
-    const otherIssueText = document.getElementById('otherIssueText');
+    var reportIssueModal = document.getElementById('reportIssueModal');
+    var reportIssueForm = document.getElementById('reportIssueForm');
+    var closeReportIssueModalBtn = document.getElementById('closeReportIssueModal');
+    var cancelReportIssueBtn = document.getElementById('cancelReportIssueBtn');
+    var issueType = document.getElementById('issueType');
+    var otherIssueGroup = document.getElementById('otherIssueGroup');
+    var otherIssueText = document.getElementById('otherIssueText');
 
     if (closeReportIssueModalBtn) {
         closeReportIssueModalBtn.addEventListener('click', closeReportIssueModal);
@@ -44,31 +402,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (reportIssueModal) {
-        reportIssueModal.addEventListener('click', function (e) {
+        reportIssueModal.addEventListener('click', function(e) {
             if (e.target === reportIssueModal) {
                 closeReportIssueModal();
             }
         });
     }
 
-    document.querySelectorAll('.priority-option input[type="radio"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            document.querySelectorAll('.priority-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-
-            const parent = this.closest('.priority-option');
+    var priorityOptions = document.querySelectorAll('.priority-option input[type="radio"]');
+    for (var i = 0; i < priorityOptions.length; i++) {
+        priorityOptions[i].addEventListener('change', function() {
+            var allOptions = document.querySelectorAll('.priority-option');
+            for (var j = 0; j < allOptions.length; j++) {
+                allOptions[j].classList.remove('selected');
+            }
+            var parent = this.closest('.priority-option');
             if (parent) {
                 parent.classList.add('selected');
             }
         });
-    });
+    }
 
     if (issueType) {
-        issueType.addEventListener('change', function () {
+        issueType.addEventListener('change', function() {
             if (this.value === 'Other') {
                 if (otherIssueGroup) otherIssueGroup.style.display = 'block';
-                if (otherIssueText) otherIssueText.setAttribute('required', true);
+                if (otherIssueText) otherIssueText.setAttribute('required', 'required');
             } else {
                 if (otherIssueGroup) otherIssueGroup.style.display = 'none';
                 if (otherIssueText) {
@@ -78,31 +437,33 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-
+    
     if (reportIssueForm) {
-        reportIssueForm.addEventListener('submit', function (e) {
+        reportIssueForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const issueJobId = document.getElementById('issueJobId');
-            const issueRequestId = document.getElementById('issueRequestId');
-            const issueDescription = document.getElementById('issueDescription');
+            var issueJobId = document.getElementById('issueJobId');
+            var issueRequestId = document.getElementById('issueRequestId');
+            var issueSubject = document.getElementById('issueSubject');
+            var issueDescription = document.getElementById('issueDescription');
+            var issueTypeSelect = document.getElementById('issueType');
+            var severityRadio = document.querySelector('input[name="severity"]:checked');
 
-            let selectedIssue = issueType ? issueType.value : '';
+            var selectedIssue = issueTypeSelect ? issueTypeSelect.value : '';
             if (selectedIssue === 'Other') {
                 selectedIssue = otherIssueText ? otherIssueText.value.trim() : '';
             }
 
-            const selectedPriority = document.querySelector('input[name="priority"]:checked');
-
-            const formData = {
+            var formData = {
                 jobId: issueJobId ? issueJobId.value : '',
                 requestId: issueRequestId ? issueRequestId.value : '',
+                subject: issueSubject ? issueSubject.value.trim() : '',
                 issueType: selectedIssue,
-                priority: selectedPriority ? selectedPriority.value : '',
+                severity: severityRadio ? severityRadio.value : '',
                 description: issueDescription ? issueDescription.value.trim() : ''
             };
 
-            if (!formData.issueType || !formData.priority || !formData.description) {
+            if (!formData.subject || !formData.issueType || !formData.severity || !formData.description) {
                 alert('Please complete all fields.');
                 return;
             }
@@ -113,23 +474,43 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    document.getElementById('assignHandoverForm')?.addEventListener('submit', function (e) {
-        e.preventDefault();
-        alert(`Handover assigned for ${document.getElementById('handoverJobId').value}`);
-        closeAssignHandoverModal();
-    });
+    var assignHandoverForm = document.getElementById('assignHandoverForm');
+    if (assignHandoverForm) {
+        assignHandoverForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var handoverJobId = document.getElementById('handoverJobId');
+            alert('Handover assigned for ' + (handoverJobId ? handoverJobId.value : ''));
+            closeAssignHandoverModal();
+        });
+    }
 
-    document.getElementById('reassignJobForm')?.addEventListener('submit', function (e) {
-        e.preventDefault();
-        alert(`Job reassigned for ${document.getElementById('reassignJobId').value}`);
-        closeReassignJobModal();
-    });
+    var reassignJobForm = document.getElementById('reassignJobForm');
+    if (reassignJobForm) {
+        reassignJobForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var reassignJobId = document.getElementById('reassignJobId');
+            alert('Job reassigned for ' + (reassignJobId ? reassignJobId.value : ''));
+            closeReassignJobModal();
+        });
+    }
 
-    document.getElementById('reassignCentreForm')?.addEventListener('submit', function (e) {
-        e.preventDefault();
-        alert(`Collection centre reassigned for ${document.getElementById('reassignCentreJobId').value}`);
-        closeReassignCentreModal();
-    });
+    var reassignCentreForm = document.getElementById('reassignCentreForm');
+    if (reassignCentreForm) {
+        reassignCentreForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var reassignCentreJobId = document.getElementById('reassignCentreJobId');
+            alert('Collection centre reassigned for ' + (reassignCentreJobId ? reassignCentreJobId.value : ''));
+            closeReassignCentreModal();
+        });
+    }
+    
+    var routeInfoBox = document.getElementById('routeInfoBox');
+    if (routeInfoBox && !document.getElementById('routeProgressBar')) {
+        var progressContainer = document.createElement('div');
+        progressContainer.style.cssText = 'margin-top: 8px; height: 4px; background: #e0e0e0; border-radius: 2px; overflow: hidden;';
+        progressContainer.innerHTML = '<div id="routeProgressBar" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s ease;"></div>';
+        routeInfoBox.appendChild(progressContainer);
+    }
 });
 
 function loadAllData() {
@@ -147,44 +528,25 @@ function loadHandoverJobs() {
 }
 
 function displayHandoverJobs(jobs) {
-    const handoverList = document.getElementById('handoverList');
-    const panelHandoverCount = document.getElementById('panelHandoverCount');
+    var handoverList = document.getElementById('handoverList');
+    var panelHandoverCount = document.getElementById('panelHandoverCount');
 
     if (!handoverList) return;
 
     if (!jobs.length) {
-        handoverList.innerHTML = `
-            <div class="no-jobs-message">
-                <i class="fas fa-check-circle"></i>
-                <p>No handover required</p>
-            </div>
-        `;
+        handoverList.innerHTML = '<div class="no-jobs-message"><i class="fas fa-check-circle"></i><p>No handover required</p></div>';
         if (panelHandoverCount) panelHandoverCount.textContent = '0';
         return;
     }
 
     if (panelHandoverCount) panelHandoverCount.textContent = jobs.length;
 
-    handoverList.innerHTML = jobs.map(job => `
-        <div class="panel-item">
-            <div class="item-info">
-                <i class="fas fa-route"></i>
-                <div>
-                    <strong>${escapeHtml(job.id || '')}</strong>
-                    <small>${escapeHtml(job.location || '-')}</small>
-                </div>
-                <span class="item-reason">${escapeHtml(job.reason || '-')}</span>
-            </div>
-            <div class="item-actions">
-                <button class="btn-icon" onclick="goToIssuePage('${escapeJs(job.jobID || '')}')" title="Go to issue page">
-                    <i class="fas fa-exclamation-circle"></i>
-                </button>
-                <button class="btn-icon" onclick="viewJobDetails('${escapeJs(job.id || '')}')" title="View details">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+    var html = '';
+    for (var i = 0; i < jobs.length; i++) {
+        var job = jobs[i];
+        html += '<div class="panel-item"><div class="item-info"><i class="fas fa-route"></i><div><strong>' + escapeHtml(job.id || '') + '</strong><small>' + escapeHtml(job.location || '-') + '</small></div><span class="item-reason">' + escapeHtml(job.reason || '-') + '</span></div><div class="item-actions"><button class="btn-icon" onclick="goToIssuePage(\'' + escapeJs(job.jobID || '') + '\')" title="Go to issue page"><i class="fas fa-exclamation-circle"></i></button><button class="btn-icon" onclick="viewJobDetails(\'' + escapeJs(job.id || '') + '\')" title="View details"><i class="fas fa-eye"></i></button></div></div>';
+    }
+    handoverList.innerHTML = html;
 }
 
 function loadDelayedJobs() {
@@ -192,44 +554,25 @@ function loadDelayedJobs() {
 }
 
 function displayDelayedJobs(jobs) {
-    const delayedList = document.getElementById('delayedList');
-    const panelDelayedCount = document.getElementById('panelDelayedCount');
+    var delayedList = document.getElementById('delayedList');
+    var panelDelayedCount = document.getElementById('panelDelayedCount');
 
     if (!delayedList) return;
 
     if (!jobs.length) {
-        delayedList.innerHTML = `
-            <div class="no-jobs-message">
-                <i class="fas fa-check-circle"></i>
-                <p>No delayed jobs</p>
-            </div>
-        `;
+        delayedList.innerHTML = '<div class="no-jobs-message"><i class="fas fa-check-circle"></i><p>No delayed jobs</p></div>';
         if (panelDelayedCount) panelDelayedCount.textContent = '0';
         return;
     }
 
     if (panelDelayedCount) panelDelayedCount.textContent = jobs.length;
 
-    delayedList.innerHTML = jobs.map(job => `
-        <div class="panel-item">
-            <div class="item-info">
-                <i class="fas fa-clock"></i>
-                <div>
-                    <strong>${escapeHtml(job.id || '')}</strong>
-                    <small>${escapeHtml(job.location || '-')}</small>
-                </div>
-                <span class="item-reason">${escapeHtml(job.reason || '-')}${job.delay ? ` (${escapeHtml(job.delay)})` : ''}</span>
-            </div>
-            <div class="item-actions">
-                <button class="btn-icon" onclick="openReportIssueModal('${escapeJs(job.id || '')}')" title="Report issue">
-                    <i class="fas fa-flag"></i>
-                </button>
-                <button class="btn-icon" onclick="viewJobDetails('${escapeJs(job.id || '')}')" title="View details">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+    var html = '';
+    for (var i = 0; i < jobs.length; i++) {
+        var job = jobs[i];
+        html += '<div class="panel-item"><div class="item-info"><i class="fas fa-clock"></i><div><strong>' + escapeHtml(job.id || '') + '</strong><small>' + escapeHtml(job.location || '-') + '</small></div><span class="item-reason">' + escapeHtml(job.reason || '-') + (job.delay ? ' (' + escapeHtml(job.delay) + ')' : '') + '</span></div><div class="item-actions"><button class="btn-icon" onclick="openReportIssueModal(\'' + escapeJs(job.id || '') + '\')" title="Report issue"><i class="fas fa-flag"></i></button><button class="btn-icon" onclick="viewJobDetails(\'' + escapeJs(job.id || '') + '\')" title="View details"><i class="fas fa-eye"></i></button></div></div>';
+    }
+    delayedList.innerHTML = html;
 }
 
 function loadPendingDropoffJobs() {
@@ -237,21 +580,16 @@ function loadPendingDropoffJobs() {
 }
 
 function displayPendingDropoffJobs(jobs) {
-    const pendingDropoffList = document.getElementById('pendingDropoffList');
-    const pendingDropoffCount = document.getElementById('pendingDropoffCount');
-    const itemsInTransit = document.getElementById('itemsInTransit');
-    const affectedCollectors = document.getElementById('affectedCollectors');
-    const centresAvailable = document.getElementById('centresAvailable');
+    var pendingDropoffList = document.getElementById('pendingDropoffList');
+    var pendingDropoffCount = document.getElementById('pendingDropoffCount');
+    var itemsInTransit = document.getElementById('itemsInTransit');
+    var affectedCollectors = document.getElementById('affectedCollectors');
+    var centresAvailable = document.getElementById('centresAvailable');
 
     if (!pendingDropoffList) return;
 
     if (!jobs.length) {
-        pendingDropoffList.innerHTML = `
-            <div class="no-jobs-message">
-                <i class="fas fa-check-circle"></i>
-                <p>No pending drop-offs</p>
-            </div>
-        `;
+        pendingDropoffList.innerHTML = '<div class="no-jobs-message"><i class="fas fa-check-circle"></i><p>No pending drop-offs</p></div>';
         if (pendingDropoffCount) pendingDropoffCount.textContent = '0';
         if (itemsInTransit) itemsInTransit.textContent = '0';
         if (affectedCollectors) affectedCollectors.textContent = '0';
@@ -261,126 +599,80 @@ function displayPendingDropoffJobs(jobs) {
 
     if (pendingDropoffCount) pendingDropoffCount.textContent = jobs.length;
 
-    let totalItems = 0;
-    jobs.forEach(job => {
-        const match = String(job.items || '').match(/\d+/);
+    var totalItems = 0;
+    for (var i = 0; i < jobs.length; i++) {
+        var job = jobs[i];
+        var match = String(job.items || '').match(/\d+/);
         totalItems += match ? parseInt(match[0], 10) : 0;
-    });
+    }
 
     if (itemsInTransit) itemsInTransit.textContent = totalItems;
     if (affectedCollectors) affectedCollectors.textContent = jobs.length;
     if (centresAvailable) centresAvailable.textContent = collectionJobsData.centresAvailable || 0;
 
-    pendingDropoffList.innerHTML = jobs.map(job => `
-        <div class="dropoff-item">
-            <div class="dropoff-header">
-                <span class="dropoff-id">${escapeHtml(job.id || '')}</span>
-                <span class="dropoff-status">Failed Drop-off</span>
-            </div>
-            <div class="dropoff-details">
-                <div class="dropoff-detail">
-                    <span class="dropoff-detail-label">Collector</span>
-                    <span class="dropoff-detail-value">${escapeHtml(job.collector || '-')}</span>
-                </div>
-                <div class="dropoff-detail">
-                    <span class="dropoff-detail-label">Items</span>
-                    <span class="dropoff-detail-value">${escapeHtml(job.items || '-')}</span>
-                </div>
-                <div class="dropoff-detail">
-                    <span class="dropoff-detail-label">Original Centre</span>
-                    <span class="dropoff-detail-value">${escapeHtml(job.originalCentre || '-')}</span>
-                </div>
-                <div class="dropoff-detail">
-                    <span class="dropoff-detail-label">Time</span>
-                    <span class="dropoff-detail-value">${escapeHtml(job.time || '-')}</span>
-                </div>
-            </div>
-            <div class="dropoff-fail-reason">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>${escapeHtml(job.failReason || '-')}</span>
-            </div>
-            <div class="dropoff-actions">
-                <button class="btn-reassign-centre" onclick="goToIssuePage('${escapeJs(job.jobID || '')}')">
-                    <i class="fas fa-exclamation-circle"></i>
-                    Go to Issue
-                </button>
-                <button class="btn-icon" onclick="viewFailedDropoffDetails('${escapeJs(job.id || '')}')" title="View details">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+    var html = '';
+    for (var j = 0; j < jobs.length; j++) {
+        var dropoffJob = jobs[j];
+        html += '<div class="dropoff-item"><div class="dropoff-header"><span class="dropoff-id">' + escapeHtml(dropoffJob.id || '') + '</span><span class="dropoff-status">Failed Drop-off</span></div><div class="dropoff-details"><div class="dropoff-detail"><span class="dropoff-detail-label">Collector</span><span class="dropoff-detail-value">' + escapeHtml(dropoffJob.collector || '-') + '</span></div><div class="dropoff-detail"><span class="dropoff-detail-label">Items</span><span class="dropoff-detail-value">' + escapeHtml(dropoffJob.items || '-') + '</span></div><div class="dropoff-detail"><span class="dropoff-detail-label">Original Centre</span><span class="dropoff-detail-value">' + escapeHtml(dropoffJob.originalCentre || '-') + '</span></div><div class="dropoff-detail"><span class="dropoff-detail-label">Time</span><span class="dropoff-detail-value">' + escapeHtml(dropoffJob.time || '-') + '</span></div></div><div class="dropoff-fail-reason"><i class="fas fa-exclamation-circle"></i><span>' + escapeHtml(dropoffJob.failReason || '-') + '</span></div><div class="dropoff-actions"><button class="btn-reassign-centre" onclick="goToIssuePage(\'' + escapeJs(dropoffJob.jobID || '') + '\')"><i class="fas fa-exclamation-circle"></i> Go to Issue</button><button class="btn-icon" onclick="viewFailedDropoffDetails(\'' + escapeJs(dropoffJob.id || '') + '\')" title="View details"><i class="fas fa-eye"></i></button></div></div>';
+    }
+    pendingDropoffList.innerHTML = html;
 }
 
 function getCollectorsData() {
-    return Array.isArray(collectionJobsData.activeCollectors)
-        ? collectionJobsData.activeCollectors
-        : [];
+    return Array.isArray(collectionJobsData.activeCollectors) ? collectionJobsData.activeCollectors : [];
 }
 
 function loadActiveCollectors() {
-    const collectorList = document.getElementById('activeCollectorList');
-    const collectorCount = document.getElementById('activeCollectorCount');
-    const collectors = getCollectorsData().filter(c => c.jobStatus === 'Ongoing');
+    var collectorList = document.getElementById('activeCollectorList');
+    var collectorCount = document.getElementById('activeCollectorCount');
+    var collectors = getCollectorsData().filter(function(c) { return c.jobStatus === 'Ongoing'; });
 
     if (!collectorList) return;
     if (collectorCount) collectorCount.textContent = collectors.length;
 
-    collectorList.innerHTML = collectors.length ? collectors.map(collector => {
-        const statusClass = collector.status === 'online' ? 'online' : 'busy';
-        const initials = getInitials(collector.name || 'NA');
-        const activeClass = selectedCollectorId === collector.id ? 'active' : '';
+    if (!collectors.length) {
+        collectorList.innerHTML = '<div class="no-jobs-message"><i class="fas fa-user-check"></i><p>No active collectors</p></div>';
+        return;
+    }
 
-        return `
-            <div class="collector-list-item ${activeClass}" onclick="selectCollector('${escapeJs(collector.id || '')}')">
-                <div class="collector-list-info">
-                    <div class="collector-avatar">${escapeHtml(initials)}</div>
-                    <div class="collector-details">
-                        <span class="collector-list-name">${escapeHtml(collector.name || '-')}</span>
-                        <span class="collector-list-vehicle">${escapeHtml(collector.vehicle || '-')}</span>
-                    </div>
-                </div>
-                <div class="collector-list-status">
-                    <span class="status-badge-collector ${statusClass}"></span>
-                    ${collector.jobId ? `<span class="collector-job-id">${escapeHtml(collector.jobId)}</span>` : '<span>Available</span>'}
-                </div>
-            </div>
-        `;
-    }).join('') : `
-        <div class="no-jobs-message">
-            <i class="fas fa-user-check"></i>
-            <p>No active collectors</p>
-        </div>
-    `;
+    var html = '';
+    for (var i = 0; i < collectors.length; i++) {
+        var collector = collectors[i];
+        var statusClass = collector.status === 'online' ? 'online' : 'busy';
+        var initials = getInitials(collector.name || 'NA');
+        var activeClass = selectedCollectorId === collector.id ? 'active' : '';
+        html += '<div class="collector-list-item ' + activeClass + '" onclick="selectCollector(\'' + escapeJs(collector.id || '') + '\')"><div class="collector-list-info"><div class="collector-avatar">' + escapeHtml(initials) + '</div><div class="collector-details"><span class="collector-list-name">' + escapeHtml(collector.name || '-') + '</span><span class="collector-list-vehicle">' + escapeHtml(collector.vehicle || '-') + '</span></div></div><div class="collector-list-status"><span class="status-badge-collector ' + statusClass + '"></span>' + (collector.jobId ? '<span class="collector-job-id">' + escapeHtml(collector.jobId) + '</span>' : '<span>Available</span>') + '</div></div>';
+    }
+    collectorList.innerHTML = html;
 }
 
 function loadQuickStats() {
-    const completedToday = document.getElementById('completedToday');
-    const avgResponse = document.getElementById('avgResponse');
-    const totalDistance = document.getElementById('totalDistance');
+    var completedToday = document.getElementById('completedToday');
+    var avgResponse = document.getElementById('avgResponse');
+    var totalDistance = document.getElementById('totalDistance');
 
-    if (completedToday) completedToday.textContent = collectionJobsData.quickStats.completedToday ?? 0;
-    if (avgResponse) avgResponse.textContent = collectionJobsData.quickStats.avgResponse ?? '0min';
-    if (totalDistance) totalDistance.textContent = collectionJobsData.quickStats.totalDistance ?? 0;
+    if (completedToday) completedToday.textContent = collectionJobsData.quickStats.completedToday || 0;
+    if (avgResponse) avgResponse.textContent = collectionJobsData.quickStats.avgResponse || '0min';
+    if (totalDistance) totalDistance.textContent = collectionJobsData.quickStats.totalDistance || 0;
 }
 
 function updateCounts() {
-    const handoverCount = document.getElementById('panelHandoverCount');
-    const delayedCount = document.getElementById('panelDelayedCount');
-    const pendingDropoffCount = document.getElementById('pendingDropoffCount');
-    const activeCollectorCount = document.getElementById('activeCollectorCount');
+    var handoverCount = document.getElementById('panelHandoverCount');
+    var delayedCount = document.getElementById('panelDelayedCount');
+    var pendingDropoffCount = document.getElementById('pendingDropoffCount');
+    var activeCollectorCount = document.getElementById('activeCollectorCount');
 
     if (handoverCount) handoverCount.textContent = (collectionJobsData.handoverJobs || []).length;
     if (delayedCount) delayedCount.textContent = (collectionJobsData.delayedJobs || []).length;
     if (pendingDropoffCount) pendingDropoffCount.textContent = (collectionJobsData.pendingDropoffJobs || []).length;
     if (activeCollectorCount) {
-        activeCollectorCount.textContent = getCollectorsData().filter(c => c.jobStatus === 'Ongoing').length;
+        activeCollectorCount.textContent = getCollectorsData().filter(function(c) { return c.jobStatus === 'Ongoing'; }).length;
     }
 }
 
 function initMap() {
-    const mapEl = document.getElementById('actualMap');
-    const placeholderEl = document.getElementById('mapPlaceholder');
+    var mapEl = document.getElementById('actualMap');
+    var placeholderEl = document.getElementById('mapPlaceholder');
 
     if (!mapEl || typeof L === 'undefined') return;
 
@@ -392,17 +684,18 @@ function initMap() {
     if (placeholderEl) placeholderEl.style.display = 'none';
     mapEl.style.display = 'block';
 
-    map = L.map('actualMap', { zoomControl: true }).setView([3.1390, 101.6869], 11);
+    map = L.map('actualMap').setView([3.1390, 101.6869], 11);
     map.attributionControl.setPrefix('');
 
     tilesLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
     routeLayer = L.layerGroup().addTo(map);
 
-    map.on('move zoom', function () {
+    map.on('move zoom', function() {
         positionEtaBubble();
     });
 }
@@ -412,27 +705,21 @@ function updateMapMarkers() {
 
     markersLayer.clearLayers();
 
-    const collectors = getCollectorsData().filter(c => c.jobStatus === 'Ongoing');
+    var collectors = getCollectorsData().filter(function(c) { return c.jobStatus === 'Ongoing'; });
 
     if (!collectors.length) return;
 
-    collectors.forEach((collector, index) => {
-        const fallbackLat = 3.10 + (index * 0.02);
-        const fallbackLng = 101.60 + (index * 0.02);
+    for (var i = 0; i < collectors.length; i++) {
+        var collector = collectors[i];
+        var lat = collector.pickupLat || (3.10 + (i * 0.02));
+        var lng = collector.pickupLng || (101.60 + (i * 0.02));
 
-        const lat = fallbackLat;
-        const lng = fallbackLng;
-
-        const marker = L.marker([lat, lng]).addTo(markersLayer);
-        marker.bindPopup(`
-            <strong>${escapeHtml(collector.name || '-')}</strong><br>
-            ${escapeHtml(collector.vehicle || '-')}<br>
-            ${escapeHtml(collector.jobId || 'No active job')}
-        `);
-    });
+        var marker = L.marker([lat, lng]).addTo(markersLayer);
+        marker.bindPopup('<strong>' + escapeHtml(collector.name || '-') + '</strong><br>' + escapeHtml(collector.vehicle || '-') + '<br>' + (collector.jobId ? 'Job: ' + escapeHtml(collector.jobId) : 'No active job'));
+    }
 
     if (!selectedCollectorId) {
-        const group = new L.featureGroup(markersLayer.getLayers());
+        var group = L.featureGroup(markersLayer.getLayers());
         if (group.getLayers().length) {
             map.fitBounds(group.getBounds().pad(0.2));
         }
@@ -440,59 +727,56 @@ function updateMapMarkers() {
 }
 
 function notifyCollector(jobId) {
-    alert(`Notification sent for job ${jobId}`);
+    alert('Notification sent for job ' + jobId);
 }
 
 function contactCollector(jobId) {
-    alert(`Contacting collector for job ${jobId}`);
+    alert('Contacting collector for job ' + jobId);
 }
 
 function selectCollector(collectorId) {
     selectedCollectorId = collectorId;
     loadActiveCollectors();
-    showCollectorRouteOnMap(collectorId);
+    startGPSSimulationForCollector(collectorId);
 }
 
-function showCollectorRouteOnMap(collectorId) {
-    if (!map) return;
-
-    selectedCollectorId = collectorId;
-
+async function startGPSSimulationForCollector(collectorId) {
+    var collectors = getCollectorsData();
+    var collector = null;
+    for (var i = 0; i < collectors.length; i++) {
+        if (collectors[i].id === collectorId) {
+            collector = collectors[i];
+            break;
+        }
+    }
+    if (!collector) return;
+    
+    stopSimulation();
+    
     if (routeLayer) {
         routeLayer.clearLayers();
     }
-
-    const collector = getCollectorsData().find(c => c.id === collectorId);
-    if (!collector) return;
-
-    const routeInfoBox = document.getElementById('routeInfoBox');
-    const routeCollectorName = document.getElementById('routeCollectorName');
-    const routeCurrentLocation = document.getElementById('routeCurrentLocation');
-    const routeEta = document.getElementById('routeEta');
-
-    if (routeCollectorName) routeCollectorName.textContent = collector.name || '-';
-    if (routeCurrentLocation) routeCurrentLocation.textContent = `Current location: ${collector.currentRoad || '-'}`;
-    if (routeEta) routeEta.textContent = `ETA to collection centre: En route`;
+    
+    var routeInfoBox = document.getElementById('routeInfoBox');
+    var routeCollectorName = document.getElementById('routeCollectorName');
+    var routeCurrentLocation = document.getElementById('routeCurrentLocation');
+    
+    if (routeCollectorName) routeCollectorName.textContent = collector.vehicle || '-';
+    if (routeCurrentLocation) routeCurrentLocation.textContent = 'Loading...';
     if (routeInfoBox) routeInfoBox.style.display = 'block';
-
-    const fallbackLat = 3.12;
-    const fallbackLng = 101.65;
-
-    const marker = L.marker([fallbackLat, fallbackLng]).addTo(routeLayer);
-    marker.bindPopup(`<strong>${escapeHtml(collector.name || '-')}</strong>`).openPopup();
-
-    map.setView([fallbackLat, fallbackLng], 13);
-    showEtaBubble(fallbackLat, fallbackLng, 'ETA: En route');
+    
+    await startGPSSimulation(collector);
 }
 
 function centerMapOnAll() {
     selectedCollectorId = null;
+    stopSimulation();
 
     if (routeLayer) {
         routeLayer.clearLayers();
     }
 
-    const routeInfoBox = document.getElementById('routeInfoBox');
+    var routeInfoBox = document.getElementById('routeInfoBox');
     if (routeInfoBox) routeInfoBox.style.display = 'none';
 
     hideEtaBubble();
@@ -502,7 +786,7 @@ function centerMapOnAll() {
 
 function zoomToFit() {
     if (selectedCollectorId) {
-        showCollectorRouteOnMap(selectedCollectorId);
+        startGPSSimulationForCollector(selectedCollectorId);
     } else {
         centerMapOnAll();
     }
@@ -520,13 +804,24 @@ function toggleMapLayers() {
     mapLayersVisible = !mapLayersVisible;
 }
 
-function showEtaBubble(lat, lng, text) {
-    const etaBubble = document.getElementById('etaBubble');
-    const etaBubbleText = document.getElementById('etaBubbleText');
+function showEtaBubble(lat, lng, text, isEnRoute) {
+    var etaBubble = document.getElementById('etaBubble');
+    var etaBubbleText = document.getElementById('etaBubbleText');
+    var etaDot = document.querySelector('.eta-dot');
 
     if (!etaBubble || !map) return;
 
     if (etaBubbleText) etaBubbleText.textContent = text;
+    
+    if (etaDot) {
+        if (isEnRoute) {
+            etaDot.style.animation = 'etaBlink 1s infinite';
+        } else {
+            etaDot.style.animation = 'none';
+            etaDot.style.opacity = '1';
+        }
+    }
+    
     etaBubble.dataset.lat = lat;
     etaBubble.dataset.lng = lng;
     etaBubble.style.display = 'flex';
@@ -535,22 +830,23 @@ function showEtaBubble(lat, lng, text) {
 }
 
 function positionEtaBubble() {
-    const etaBubble = document.getElementById('etaBubble');
-    const mapContainer = document.getElementById('mapContainer');
+    var etaBubble = document.getElementById('etaBubble');
+    var mapContainer = document.getElementById('mapContainer');
 
     if (!etaBubble || !mapContainer || etaBubble.style.display === 'none') return;
     if (!etaBubble.dataset.lat || !etaBubble.dataset.lng || !map) return;
 
-    const lat = parseFloat(etaBubble.dataset.lat);
-    const lng = parseFloat(etaBubble.dataset.lng);
-    const point = map.latLngToContainerPoint([lat, lng]);
+    var lat = parseFloat(etaBubble.dataset.lat);
+    var lng = parseFloat(etaBubble.dataset.lng);
+    
+    var point = map.latLngToContainerPoint([lat, lng]);
 
-    etaBubble.style.left = `${point.x}px`;
-    etaBubble.style.top = `${point.y - 12}px`;
+    etaBubble.style.left = point.x + 'px';
+    etaBubble.style.top = (point.y - 12) + 'px';
 }
 
 function hideEtaBubble() {
-    const etaBubble = document.getElementById('etaBubble');
+    var etaBubble = document.getElementById('etaBubble');
     if (etaBubble) etaBubble.style.display = 'none';
 }
 
@@ -559,164 +855,209 @@ function getDelayedJobById(jobId) {
 }
 
 function openReportIssueModal(jobId) {
-    const job = getDelayedJobById(jobId);
-    const modal = document.getElementById('reportIssueModal');
-    const form = document.getElementById('reportIssueForm');
-    const issueJobId = document.getElementById('issueJobId');
-    const issueRequestId = document.getElementById('issueRequestId');
-    const otherIssueGroup = document.getElementById('otherIssueGroup');
-    const otherIssueText = document.getElementById('otherIssueText');
+    var job = (collectionJobsData.handoverLookup || {})[jobId] || 
+                (collectionJobsData.delayedLookup || {})[jobId] || 
+                (collectionJobsData.pendingDropoffLookup || {})[jobId];
+    
+    var modal = document.getElementById('reportIssueModal');
+    var form = document.getElementById('reportIssueForm');
+    var issueJobId = document.getElementById('issueJobId');
+    var issueRequestId = document.getElementById('issueRequestId');
+    var issueSubject = document.getElementById('issueSubject');
+    var otherIssueGroupElem = document.getElementById('otherIssueGroup');
+    var otherIssueTextElem = document.getElementById('otherIssueText');
 
-    if (!job || !modal || !form) return;
+    if (!job) {
+        console.error('Job not found:', jobId);
+        alert('Job details not found. Please try again.');
+        return;
+    }
+
+    if (!modal || !form) {
+        console.error('Modal or form not found');
+        return;
+    }
 
     form.reset();
 
-    document.querySelectorAll('.priority-option').forEach(opt => {
-        opt.classList.remove('selected');
-    });
+    var priorityOptions = document.querySelectorAll('.priority-option');
+    for (var i = 0; i < priorityOptions.length; i++) {
+        priorityOptions[i].classList.remove('selected');
+    }
 
-    if (otherIssueGroup) otherIssueGroup.style.display = 'none';
-    if (otherIssueText) {
-        otherIssueText.removeAttribute('required');
-        otherIssueText.value = '';
+    if (otherIssueGroupElem) otherIssueGroupElem.style.display = 'none';
+    if (otherIssueTextElem) {
+        otherIssueTextElem.removeAttribute('required');
+        otherIssueTextElem.value = '';
     }
 
     if (issueJobId) issueJobId.value = job.id || '';
     if (issueRequestId) {
-        issueRequestId.value = job.requestID ? `REQ${String(job.requestID).padStart(3, '0')}` : '';
+        issueRequestId.value = job.requestID ? 'REQ' + String(job.requestID).padStart(3, '0') : '';
+    }
+    if (issueSubject) {
+        issueSubject.placeholder = 'Issue with ' + (job.id || '');
+        issueSubject.value = '';
     }
 
     modal.classList.add('active');
 }
 
 function closeReportIssueModal() {
-    const modal = document.getElementById('reportIssueModal');
-    const form = document.getElementById('reportIssueForm');
-    const otherIssueGroup = document.getElementById('otherIssueGroup');
-    const otherIssueText = document.getElementById('otherIssueText');
+    var modal = document.getElementById('reportIssueModal');
+    var form = document.getElementById('reportIssueForm');
+    var otherIssueGroupElem = document.getElementById('otherIssueGroup');
+    var otherIssueTextElem = document.getElementById('otherIssueText');
 
     if (modal) modal.classList.remove('active');
     if (form) form.reset();
 
-    document.querySelectorAll('.priority-option').forEach(opt => {
-        opt.classList.remove('selected');
-    });
+    var priorityOptions = document.querySelectorAll('.priority-option');
+    for (var i = 0; i < priorityOptions.length; i++) {
+        priorityOptions[i].classList.remove('selected');
+    }
 
-    if (otherIssueGroup) otherIssueGroup.style.display = 'none';
-    if (otherIssueText) {
-        otherIssueText.removeAttribute('required');
-        otherIssueText.value = '';
+    if (otherIssueGroupElem) otherIssueGroupElem.style.display = 'none';
+    if (otherIssueTextElem) {
+        otherIssueTextElem.removeAttribute('required');
+        otherIssueTextElem.value = '';
     }
 }
 
 function assignHandover(jobId) {
-    const job = (collectionJobsData.handoverLookup || {})[jobId];
+    var job = (collectionJobsData.handoverLookup || {})[jobId];
     if (!job) return;
 
-    document.getElementById('handoverJobId').value = job.id || '';
-    document.getElementById('handoverCurrentCollector').value = job.collector || '';
-    document.getElementById('handoverReason').value = job.reason || '';
-    document.getElementById('handoverNewCollector').value = '';
-    document.getElementById('handoverVehicle').value = '';
-    document.getElementById('handoverPriority').value = 'High';
-    document.getElementById('handoverAdminNotes').value = '';
+    var handoverJobId = document.getElementById('handoverJobId');
+    var handoverCurrentCollector = document.getElementById('handoverCurrentCollector');
+    var handoverReason = document.getElementById('handoverReason');
+    
+    if (handoverJobId) handoverJobId.value = job.id || '';
+    if (handoverCurrentCollector) handoverCurrentCollector.value = job.collector || '';
+    if (handoverReason) handoverReason.value = job.reason || '';
 
-    document.getElementById('assignHandoverModal')?.classList.add('show');
+    var assignHandoverModal = document.getElementById('assignHandoverModal');
+    if (assignHandoverModal) assignHandoverModal.classList.add('show');
 }
 
 function closeAssignHandoverModal() {
-    document.getElementById('assignHandoverModal')?.classList.remove('show');
+    var assignHandoverModal = document.getElementById('assignHandoverModal');
+    if (assignHandoverModal) assignHandoverModal.classList.remove('show');
 }
 
 function viewJobDetails(jobId) {
-    const job = (collectionJobsData.handoverLookup || {})[jobId] || (collectionJobsData.delayedLookup || {})[jobId];
+    var job = (collectionJobsData.handoverLookup || {})[jobId] || (collectionJobsData.delayedLookup || {})[jobId];
     if (!job) return;
 
-    document.getElementById('detailsJobId').textContent = job.id || '-';
-    document.getElementById('detailsStatus').textContent = job.status || '-';
-    document.getElementById('detailsTime').textContent = job.time || '-';
-    document.getElementById('detailsLocation').textContent = job.location || '-';
-    document.getElementById('detailsCollector').textContent = job.collector || '-';
-    document.getElementById('detailsVehicle').textContent = job.vehicle || '-';
-    document.getElementById('detailsReason').textContent = job.reason || '-';
-    document.getElementById('detailsAdminNotes').value = '';
+    var detailsJobId = document.getElementById('detailsJobId');
+    var detailsStatus = document.getElementById('detailsStatus');
+    var detailsTime = document.getElementById('detailsTime');
+    var detailsLocation = document.getElementById('detailsLocation');
+    var detailsCollector = document.getElementById('detailsCollector');
+    var detailsVehicle = document.getElementById('detailsVehicle');
+    var detailsReason = document.getElementById('detailsReason');
+    var detailsAdminNotes = document.getElementById('detailsAdminNotes');
 
-    document.getElementById('jobDetailsModal')?.classList.add('show');
+    if (detailsJobId) detailsJobId.textContent = job.id || '-';
+    if (detailsStatus) detailsStatus.textContent = job.status || '-';
+    if (detailsTime) detailsTime.textContent = job.time || '-';
+    if (detailsLocation) detailsLocation.textContent = job.location || '-';
+    if (detailsCollector) detailsCollector.textContent = job.collector || '-';
+    if (detailsVehicle) detailsVehicle.textContent = job.vehicle || '-';
+    if (detailsReason) detailsReason.textContent = job.reason || '-';
+    if (detailsAdminNotes) detailsAdminNotes.value = '';
+
+    var jobDetailsModal = document.getElementById('jobDetailsModal');
+    if (jobDetailsModal) jobDetailsModal.classList.add('show');
 }
 
 function closeJobDetailsModal() {
-    document.getElementById('jobDetailsModal')?.classList.remove('show');
+    var jobDetailsModal = document.getElementById('jobDetailsModal');
+    if (jobDetailsModal) jobDetailsModal.classList.remove('show');
 }
 
 function reassignJob(jobId) {
-    const job = (collectionJobsData.delayedLookup || {})[jobId];
+    var job = (collectionJobsData.delayedLookup || {})[jobId];
     if (!job) return;
 
-    document.getElementById('reassignJobId').value = job.id || '';
-    document.getElementById('reassignCurrentCollector').value = job.collector || '';
-    document.getElementById('reassignDelayReason').value = `${job.reason || '-'}${job.delay ? ` (${job.delay})` : ''}`;
-    document.getElementById('reassignNewCollector').value = '';
-    document.getElementById('reassignNewVehicle').value = '';
-    document.getElementById('reassignEta').value = '';
-    document.getElementById('reassignRemarks').value = '';
+    var reassignJobId = document.getElementById('reassignJobId');
+    var reassignCurrentCollector = document.getElementById('reassignCurrentCollector');
+    var reassignDelayReason = document.getElementById('reassignDelayReason');
+    
+    if (reassignJobId) reassignJobId.value = job.id || '';
+    if (reassignCurrentCollector) reassignCurrentCollector.value = job.collector || '';
+    if (reassignDelayReason) reassignDelayReason.value = (job.reason || '-') + (job.delay ? ' (' + job.delay + ')' : '');
 
-    document.getElementById('reassignJobModal')?.classList.add('show');
+    var reassignJobModal = document.getElementById('reassignJobModal');
+    if (reassignJobModal) reassignJobModal.classList.add('show');
 }
 
 function closeReassignJobModal() {
-    document.getElementById('reassignJobModal')?.classList.remove('show');
+    var reassignJobModal = document.getElementById('reassignJobModal');
+    if (reassignJobModal) reassignJobModal.classList.remove('show');
 }
 
 function reassignCentre(jobId) {
-    const job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
+    var job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
     if (!job) return;
 
-    document.getElementById('reassignCentreJobId').value = job.id || '';
-    document.getElementById('reassignCentreCollector').value = job.collector || '';
-    document.getElementById('reassignCentreOriginal').value = job.originalCentre || '';
-    document.getElementById('reassignCentreReason').value = job.failReason || '';
-    document.getElementById('reassignCentreNew').value = '';
-    document.getElementById('reassignCentrePriority').value = 'High';
-    document.getElementById('reassignCentreInstructions').value = '';
-    document.getElementById('reassignCentreRemarks').value = '';
+    var reassignCentreJobId = document.getElementById('reassignCentreJobId');
+    var reassignCentreCollector = document.getElementById('reassignCentreCollector');
+    var reassignCentreOriginal = document.getElementById('reassignCentreOriginal');
+    var reassignCentreReason = document.getElementById('reassignCentreReason');
+    
+    if (reassignCentreJobId) reassignCentreJobId.value = job.id || '';
+    if (reassignCentreCollector) reassignCentreCollector.value = job.collector || '';
+    if (reassignCentreOriginal) reassignCentreOriginal.value = job.originalCentre || '';
+    if (reassignCentreReason) reassignCentreReason.value = job.failReason || '';
 
-    document.getElementById('reassignCentreModal')?.classList.add('show');
+    var reassignCentreModal = document.getElementById('reassignCentreModal');
+    if (reassignCentreModal) reassignCentreModal.classList.add('show');
 }
 
 function closeReassignCentreModal() {
-    document.getElementById('reassignCentreModal')?.classList.remove('show');
+    var reassignCentreModal = document.getElementById('reassignCentreModal');
+    if (reassignCentreModal) reassignCentreModal.classList.remove('show');
 }
 
 function viewFailedDropoffDetails(jobId) {
-    const job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
+    var job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
     if (!job) return;
 
-    document.getElementById('detailsJobId').textContent = job.id || '-';
-    document.getElementById('detailsStatus').textContent = 'Failed Drop-off';
-    document.getElementById('detailsTime').textContent = job.time || '-';
-    document.getElementById('detailsLocation').textContent = job.originalCentre || '-';
-    document.getElementById('detailsCollector').textContent = job.collector || '-';
-    document.getElementById('detailsVehicle').textContent = '-';
-    document.getElementById('detailsReason').textContent = job.failReason || '-';
-    document.getElementById('detailsAdminNotes').value = '';
+    var detailsJobId = document.getElementById('detailsJobId');
+    var detailsStatus = document.getElementById('detailsStatus');
+    var detailsTime = document.getElementById('detailsTime');
+    var detailsLocation = document.getElementById('detailsLocation');
+    var detailsCollector = document.getElementById('detailsCollector');
+    var detailsReason = document.getElementById('detailsReason');
+    var detailsAdminNotes = document.getElementById('detailsAdminNotes');
 
-    document.getElementById('jobDetailsModal')?.classList.add('show');
+    if (detailsJobId) detailsJobId.textContent = job.id || '-';
+    if (detailsStatus) detailsStatus.textContent = 'Failed Drop-off';
+    if (detailsTime) detailsTime.textContent = job.time || '-';
+    if (detailsLocation) detailsLocation.textContent = job.originalCentre || '-';
+    if (detailsCollector) detailsCollector.textContent = job.collector || '-';
+    if (detailsReason) detailsReason.textContent = job.failReason || '-';
+    if (detailsAdminNotes) detailsAdminNotes.value = '';
+
+    var jobDetailsModal = document.getElementById('jobDetailsModal');
+    if (jobDetailsModal) jobDetailsModal.classList.add('show');
 }
 
 function goToIssuePage(jobId) {
     if (!jobId) return;
-    window.location.href = `aIssue.php?jobID=${encodeURIComponent(jobId)}`;
+    window.location.href = 'aIssue.php?jobID=' + encodeURIComponent(jobId);
 }
 
 function getInitials(name) {
-    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    var parts = String(name || '').trim().split(/\s+/).filter(function(p) { return p.length > 0; });
     if (!parts.length) return 'NA';
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 function escapeHtml(value) {
-    return String(value ?? '')
+    return String(value || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -725,7 +1066,7 @@ function escapeHtml(value) {
 }
 
 function escapeJs(value) {
-    return String(value ?? '')
+    return String(value || '')
         .replace(/\\/g, '\\\\')
         .replace(/'/g, "\\'")
         .replace(/"/g, '\\"')
@@ -747,6 +1088,11 @@ window.selectCollector = selectCollector;
 window.centerMapOnAll = centerMapOnAll;
 window.toggleMapLayers = toggleMapLayers;
 window.zoomToFit = zoomToFit;
+
+function goBackToJobs() {
+    window.location.href = '../../html/admin/aJobs.php';
+}
+
 window.goToIssuePage = goToIssuePage;
 window.openReportIssueModal = openReportIssueModal;
 window.closeReportIssueModal = closeReportIssueModal;
