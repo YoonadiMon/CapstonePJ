@@ -856,11 +856,13 @@ $jsData = [
         </div>
     </div>
 
+    
+
+    <script src="../../javascript/mainScript.js"></script>
+    <script src="../../javascript/aCollectionJobs.js?v=<?php echo time(); ?>"></script>
+
     <script>
         window.collectionJobsData = <?php echo json_encode($jsData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     </script>
-
-    <script src="/main/javascript/mainScript.js"></script>
-    <script src="/main/javascript/aCollectionJobs.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>
