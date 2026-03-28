@@ -642,14 +642,10 @@ $centreResult = mysqli_query($conn, $centreSql);
 
 if ($centreResult) {
     while ($row = mysqli_fetch_assoc($centreResult)) {
-        $itemCount = (int)$row['itemCount'];
-        $capacityPercent = min(100, $itemCount * 10);
-
         $centres[] = [
             'id' => (string)$row['centreID'],
             'name' => $row['name'],
             'status' => $row['status'],
-            'capacity' => $capacityPercent,
             'address' => $row['address'] . ', ' . $row['state'] . ' ' . $row['postcode']
         ];
     }
@@ -838,11 +834,6 @@ if ($timelineResult) {
                                 <span class="arrow"><i class="fas fa-chevron-down"></i></span>
                             </div>
                             <div class="custom-dropdown-menu" id="centreMenu"></div>
-                        </div>
-                        <div class="centre-capacity-container" id="centreCapacityContainer">
-                            <div class="capacity-circle" id="capacityCircle">
-                                <span id="capacityPercentage">0%</span>
-                            </div>
                         </div>
                     </div>
                 </div>

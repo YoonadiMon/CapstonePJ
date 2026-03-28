@@ -521,16 +521,6 @@
     padding-left: 0.5rem;
 }
 
-.centre-capacity {
-    background-color: var(--LightBlue);
-    padding: 0.3rem 1rem;
-    border-radius: 30px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--DarkBlue);
-    white-space: nowrap;
-}
-
 .datetime-picker-container {
     display: flex;
     flex-direction: column;
@@ -691,11 +681,6 @@
     background-color: var(--DarkBlue);
 }
 
-.dark-mode .centre-capacity {
-    background-color: var(--DarkerBlue);
-    color: var(--White);
-}
-
 /* Dark mode styles for dropdowns */
 .dark-mode .ops-select {
     background-color: var(--DarkBlue);
@@ -710,44 +695,6 @@
 
 .dark-mode .ops-select option {
     background-color: var(--DarkBlue);
-    color: var(--White);
-}
-
-/* Capacity Circle */
-.centre-capacity-container {
-    display: flex;
-    align-items: center;
-    margin-left: 0.5rem;
-}
-
-.capacity-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: conic-gradient(var(--MainBlue) 0deg, var(--LightBlue) 0deg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: background 0.3s ease;
-}
-
-.capacity-circle span {
-    background: var(--bg-color);
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1;
-    color: var(--DarkBlue);
-    font-size: 0.7rem;
-    font-weight: 600;
-}
-
-.dark-mode .capacity-circle span {
-    background: var(--DarkBlue);
     color: var(--White);
 }
 

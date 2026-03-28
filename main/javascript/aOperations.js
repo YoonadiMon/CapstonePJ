@@ -296,7 +296,6 @@ function clearCentreSelection() {
 
     if (centreDropdown) delete centreDropdown.dataset.selectedValue;
     if (selectedCentreText) selectedCentreText.textContent = 'Select a collection centre';
-    updateCapacityCircle(0);
 }
 
 function refreshSelectionsAfterDateChange() {
@@ -363,7 +362,6 @@ function buildCentreDropdownMenu() {
 
             document.getElementById('centreDropdown').dataset.selectedValue = centre.id;
             document.getElementById('selectedCentreText').textContent = centre.name;
-            updateCapacityCircle(Number(centre.capacity) || 0);
             menu.classList.remove('show');
             checkRequiredFields();
         });
@@ -403,19 +401,6 @@ document.addEventListener('click', function () {
         menu.classList.remove('show');
     });
 });
-
-function updateCapacityCircle(capacity) {
-    const circle = document.getElementById('capacityCircle');
-    const percentageSpan = document.getElementById('capacityPercentage');
-
-    if (!circle || !percentageSpan) return;
-
-    const safeCapacity = Math.max(0, Math.min(100, Number(capacity) || 0));
-    const degrees = (safeCapacity / 100) * 360;
-
-    circle.style.background = `conic-gradient(var(--MainBlue) ${degrees}deg, var(--LightBlue) 0deg)`;
-    percentageSpan.textContent = `${safeCapacity}%`;
-}
 
 function createRequestCard(request, index) {
     const card = document.createElement('div');
