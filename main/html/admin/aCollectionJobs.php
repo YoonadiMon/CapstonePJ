@@ -949,7 +949,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_issue'])) {
                 <div class="report-issue-footer">
                     <button type="button" class="btn-secondary" id="cancelReportIssueBtn">Cancel</button>
                     <button type="submit" class="btn-primary">
-                        <i class="fas fa-paper-plane"></i> Submit Issue
+                        <i class="fas fa-paper-plane"></i> Submit
                     </button>
                 </div>
             </form>
