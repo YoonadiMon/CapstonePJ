@@ -32,14 +32,7 @@ var tilesLayer = null;
 
 // GPS Simulation Variables
 var simulationInterval = null;
-var routeLine = null;
-var movingMarker = null;
-var currentPositionIndex = 0;
-var routeCoordinates = [];
-var totalRouteTime = 0;
-var totalRouteDistance = 0;
 
-// Random simulation states for different collectors
 var collectorSimulationStates = {};
 
 var collectionJobsData = window.collectionJobsData || {
@@ -62,345 +55,273 @@ var isSubmitting = false;
 
 var mapLayersVisible = true;
 
-// OSRM Routing Service URL
-var OSRM_URL = 'https://router.project-osrm.org/route/v1/driving/';
-var routeCache = {};
+// // doesn't work
+// // OSRM Routing Service URL
+// var OSRM_URL = 'https://router.project-osrm.org/route/v1/driving/';
+// var routeCache = {};
 
-// Fetch real road route from OSRM
-async function fetchRealRoute(startLat, startLng, endLat, endLng) {
-    var cacheKey = startLat + ',' + startLng + '|' + endLat + ',' + endLng;
+// // Fetch real road route from OSRM 
+// async function fetchRealRoute(startLat, startLng, endLat, endLng) {
+//     var cacheKey = startLat + ',' + startLng + '|' + endLat + ',' + endLng;
     
-    if (routeCache[cacheKey]) {
-        return routeCache[cacheKey];
-    }
+//     if (routeCache[cacheKey]) {
+//         return routeCache[cacheKey];
+//     }
     
-    var url = OSRM_URL + startLng + ',' + startLat + ';' + endLng + ',' + endLat + '?overview=full&geometries=geojson';
+//     var url = OSRM_URL + startLng + ',' + startLat + ';' + endLng + ',' + endLat + '?overview=full&geometries=geojson';
     
-    try {
-        var controller = new AbortController();
-        var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
+//     try {
+//         var controller = new AbortController();
+//         var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
         
-        var response = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
+//         var response = await fetch(url, { signal: controller.signal });
+//         clearTimeout(timeoutId);
         
-        var data = await response.json();
+//         var data = await response.json();
         
-        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-            var route = data.routes[0];
-            var coordinates = route.geometry.coordinates.map(function(coord) { 
-                return [coord[1], coord[0]]; 
-            });
-            var duration = route.duration;
-            var distance = route.distance;
+//         if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+//             var route = data.routes[0];
+//             var coordinates = route.geometry.coordinates.map(function(coord) { 
+//                 return [coord[1], coord[0]]; 
+//             });
+//             var duration = route.duration;
+//             var distance = route.distance;
             
-            var result = {
-                coordinates: coordinates,
-                duration: duration,
-                distance: distance,
-                summary: route.legs[0].summary || 'Route'
-            };
+//             var result = {
+//                 coordinates: coordinates,
+//                 duration: duration,
+//                 distance: distance,
+//                 summary: route.legs[0].summary || 'Route'
+//             };
             
-            routeCache[cacheKey] = result;
-            return result;
-        }
-    } catch (error) {
-        console.error('OSRM error:', error);
-    }
+//             routeCache[cacheKey] = result;
+//             return result;
+//         }
+//     } catch (error) {
+//         console.error('OSRM error:', error);
+//     }
     
-    return null;
-}
-
+//     return null;
+// }
+//
 // Generate smooth curve route as fallback (simulates road curves)
-function generateCurvedRoute(startLat, startLng, endLat, endLng, pointsCount) {
-    pointsCount = pointsCount || 50;
-    var coordinates = [];
+// function generateCurvedRoute(startLat, startLng, endLat, endLng, pointsCount) {
+//     pointsCount = pointsCount || 50;
+//     var coordinates = [];
     
-    // Add control points to create a realistic curved path
-    var midLat = (startLat + endLat) / 2;
-    var midLng = (startLng + endLng) / 2;
+//     // Add control points to create a realistic curved path
+//     var midLat = (startLat + endLat) / 2;
+//     var midLng = (startLng + endLng) / 2;
     
-    // Create a perpendicular offset to simulate road curves
-    var dx = endLng - startLng;
-    var dy = endLat - startLat;
-    var offset = Math.sqrt(dx * dx + dy * dy) * 0.15;
+//     // Create a perpendicular offset to simulate road curves
+//     var dx = endLng - startLng;
+//     var dy = endLat - startLat;
+//     var offset = Math.sqrt(dx * dx + dy * dy) * 0.15;
     
-    // Random curve direction
-    var curveDirection = Math.random() > 0.5 ? 1 : -1;
+//     // Random curve direction
+//     var curveDirection = Math.random() > 0.5 ? 1 : -1;
     
-    for (var i = 0; i <= pointsCount; i++) {
-        var t = i / pointsCount;
+//     for (var i = 0; i <= pointsCount; i++) {
+//         var t = i / pointsCount;
         
-        // Bezier curve for smooth road-like path
-        var bezierT = t;
-        var lat = Math.pow(1 - bezierT, 2) * startLat + 
-                  2 * (1 - bezierT) * bezierT * (midLat + curveDirection * offset * Math.sin(bezierT * Math.PI)) + 
-                  Math.pow(bezierT, 2) * endLat;
-        var lng = Math.pow(1 - bezierT, 2) * startLng + 
-                  2 * (1 - bezierT) * bezierT * (midLng + curveDirection * offset * Math.cos(bezierT * Math.PI)) + 
-                  Math.pow(bezierT, 2) * endLng;
+//         // Bezier curve for smooth road-like path
+//         var bezierT = t;
+//         var lat = Math.pow(1 - bezierT, 2) * startLat + 
+//                   2 * (1 - bezierT) * bezierT * (midLat + curveDirection * offset * Math.sin(bezierT * Math.PI)) + 
+//                   Math.pow(bezierT, 2) * endLat;
+//         var lng = Math.pow(1 - bezierT, 2) * startLng + 
+//                   2 * (1 - bezierT) * bezierT * (midLng + curveDirection * offset * Math.cos(bezierT * Math.PI)) + 
+//                   Math.pow(bezierT, 2) * endLng;
         
-        coordinates.push([lat, lng]);
-    }
+//         coordinates.push([lat, lng]);
+//     }
     
-    // Calculate distance
-    var R = 6371e3;
-    var totalDist = 0;
-    for (var j = 1; j < coordinates.length; j++) {
-        var lat1 = coordinates[j-1][0] * Math.PI / 180;
-        var lat2 = coordinates[j][0] * Math.PI / 180;
-        var lng1 = coordinates[j-1][1] * Math.PI / 180;
-        var lng2 = coordinates[j][1] * Math.PI / 180;
-        var dLat = lat2 - lat1;
-        var dLng = lng2 - lng1;
-        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1) * Math.cos(lat2) *
-                Math.sin(dLng/2) * Math.sin(dLng/2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        totalDist += R * c;
-    }
+//     // Calculate distance
+//     var R = 6371e3;
+//     var totalDist = 0;
+//     for (var j = 1; j < coordinates.length; j++) {
+//         var lat1 = coordinates[j-1][0] * Math.PI / 180;
+//         var lat2 = coordinates[j][0] * Math.PI / 180;
+//         var lng1 = coordinates[j-1][1] * Math.PI / 180;
+//         var lng2 = coordinates[j][1] * Math.PI / 180;
+//         var dLat = lat2 - lat1;
+//         var dLng = lng2 - lng1;
+//         var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+//                 Math.cos(lat1) * Math.cos(lat2) *
+//                 Math.sin(dLng/2) * Math.sin(dLng/2);
+//         var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+//         totalDist += R * c;
+//     }
     
-    var estimatedSpeed = 13.89;
-    var duration = totalDist / estimatedSpeed;
+//     var estimatedSpeed = 13.89;
+//     var duration = totalDist / estimatedSpeed;
     
-    return {
-        coordinates: coordinates,
-        duration: duration,
-        distance: totalDist,
-        summary: 'Road Route'
-    };
-}
+//     return {
+//         coordinates: coordinates,
+//         duration: duration,
+//         distance: totalDist,
+//         summary: 'Road Route'
+//     };
+// }
 
-// Get random simulation state for a collector
-function getRandomSimulationState(collectorId) {
-    if (!collectorSimulationStates[collectorId]) {
-        var randomValue = Math.random();
-        var isArrived = randomValue < 0.3;
-        collectorSimulationStates[collectorId] = {
-            isArrived: isArrived,
-            progress: isArrived ? 100 : Math.random() * 80,
-            startTime: Date.now()
-        };
-    }
-    return collectorSimulationStates[collectorId];
-}
+async function showPhaseRoute(collector) {
+    // debug log to verify data 
+    console.log('showPhaseRoute called with:', {
+        name: collector.name,
+        progressText: collector.progressText,
+        routeStartLat: collector.routeStartLat,
+        routeStartLng: collector.routeStartLng,
+        routeEndLat: collector.routeEndLat,
+        routeEndLng: collector.routeEndLng
+    });
 
-// Start GPS simulation with real road routing
-async function startGPSSimulation(collector) {
-    if (simulationInterval) {
-        clearInterval(simulationInterval);
-        simulationInterval = null;
-    }
-    
-    if (!collector.pickupLat || !collector.pickupLng || !collector.centreLat || !collector.centreLng) {
-        console.warn('Missing coordinates for simulation');
+    if (!collector.routeStartLat || !collector.routeStartLng ||
+        !collector.routeEndLat   || !collector.routeEndLng) {
+        console.warn('Missing route coordinates');
         return;
     }
-    
-    var simulationState = getRandomSimulationState(collector.id);
-    var isArrived = simulationState.isArrived;
-    var initialProgress = isArrived ? 100 : simulationState.progress;
-    
-    var routeEta = document.getElementById('routeEta');
-    if (routeEta) {
-        routeEta.textContent = isArrived ? '' : 'Loading route...';
-    }
-    
-    showLoadingSpinner();
-    
-    // Try to fetch real road route from OSRM
-    var routeData = await fetchRealRoute(
-        collector.pickupLat, collector.pickupLng,
-        collector.centreLat, collector.centreLng
-    );
-    
-    // Fallback to curved route if OSRM fails
-    if (!routeData) {
-        console.log('Using curved route fallback');
-        routeData = generateCurvedRoute(
-            collector.pickupLat, collector.pickupLng,
-            collector.centreLat, collector.centreLng
-        );
-    }
-    
-    hideLoadingSpinner();
-    
-    routeCoordinates = routeData.coordinates;
-    totalRouteTime = routeData.duration;
-    totalRouteDistance = routeData.distance;
-    var totalDistanceKm = (totalRouteDistance / 1000).toFixed(1);
-    
-    var startIndex = Math.floor((initialProgress / 100) * (routeCoordinates.length - 1));
-    currentPositionIndex = Math.max(0, Math.min(startIndex, routeCoordinates.length - 1));
-    
-    var remainingTime = totalRouteTime * (1 - (initialProgress / 100));
-    var remainingMinutes = Math.round(remainingTime / 60);
-    var remainingEta = remainingMinutes < 60 ? remainingMinutes + ' min' : Math.floor(remainingMinutes / 60) + 'h ' + (remainingMinutes % 60) + 'm';
-    
-    if (routeEta) {
-        if (isArrived) {
-            routeEta.textContent = '';
-        } else {
-            routeEta.textContent = 'ETA: ' + remainingEta + ' | ' + totalDistanceKm + ' km | ' + Math.round(initialProgress) + '%';
-        }
-    }
-    
-    if (routeLayer) {
-        routeLayer.clearLayers();
-    }
-    
-    var latLngs = [];
-    for (var i = 0; i < routeCoordinates.length; i++) {
-        latLngs.push([routeCoordinates[i][0], routeCoordinates[i][1]]);
-    }
-    
-    routeLine = L.polyline(latLngs, {
-        color: isArrived ? '#4caf50' : '#2196f3',
-        weight: 5,
-        opacity: 0.9,
-        lineJoin: 'round',
-        lineCap: 'round'
+
+    var startLatLng = [collector.routeStartLat, collector.routeStartLng];
+    var endLatLng   = [collector.routeEndLat,   collector.routeEndLng];
+
+    if (routeLayer) routeLayer.clearLayers();
+
+    // Draw dashed straight line immediately as placeholder while OSRM loads
+    var placeholderLine = L.polyline([startLatLng, endLatLng], {
+        color:     '#90caf9',
+        weight:    2,
+        opacity:   0.5,
+        dashArray: '6, 8',
     }).addTo(routeLayer);
-    
-    var startMarker = L.marker([collector.pickupLat, collector.pickupLng], {
-        icon: L.divIcon({
-            className: 'route-marker',
-            html: '<i class="fas fa-circle" style="color: #4caf50; font-size: 12px;"></i>',
-            iconSize: [12, 12]
-        })
-    }).addTo(routeLayer);
-    startMarker.bindPopup(escapeHtml(collector.pickupLabel || ''));
-    
-    var endMarker = L.marker([collector.centreLat, collector.centreLng], {
-        icon: L.divIcon({
-            className: 'route-marker',
-            html: '<i class="fas fa-circle" style="color: #f44336; font-size: 12px;"></i>',
-            iconSize: [12, 12]
-        })
-    }).addTo(routeLayer);
-    endMarker.bindPopup(escapeHtml(collector.centreLabel || 'Centre'));
-    
-    var currentPosition = routeCoordinates[currentPositionIndex];
-    var markerHtml = '';
-    
-    if (isArrived) {
-        markerHtml = '<i class="fas fa-check-circle" style="color: #4caf50; font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>';
-    } else {
-        markerHtml = '<i class="fas fa-truck-moving" style="color: #ff9800; font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); animation: bounce 0.5s ease infinite;"></i>';
-    }
-    
-    movingMarker = L.marker([currentPosition[0], currentPosition[1]], {
+
+    // Vehicle marker at start
+    L.marker(startLatLng, {
         icon: L.divIcon({
             className: 'moving-vehicle-marker',
-            html: markerHtml,
-            iconSize: [28, 28]
+            html: '<i class="fas fa-truck-moving" style="color:#ff9800;font-size:20px;"></i>',
+            iconSize: [24, 24]
         }),
         zIndexOffset: 1000
-    }).addTo(routeLayer);
-    
-    var vehicleDisplay = collector.vehicle || 'Vehicle';
-    movingMarker.bindPopup(vehicleDisplay).openPopup();
-    
-    if (isArrived) {
-        var routeCurrentLocation = document.getElementById('routeCurrentLocation');
-        if (routeCurrentLocation) routeCurrentLocation.textContent = '';
-        
-        var progressBar = document.getElementById('routeProgressBar');
-        if (progressBar) progressBar.style.width = '100%';
-        
-        showEtaBubble(collector.centreLat, collector.centreLng, '✓ ARRIVED', false);
-        
-        return;
+    }).addTo(routeLayer).bindPopup(collector.vehicle || 'Vehicle');
+
+    // End marker
+    var endLabel = collector.progressText === 'Returning to base'    ? 'Base (APU)'
+                 : collector.progressText === 'Heading to pickup' ||
+                   collector.progressText === 'Not yet departed'     ? 'Pickup Location'
+                 : 'Collection Centre';
+
+    L.marker(endLatLng, {
+        icon: L.divIcon({
+            className: 'route-marker',
+            html: '<i class="fas fa-map-marker-alt" style="color:#f44336;font-size:20px;"></i>',
+            iconSize: [16, 20]
+        })
+    }).addTo(routeLayer).bindPopup(endLabel);
+
+    // Fit map to placeholder line while route loads
+    map.fitBounds(L.polyline([startLatLng, endLatLng]).getBounds().pad(0.3));
+
+    // Update info box with loading state
+    var routeCollectorName   = document.getElementById('routeCollectorName');
+    var routeCurrentLocation = document.getElementById('routeCurrentLocation');
+    var routeEta             = document.getElementById('routeEta');
+    var routeInfoBox         = document.getElementById('routeInfoBox');
+
+    if (routeCollectorName)   routeCollectorName.textContent   = collector.name || '-';
+    if (routeCurrentLocation) routeCurrentLocation.textContent = collector.progressText || '-';
+    if (routeEta)             routeEta.textContent             = 'Calculating route...';
+    if (routeInfoBox)         routeInfoBox.style.display       = 'block';
+
+    // Fetch real road route from OSRM (client-side, no PHP involvement)
+    try {
+        var osrmUrl = 'https://router.project-osrm.org/route/v1/driving/'
+            + collector.routeStartLng + ',' + collector.routeStartLat + ';'
+            + collector.routeEndLng   + ',' + collector.routeEndLat
+            + '?overview=full&geometries=geojson';
+
+        var controller = new AbortController();
+        var timeout = setTimeout(function() { controller.abort(); }, 8000);
+
+        var response = await fetch(osrmUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        var data = await response.json();
+
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            var route = data.routes[0];
+
+            // Decode GeoJSON coordinates [lng, lat] → Leaflet [lat, lng]
+            var latlngs = route.geometry.coordinates.map(function(c) {
+                return [c[1], c[0]];
+            });
+
+            var distanceKm  = (route.distance / 1000).toFixed(1);
+            var durationMin = Math.round(route.duration / 60);
+
+            // Remove placeholder, draw real road route
+            routeLayer.removeLayer(placeholderLine);
+
+            L.polyline(latlngs, {
+                color:   '#2196f3',
+                weight:  4,
+                opacity: 0.85,
+                lineJoin: 'round',
+                lineCap:  'round'
+            }).addTo(routeLayer);
+
+            if (routeEta) {
+                routeEta.textContent = '~' + distanceKm + ' km · ' + durationMin + ' min';
+            }
+
+            // Refit map to actual road route
+            map.fitBounds(L.polyline(latlngs).getBounds().pad(0.25));
+
+        } else {
+            // OSRM returned no route — keep placeholder, show straight-line distance
+            throw new Error('No route from OSRM');
+        }
+
+    } catch (err) {
+        // Timeout or error — fall back to straight-line distance display
+        console.warn('OSRM routing failed, showing straight line:', err.message);
+
+        var R    = 6371;
+        var dLat = (collector.routeEndLat - collector.routeStartLat) * Math.PI / 180;
+        var dLng = (collector.routeEndLng - collector.routeStartLng) * Math.PI / 180;
+        var a    = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                   Math.cos(collector.routeStartLat * Math.PI / 180) *
+                   Math.cos(collector.routeEndLat   * Math.PI / 180) *
+                   Math.sin(dLng/2) * Math.sin(dLng/2);
+        var distanceKm = (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
+
+        // Redraw placeholder as solid line to signal fallback
+        routeLayer.removeLayer(placeholderLine);
+        L.polyline([startLatLng, endLatLng], {
+            color:     '#2196f3',
+            weight:    3,
+            opacity:   0.7,
+            dashArray: '8, 6',
+        }).addTo(routeLayer);
+
+        if (routeEta) routeEta.textContent = '~' + distanceKm + ' km (est.)';
     }
-    
-    map.setView([currentPosition[0], currentPosition[1]], 13);
-    
-    var elapsedTime = (initialProgress / 100) * totalRouteTime * 1000;
-    var lastTimestamp = Date.now();
-    var routeEtaElement = routeEta;
-    var vehicleText = collector.vehicle || 'Vehicle';
-    var centreLatVal = collector.centreLat;
-    var centreLngVal = collector.centreLng;
-    
-    simulationInterval = setInterval(function() {
-        var now = Date.now();
-        var deltaTime = Math.min(100, now - lastTimestamp);
-        lastTimestamp = now;
-        elapsedTime = elapsedTime + deltaTime;
-        
-        var progress = Math.min(1, elapsedTime / (totalRouteTime * 1000));
-        var targetIndex = Math.floor(progress * (routeCoordinates.length - 1));
-        
-        if (targetIndex > currentPositionIndex && targetIndex < routeCoordinates.length) {
-            currentPositionIndex = targetIndex;
-            var position = routeCoordinates[currentPositionIndex];
-            
-            movingMarker.setLatLng([position[0], position[1]]);
-            
-            var remainingTimeVal = totalRouteTime - (elapsedTime / 1000);
-            var remainingMinutesVal = Math.max(0, Math.round(remainingTimeVal / 60));
-            var remainingEtaVal = remainingMinutesVal < 60 ? remainingMinutesVal + ' min' : Math.floor(remainingMinutesVal / 60) + 'h ' + (remainingMinutesVal % 60) + 'm';
-            var progressPercent = Math.round(progress * 100);
-            var remainingDistanceVal = ((totalRouteTime - (elapsedTime / 1000)) / totalRouteTime) * totalRouteDistance;
-            var remainingDistanceKmVal = (remainingDistanceVal / 1000).toFixed(1);
-            
-            if (routeEtaElement) {
-                routeEtaElement.textContent = 'ETA: ' + remainingEtaVal + ' | ' + remainingDistanceKmVal + ' km | ' + progressPercent + '%';
-            }
-            
-            var routeCurrentLocationElem = document.getElementById('routeCurrentLocation');
-            if (routeCurrentLocationElem) {
-                routeCurrentLocationElem.textContent = progressPercent + '% | ' + remainingDistanceKmVal + ' km';
-            }
-            
-            movingMarker.bindPopup(vehicleText).openPopup();
-            
-            showEtaBubble(position[0], position[1], 'ETA: ' + remainingEtaVal, true);
-            
-            var progressBarElem = document.getElementById('routeProgressBar');
-            if (progressBarElem) {
-                progressBarElem.style.width = progressPercent + '%';
-            }
-        }
-        
-        if (progress >= 1) {
-            stopSimulation();
-            
-            if (routeEtaElement) routeEtaElement.textContent = '';
-            
-            var finalRouteLocation = document.getElementById('routeCurrentLocation');
-            if (finalRouteLocation) finalRouteLocation.textContent = '';
-            
-            movingMarker.bindPopup(vehicleText).openPopup();
-            
-            movingMarker.setIcon(L.divIcon({
-                className: 'arrived-marker',
-                html: '<i class="fas fa-check-circle" style="color: #4caf50; font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>',
-                iconSize: [28, 28]
-            }));
-            
-            showEtaBubble(centreLatVal, centreLngVal, '✓ ARRIVED', false);
-            
-            var finalProgressBar = document.getElementById('routeProgressBar');
-            if (finalProgressBar) finalProgressBar.style.width = '100%';
-        }
-    }, 100);
 }
 
-function showLoadingSpinner() {
-    var mapContainer = document.getElementById('mapContainer');
-    if (mapContainer && !document.getElementById('mapLoadingSpinner')) {
-        var spinner = document.createElement('div');
-        spinner.id = 'mapLoadingSpinner';
-        spinner.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 12px 20px; border-radius: 8px; z-index: 2000; display: flex; align-items: center; gap: 10px; font-size: 14px;';
-        spinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading route...';
-        mapContainer.appendChild(spinner);
-    }
-}
+// function showLoadingSpinner() {
+//     var mapContainer = document.getElementById('mapContainer');
+//     if (mapContainer && !document.getElementById('mapLoadingSpinner')) {
+//         var spinner = document.createElement('div');
+//         spinner.id = 'mapLoadingSpinner';
+//         spinner.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 12px 20px; border-radius: 8px; z-index: 2000; display: flex; align-items: center; gap: 10px; font-size: 14px;';
+//         spinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading route...';
+//         mapContainer.appendChild(spinner);
+//     }
+// }
 
-function hideLoadingSpinner() {
-    var spinner = document.getElementById('mapLoadingSpinner');
-    if (spinner) spinner.remove();
-}
+// function hideLoadingSpinner() {
+//     var spinner = document.getElementById('mapLoadingSpinner');
+//     if (spinner) spinner.remove();
+// }
 
 function stopSimulation() {
     if (simulationInterval) {
@@ -621,6 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    setInterval(function() { loadQuickStats(); }, 60000);
 });
 
 function loadAllData() {
@@ -816,19 +738,62 @@ function loadActiveCollectors() {
         var statusClass = collector.status === 'online' ? 'online' : 'busy';
         var initials = getInitials(collector.name || 'NA');
         var activeClass = selectedCollectorId === collector.id ? 'active' : '';
-        html += '<div class="collector-list-item ' + activeClass + '" onclick="selectCollector(\'' + escapeJs(collector.id || '') + '\')"><div class="collector-list-info"><div class="collector-avatar">' + escapeHtml(initials) + '</div><div class="collector-details"><span class="collector-list-name">' + escapeHtml(collector.name || '-') + '</span><span class="collector-list-vehicle">' + escapeHtml(collector.vehicle || '-') + '</span></div></div><div class="collector-list-status"><span class="status-badge-collector ' + statusClass + '"></span>' + (collector.jobId ? '<span class="collector-job-id">' + escapeHtml(collector.jobId) + '</span>' : '<span>Available</span>') + '</div></div>';
+        var jobIdDisplay = collector.jobId || 'N/A';
+        var progressText = collector.progressText || 'On route';
+
+        // Use the pre-calculated displayLocation from PHP
+        var locationText = collector.displayLocation || '';
+
+        if (!locationText) {
+            // Fallback logic if displayLocation is empty
+            if (progressText === 'Returning to base') {
+                locationText = 'APU, Jalan Teknologi 5, Kuala Lumpur';
+            } else if (progressText === 'Delivering to centre') {
+                locationText = collector.centreLabel || collector.pickupLabel || 'Collection centre';
+            } else {
+                locationText = collector.pickupLabel || 'Pickup location';
+            }
+        }
+
+        html += '<div class="collector-list-item ' + activeClass + '" data-collector-id="' + escapeJs(collector.id) + '" onclick="selectCollector(\'' + escapeJs(collector.id) + '\')">';
+        html += '<div class="collector-list-info">';
+        html += '<div class="collector-avatar">' + escapeHtml(initials) + '</div>';
+        html += '<div class="collector-details">';
+        html += '<span class="collector-list-name">' + escapeHtml(collector.name || '-') + '</span>';
+        html += '<span class="collector-list-vehicle">' + escapeHtml(collector.vehicle || '-') + '</span>';
+        html += '</div></div>';
+        html += '<div class="collector-list-status">';
+        html += '<span class="status-badge-collector ' + statusClass + '"></span>';
+        html += '<span class="collector-job-id">' + escapeHtml(jobIdDisplay) + '</span>';
+        html += '</div>';
+        html += '<div class="job-summary">';
+        html += '<div><i class="fas fa-truck"></i> <span>' + escapeHtml(progressText) + '</span></div>';
+        html += '<div><i class="fas fa-map-marker-alt"></i> <span>' + escapeHtml(locationText) + '</span></div>';
+        html += '<div class="job-actions">';
+        html += '<button class="btn-icon" onclick="openReportIssueModal(\'' + escapeJs(collector.jobID_numeric || '') + '\'); event.stopPropagation();" title="Report issue"><i class="fas fa-exclamation-circle"></i></button>';
+        html += '<button class="btn-icon" onclick="viewJobDetails(\'' + escapeJs(collector.jobId) + '\'); event.stopPropagation();" title="View details"><i class="fas fa-eye"></i></button>';
+        html += '</div></div>';
+        html += '</div>';
     }
     collectorList.innerHTML = html;
 }
 
-function loadQuickStats() {
+async function loadQuickStats() {
+    try {
+        var response = await fetch(window.location.href + '?fetch_data=1&t=' + Date.now());
+        var freshData = await response.json();
+        collectionJobsData.quickStats = freshData.quickStats;
+    } catch (e) {
+        // fall back to existing data silently
+    }
+
     var completedToday = document.getElementById('completedToday');
     var avgResponse = document.getElementById('avgResponse');
     var totalDistance = document.getElementById('totalDistance');
 
     if (completedToday) completedToday.textContent = collectionJobsData.quickStats.completedToday || 0;
     if (avgResponse) avgResponse.textContent = collectionJobsData.quickStats.avgResponse || '0min';
-    if (totalDistance) totalDistance.textContent = collectionJobsData.quickStats.totalDistance || 0;
+    if (totalDistance) totalDistance.textContent = (collectionJobsData.quickStats.totalDistance || 0) + ' km';
 }
 
 function updateCounts() {
@@ -925,25 +890,18 @@ async function startGPSSimulationForCollector(collectorId) {
         }
     }
     if (!collector) return;
-    
+
     stopSimulation();
-    
-    if (routeLayer) {
-        routeLayer.clearLayers();
-    }
-    
+
+    if (routeLayer) routeLayer.clearLayers();
+
     var routeInfoBox = document.getElementById('routeInfoBox');
-    var routeCollectorName = document.getElementById('routeCollectorName');
     var routeCurrentLocation = document.getElementById('routeCurrentLocation');
-    
-    if (routeCollectorName) routeCollectorName.textContent = collector.vehicle || '-';
     if (routeCurrentLocation) routeCurrentLocation.textContent = 'Loading...';
     if (routeInfoBox) routeInfoBox.style.display = 'block';
-    
-    await startGPSSimulation(collector);
+
+    await showPhaseRoute(collector);
 }
-
-
 
 function centerMapOnAll() {
     selectedCollectorId = null;
@@ -1045,7 +1003,25 @@ function openReportIssueModal(jobId) {
             ...(collectionJobsData.delayedJobs || []),
             ...(collectionJobsData.pendingDropoffJobs || [])
         ];
-        job = allJobs.find(j => j.jobID == numericJobId);
+        job = allJobs.find(function(j) { return j.jobID == numericJobId; });
+    }
+
+    if (!job) {
+        var activeCollectors = collectionJobsData.activeCollectors || [];
+        var found = activeCollectors.find(function(c) { return c.jobID_numeric == numericJobId; });
+        if (found) {
+            job = {
+                jobID: found.jobID_numeric,
+                requestID: found.requestID,
+                id: found.jobId,
+                collector: found.name,
+                vehicle: found.vehicle,
+                location: found.pickupLabel,
+                reason: found.progressText,
+                status: found.jobStatus,
+                time: '-'
+            };
+        }
     }
     
     var modal = document.getElementById('reportIssueModal');
@@ -1175,7 +1151,30 @@ function closeAssignHandoverModal() {
 }
 
 function viewJobDetails(jobId) {
-    var job = (collectionJobsData.handoverLookup || {})[jobId] || (collectionJobsData.delayedLookup || {})[jobId];
+    var job = (collectionJobsData.handoverLookup || {})[jobId] || 
+              (collectionJobsData.delayedLookup || {})[jobId];
+
+    if (!job) {
+        var numericId = extractNumericJobId(jobId);
+        var activeCollectors = collectionJobsData.activeCollectors || [];
+        var found = activeCollectors.find(function(c) { return c.jobID_numeric == numericId; });
+        var formattedTime = '-';
+        if (found.scheduledDate && found.scheduledTime) {
+            formattedTime = new Date(found.scheduledDate + ' ' + found.scheduledTime).toLocaleString('en-MY');
+        }
+        if (found) {
+            job = {
+                id: found.jobId,
+                status: found.jobStatus,
+                time: formattedTime,
+                location: found.pickupLabel,
+                collector: found.name,
+                vehicle: found.vehicle,
+                reason: found.progressText
+            };
+        }
+    }
+
     if (!job) return;
 
     var detailsJobId = document.getElementById('detailsJobId');

@@ -169,25 +169,105 @@ function vehicleHasScheduledConflict(vehicleId, scheduledDate) {
     );
 }
 
-function centreAcceptsRequestItems(centreId, request) {
-    if (!centreId || !request) return false;
+// Validate that a centre accepts the given item type
+function centreAcceptsItemType(centreId, itemTypeId, itemName = '') {
+    if (!centreId || !itemTypeId) return false;
+    const accepted = getCentreAcceptedTypes()[String(centreId)] || [];
+    // "other electronics" always accepted
+    if (itemName.toLowerCase() === 'other electronics') return true;
+    return accepted.includes(Number(itemTypeId));
+}
 
-    const acceptedData = getCentreAcceptedTypes();
-    const acceptedTypeIds = Array.isArray(acceptedData[String(centreId)])
-        ? acceptedData[String(centreId)]
-        : [];
+// Render per‑item centre selectors
+function renderItemCentreSelectors(request) {
+    const container = document.getElementById('itemCentreSelectors');
+    if (!container) return;
 
-    const itemDetails = Array.isArray(request.itemDetails) ? request.itemDetails : [];
+    const items = request.itemDetails || [];
+    if (items.length === 0) {
+        container.innerHTML = '<div class="no-items">No items found</div>';
+        return;
+    }
 
-    return itemDetails.every(item => {
-        const itemName = String(item.name || '').trim().toLowerCase();
+    const allCentres = getCentres();
+    // Pre‑filter eligible centres (Active only)
+    const eligibleCentres = allCentres.filter(centre => centre.status.toLowerCase() === 'active');
 
-        if (itemName === 'other electronics') {
-            return true;
-        }
+    container.innerHTML = items.map(item => {
+        // For each item, further filter centres that accept its type
+        const itemName = item.name.toLowerCase();
+        const acceptAll = itemName === 'other electronics'; // always accepted
+        const itemTypeId = item.itemTypeID;
 
-        return acceptedTypeIds.includes(Number(item.itemTypeID));
+        const centreOptions = eligibleCentres.filter(centre => {
+            if (acceptAll) return true;
+            const acceptedTypes = getCentreAcceptedTypes()[centre.id] || [];
+            return acceptedTypes.includes(itemTypeId);
+        }).map(centre => `
+            <option value="${centre.id}">
+                ${escapeHtml(centre.name)}
+            </option>
+        `).join('');
+
+        return `
+            <div class="item-centre-row" data-item-id="${item.itemID}" data-item-type-id="${item.itemTypeID}">
+                <div class="item-name">${escapeHtml(item.name)}</div>
+                <div class="centre-select-wrapper">
+                    <select class="centre-select" data-item-id="${item.itemID}" data-item-type-id="${item.itemTypeID}">
+                        <option value="">-- Select centre --</option>
+                        ${centreOptions}
+                    </select>
+                </div>
+                <div class="centre-warning" style="display:none; color:#e74c3c; font-size:0.75rem;"></div>
+            </div>
+        `;
+    }).join('');
+
+    // Attach change event to each select (for extra validation like status, but already filtered)
+    document.querySelectorAll('.centre-select').forEach(select => {
+        select.addEventListener('change', function() {
+            validateItemCentre(this);
+            checkRequiredFields();
+        });
     });
+}
+
+// Validate a single item's centre selection
+function validateItemCentre(selectElement) {
+    const selectedCentreId = selectElement.value;
+    const row = selectElement.closest('.item-centre-row');
+    const warningSpan = row.querySelector('.centre-warning');
+    if (!warningSpan) return;
+
+    if (!selectedCentreId) {
+        warningSpan.style.display = 'none';
+        return;
+    }
+
+    const itemTypeId = parseInt(selectElement.dataset.itemTypeId);
+    const itemName = row.querySelector('.item-name').innerText;
+    const centre = getCentres().find(c => c.id === selectedCentreId);
+    if (!centre) {
+        warningSpan.textContent = 'Centre not found';
+        warningSpan.style.display = 'block';
+        return;
+    }
+
+    if (centre.status.toLowerCase() !== 'active') {
+        warningSpan.textContent = `Centre is ${centre.status}, cannot assign.`;
+        warningSpan.style.display = 'block';
+        selectElement.value = '';
+        return;
+    }
+
+    if (!centreAcceptsItemType(selectedCentreId, itemTypeId, itemName)) {
+        warningSpan.textContent = `This centre does not accept "${itemName}".`;
+        warningSpan.style.display = 'block';
+        selectElement.value = '';
+        return;
+    }
+
+    warningSpan.style.display = 'none';
 }
 
 function getCollectorReason(collector, selectedDateOnly) {
@@ -222,20 +302,6 @@ function getVehicleReason(vehicle, selectedDateOnly) {
     return '';
 }
 
-function getCentreReason(centre, request) {
-    const centreStatus = String(centre.status || '').toLowerCase();
-
-    if (centreStatus !== 'active') {
-        return 'Centre inactive';
-    }
-
-    if (request && !centreAcceptsRequestItems(centre.id, request)) {
-        return 'Item type not accepted';
-    }
-
-    return '';
-}
-
 function setMinDateTime() {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -260,13 +326,15 @@ function setMinPopupDates() {
 function checkRequiredFields() {
     const collector = document.getElementById('collectorDropdown')?.dataset.selectedValue || '';
     const vehicle = document.getElementById('vehicleDropdown')?.dataset.selectedValue || '';
-    const centre = document.getElementById('centreDropdown')?.dataset.selectedValue || '';
     const datetime = document.getElementById('scheduledDateTime')?.value || '';
     const selectedRequest = getSelectedRequest();
 
+    const itemSelects = document.querySelectorAll('.centre-select');
+    const allItemsHaveCentre = Array.from(itemSelects).every(select => select.value !== '');
+
     const confirmBtn = document.getElementById('confirmAssignmentBtn');
     if (confirmBtn) {
-        confirmBtn.disabled = !(collector && vehicle && centre && datetime && selectedRequest);
+        confirmBtn.disabled = !(collector && vehicle && datetime && selectedRequest && allItemsHaveCentre);
     }
 }
 
@@ -290,12 +358,10 @@ function clearVehicleSelection() {
     if (vehicleHint) vehicleHint.textContent = '';
 }
 
-function clearCentreSelection() {
-    const centreDropdown = document.getElementById('centreDropdown');
-    const selectedCentreText = document.getElementById('selectedCentreText');
-
-    if (centreDropdown) delete centreDropdown.dataset.selectedValue;
-    if (selectedCentreText) selectedCentreText.textContent = 'Select a collection centre';
+function clearCentreSelections() {
+    // Clear all item centre selectors
+    const container = document.getElementById('itemCentreSelectors');
+    if (container) container.innerHTML = '';
 }
 
 function refreshSelectionsAfterDateChange() {
@@ -317,138 +383,8 @@ function refreshSelectionsAfterDateChange() {
         }
     }
 
-    const centreId = document.getElementById('centreDropdown')?.dataset.selectedValue || '';
-    const request = getSelectedRequest();
-    if (centreId) {
-        const centre = getCentres().find(c => String(c.id) === String(centreId));
-        if (!centre || getCentreReason(centre, request)) {
-            clearCentreSelection();
-        }
-    }
-
-    buildCentreDropdownMenu();
+    // Centre selections are re‑rendered when a request is selected, no need to clear here
     checkRequiredFields();
-}
-
-function buildCentreDropdownMenu() {
-    const menu = document.getElementById('centreMenu');
-    const selectedRequest = getSelectedRequest();
-    if (!menu) return;
-
-    menu.innerHTML = '';
-
-    getCentres().forEach(centre => {
-        const menuItem = document.createElement('div');
-        menuItem.className = 'custom-dropdown-item';
-        menuItem.dataset.value = centre.id;
-
-        const reason = getCentreReason(centre, selectedRequest);
-        const isAvailable = !reason;
-
-        menuItem.innerHTML = `
-            <div>${escapeHtml(centre.name)}</div>
-            ${reason ? `<small class="centre-reason-text">${escapeHtml(reason)}</small>` : ''}
-        `;
-
-        if (!isAvailable) {
-            menuItem.style.opacity = '0.5';
-            menuItem.style.pointerEvents = 'none';
-            menuItem.style.cursor = 'not-allowed';
-        }
-
-        menuItem.addEventListener('click', function (e) {
-            e.stopPropagation();
-            if (!isAvailable) return;
-
-            document.getElementById('centreDropdown').dataset.selectedValue = centre.id;
-            document.getElementById('selectedCentreText').textContent = centre.name;
-            menu.classList.remove('show');
-            checkRequiredFields();
-        });
-
-        menu.appendChild(menuItem);
-    });
-}
-
-function initCentreDropdown() {
-    const dropdown = document.getElementById('centreDropdown');
-    const menu = document.getElementById('centreMenu');
-    const selectBtn = dropdown?.querySelector('.custom-dropdown-select');
-
-    if (!dropdown || !menu || !selectBtn) return;
-
-    const newSelectBtn = selectBtn.cloneNode(true);
-    selectBtn.parentNode.replaceChild(newSelectBtn, selectBtn);
-
-    buildCentreDropdownMenu();
-
-    newSelectBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        document.querySelectorAll('.custom-dropdown-menu').forEach(m => {
-            if (m !== menu) m.classList.remove('show');
-        });
-        buildCentreDropdownMenu();
-        menu.classList.toggle('show');
-    });
-
-    menu.addEventListener('click', function (e) {
-        e.stopPropagation();
-    });
-}
-
-document.addEventListener('click', function () {
-    document.querySelectorAll('.custom-dropdown-menu').forEach(menu => {
-        menu.classList.remove('show');
-    });
-});
-
-function createRequestCard(request, index) {
-    const card = document.createElement('div');
-    card.className = 'request-card';
-    card.dataset.id = request.id;
-    card.dataset.index = index;
-
-    const preferredDate = new Date(request.preferredDate);
-    const formattedDate = isNaN(preferredDate)
-        ? '-'
-        : preferredDate.toLocaleString('en-MY', {
-              day: 'numeric',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit'
-          });
-
-    card.innerHTML = `
-        <div class="card-header">
-            <span class="request-id">${formatRequestCode(request.id)}</span>
-        </div>
-        <div class="card-body">
-            <div class="provider-name">${escapeHtml(request.provider)}</div>
-            <div class="e-waste-items">
-                ${(request.items || []).map(item => `<span class="item-chip">${escapeHtml(item)}</span>`).join('')}
-            </div>
-            <div class="card-footer">
-                <span>${escapeHtml(request.weight || '0 kg')}</span>
-                <span class="preferred-date">${formattedDate}</span>
-            </div>
-        </div>
-    `;
-
-    card.addEventListener('click', () => {
-        document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-
-        clearCollectorSelection();
-        clearVehicleSelection();
-        clearCentreSelection();
-
-        updateAssignmentPanel(request);
-        updateSelectedRequestId(request);
-        buildCentreDropdownMenu();
-        checkRequiredFields();
-    });
-
-    return card;
 }
 
 function updateAssignmentPanel(request) {
@@ -488,6 +424,9 @@ function updateAssignmentPanel(request) {
             📍 ${escapeHtml(request.address || '-')}
         </div>
     `;
+
+    // Render per‑item centre selectors
+    renderItemCentreSelectors(request);
 }
 
 function updateSelectedRequestId(request) {
@@ -578,6 +517,8 @@ function filterRequests() {
         updateSelectedRequestId(null);
         const summaryDiv = document.getElementById('selectedRequestSummary');
         if (summaryDiv) summaryDiv.innerHTML = '';
+        const centreContainer = document.getElementById('itemCentreSelectors');
+        if (centreContainer) centreContainer.innerHTML = '';
         checkRequiredFields();
         return;
     }
@@ -602,7 +543,6 @@ function filterRequests() {
         updateSelectedRequestId(selectedRequest);
     }
 
-    buildCentreDropdownMenu();
     checkRequiredFields();
 }
 
@@ -624,16 +564,16 @@ function autoSelectRequestFromURL() {
 
         clearCollectorSelection();
         clearVehicleSelection();
-        clearCentreSelection();
+        clearCentreSelections();
 
         updateAssignmentPanel(request);
         updateSelectedRequestId(request);
-        buildCentreDropdownMenu();
         checkRequiredFields();
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
 }
 
+// --- Collector modal (unchanged) ---
 let selectedAvailabilityDate = null;
 let selectedVehicleAvailabilityDate = null;
 
@@ -870,6 +810,7 @@ function selectCollectorFromModal(collectorId, collectorName) {
 
 window.selectCollectorFromModal = selectCollectorFromModal;
 
+// --- Vehicle modal (unchanged) ---
 function updateVehicleDateDisplay() {
     const subtitle = document.getElementById('selectedVehicleDateDisplay');
     if (!subtitle) return;
@@ -1055,7 +996,6 @@ async function confirmAssignment() {
     const datetime = document.getElementById('scheduledDateTime')?.value || '';
     const collector = document.getElementById('collectorDropdown')?.dataset.selectedValue || '';
     const vehicle = document.getElementById('vehicleDropdown')?.dataset.selectedValue || '';
-    const centre = document.getElementById('centreDropdown')?.dataset.selectedValue || '';
     const notes = document.getElementById('assignmentNotes')?.value || '';
     const confirmBtn = document.getElementById('confirmAssignmentBtn');
 
@@ -1071,10 +1011,6 @@ async function confirmAssignment() {
         alert('Please select a vehicle.');
         return;
     }
-    if (!centre) {
-        alert('Please select a collection centre.');
-        return;
-    }
     if (!datetime) {
         alert('Please select a scheduled date and time.');
         return;
@@ -1082,6 +1018,7 @@ async function confirmAssignment() {
 
     const selectedDateOnly = datetime.split('T')[0];
 
+    // Validate collector availability again
     const collectorObj = getCollectors().find(c => String(c.id) === String(collector));
     if (!collectorObj) {
         alert('Selected collector not found.');
@@ -1093,6 +1030,7 @@ async function confirmAssignment() {
         return;
     }
 
+    // Validate vehicle availability again
     const vehicleObj = getVehicles().find(v => String(v.id) === String(vehicle));
     if (!vehicleObj) {
         alert('Selected vehicle not found.');
@@ -1104,16 +1042,24 @@ async function confirmAssignment() {
         return;
     }
 
-    const centreObj = getCentres().find(c => String(c.id) === String(centre));
-    if (!centreObj) {
-        alert('Selected collection centre not found.');
-        return;
+    // Gather item‑centre selections
+    const itemSelections = [];
+    const itemRows = document.querySelectorAll('.item-centre-row');
+    let allValid = true;
+
+    for (const row of itemRows) {
+        const select = row.querySelector('.centre-select');
+        const centreId = select.value;
+        if (!centreId) {
+            alert('Please select a centre for all items.');
+            allValid = false;
+            break;
+        }
+        const itemId = row.dataset.itemId;
+        itemSelections.push({ itemID: parseInt(itemId), centreID: parseInt(centreId) });
     }
-    const centreReason = getCentreReason(centreObj, selectedRequest);
-    if (centreReason) {
-        alert(`Collection centre unavailable: ${centreReason}`);
-        return;
-    }
+
+    if (!allValid) return;
 
     const originalBtnText = confirmBtn ? confirmBtn.innerHTML : '✓ Confirm';
 
@@ -1128,9 +1074,9 @@ async function confirmAssignment() {
         formData.append('requestID', selectedRequest.id);
         formData.append('collectorID', collector);
         formData.append('vehicleID', vehicle);
-        formData.append('centreID', centre);
         formData.append('scheduledDateTime', datetime);
         formData.append('notes', notes);
+        formData.append('item_centres', JSON.stringify(itemSelections));
 
         const response = await fetch(window.location.href, {
             method: 'POST',
@@ -1150,11 +1096,7 @@ async function confirmAssignment() {
 
         const collectorText = document.getElementById('selectedCollectorText')?.textContent || 'Collector';
         const vehicleText = document.getElementById('selectedVehicleText')?.textContent || 'Vehicle';
-        const centreText = document.getElementById('selectedCentreText')?.textContent || '';
-
-        // alert(
-        //     `✓ Assignment saved successfully!\n\nRequest: ${formatRequestCode(selectedRequest.id)}\nCollector: ${collectorText}\nVehicle: ${vehicleText}\nCentre: ${centreText}\nScheduled: ${new Date(datetime).toLocaleString()}`
-        // );
+        const centreText = 'multiple centres';
 
         addToTimeline(datetime, selectedRequest, collectorText, vehicleText, centreText);
 
@@ -1181,7 +1123,6 @@ async function confirmAssignment() {
 
         resetAssignmentForm(true);
         filterRequests();
-        buildCentreDropdownMenu();
         checkRequiredFields();
     } catch (error) {
         alert(error.message || 'Error saving assignment.');
@@ -1238,11 +1179,12 @@ function resetAssignmentForm(clearSelectedRequest = false) {
         const summaryDiv = document.getElementById('selectedRequestSummary');
         if (summaryDiv) summaryDiv.innerHTML = '';
         document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
+        const centreContainer = document.getElementById('itemCentreSelectors');
+        if (centreContainer) centreContainer.innerHTML = '';
     }
 
     clearCollectorSelection();
     clearVehicleSelection();
-    clearCentreSelection();
 
     const scheduledDateTime = document.getElementById('scheduledDateTime');
     const assignmentNotes = document.getElementById('assignmentNotes');
@@ -1314,22 +1256,34 @@ function addOperationsEnhancementStyles() {
             justify-content: center;
         }
 
-        .centre-select-field {
-            position: relative;
-            padding-right: 2.2rem !important;
-        }
-
-        .centre-select-field .arrow {
-            position: absolute;
-            right: 0.9rem;
-            top: 50%;
-            transform: translateY(-50%);
-            display: inline-flex !important;
+        /* Styles for per‑item centre selectors */
+        .item-centre-row {
+            display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
+            gap: 1rem;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .item-name {
+            min-width: 130px;
+            font-weight: 500;
+        }
+        .centre-select-wrapper {
+            flex: 2;
+            min-width: 200px;
+        }
+        .centre-select {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border-radius: 30px;
+            border: 1px solid var(--BlueGray);
+            background: var(--bg-color);
             color: var(--text-color);
-            pointer-events: none;
+            font-size: 0.9rem;
+        }
+        .centre-warning {
+            flex: 1;
+            font-size: 0.75rem;
         }
 
         .centre-reason-text {
@@ -1471,7 +1425,7 @@ function addOperationsEnhancementStyles() {
         }
 
         .scheduled-job-item .job-status-mini {
-        display: none !important;
+            display: none !important;
         }
 
         .job-id-display {
@@ -1689,8 +1643,55 @@ function addOperationsEnhancementStyles() {
     document.head.appendChild(style);
 }
 
+function createRequestCard(request, index) {
+    const card = document.createElement('div');
+    card.className = 'request-card';
+    card.dataset.id = request.id;
+    card.dataset.index = index;
+
+    const preferredDate = new Date(request.preferredDate);
+    const formattedDate = isNaN(preferredDate)
+        ? '-'
+        : preferredDate.toLocaleString('en-MY', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit'
+          });
+
+    card.innerHTML = `
+        <div class="card-header">
+            <span class="request-id">${formatRequestCode(request.id)}</span>
+        </div>
+        <div class="card-body">
+            <div class="provider-name">${escapeHtml(request.provider)}</div>
+            <div class="e-waste-items">
+                ${(request.items || []).map(item => `<span class="item-chip">${escapeHtml(item)}</span>`).join('')}
+            </div>
+            <div class="card-footer">
+                <span>${escapeHtml(request.weight || '0 kg')}</span>
+                <span class="preferred-date">${formattedDate}</span>
+            </div>
+        </div>
+    `;
+
+    card.addEventListener('click', () => {
+        document.querySelectorAll('.request-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        clearCollectorSelection();
+        clearVehicleSelection();
+        clearCentreSelections();
+
+        updateAssignmentPanel(request);
+        updateSelectedRequestId(request);
+        checkRequiredFields();
+    });
+
+    return card;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
-    initCentreDropdown();
     filterRequests();
     autoSelectRequestFromURL();
     loadRecentAssignments();

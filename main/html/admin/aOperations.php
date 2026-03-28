@@ -19,14 +19,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $requestID = isset($_POST['requestID']) ? (int)$_POST['requestID'] : 0;
         $collectorID = isset($_POST['collectorID']) ? (int)$_POST['collectorID'] : 0;
         $vehicleID = isset($_POST['vehicleID']) ? (int)$_POST['vehicleID'] : 0;
-        $centreID = isset($_POST['centreID']) ? (int)$_POST['centreID'] : 0;
         $scheduledDateTime = trim($_POST['scheduledDateTime'] ?? '');
         $notes = trim($_POST['notes'] ?? '');
+        $itemCentres = json_decode($_POST['item_centres'] ?? '[]', true);
 
         $adminUserID = isset($_SESSION['userID']) ? (int)$_SESSION['userID'] : 1;
 
-        if ($requestID <= 0 || $collectorID <= 0 || $vehicleID <= 0 || $centreID <= 0 || $scheduledDateTime === '') {
+        if ($requestID <= 0 || $collectorID <= 0 || $vehicleID <= 0 || $scheduledDateTime === '') {
             throw new Exception('Missing required assignment data.');
+        }
+
+        if (empty($itemCentres)) {
+            throw new Exception('Please assign a centre to each item.');
         }
 
         $dt = DateTime::createFromFormat('Y-m-d\TH:i', $scheduledDateTime);
@@ -73,31 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception('This request already has a job assigned.');
         }
 
-        $requestItemTypes = [];
-        $requestItemNames = [];
-
-        $itemTypeSql = "
-            SELECT i.itemTypeID, it.name
-            FROM tblitem i
-            INNER JOIN tblitem_type it
-                ON it.itemTypeID = i.itemTypeID
-            WHERE i.requestID = ?
-        ";
-        $stmt = mysqli_prepare($conn, $itemTypeSql);
-        mysqli_stmt_bind_param($stmt, "i", $requestID);
-        mysqli_stmt_execute($stmt);
-        $itemTypeResult = mysqli_stmt_get_result($stmt);
-
-        while ($itemRow = mysqli_fetch_assoc($itemTypeResult)) {
-            $requestItemTypes[] = (int)$itemRow['itemTypeID'];
-            $requestItemNames[] = strtolower(trim($itemRow['name']));
-        }
-
-        if (empty($requestItemTypes)) {
-            throw new Exception('This request has no items to assign.');
-        }
-
-        // Collector validation
+        // --- Collector validation (unchanged) ---
         $checkCollectorStatusSql = "
             SELECT status
             FROM tblcollector
@@ -140,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception("Collector already has a scheduled job on or within 1 day of the selected date (conflicts with: {$conflictDates}).");
         }
 
-        // Vehicle validation
+        // --- Vehicle validation (unchanged) ---
         $checkVehicleStatusSql = "
             SELECT status
             FROM tblvehicle
@@ -200,54 +180,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception("Vehicle already has a scheduled job on or within 1 day of the selected date (conflicts with: {$conflictDates}).");
         }
 
-        // Centre validation
-        $checkCentreSql = "
-            SELECT centreID, name, status
-            FROM tblcentre
-            WHERE centreID = ?
-            LIMIT 1
-        ";
-        $stmt = mysqli_prepare($conn, $checkCentreSql);
-        mysqli_stmt_bind_param($stmt, "i", $centreID);
-        mysqli_stmt_execute($stmt);
-        $centreResult = mysqli_stmt_get_result($stmt);
-        $centreRow = mysqli_fetch_assoc($centreResult);
+        // --- Centre validation per item ---
+        foreach ($itemCentres as $itemCentre) {
+            $itemID = (int)$itemCentre['itemID'];
+            $centreID = (int)$itemCentre['centreID'];
 
-        if (!$centreRow) {
-            throw new Exception('Collection centre not found.');
-        }
+            // Get item type and name
+            $itemSql = "
+                SELECT i.itemTypeID, it.name
+                FROM tblitem i
+                INNER JOIN tblitem_type it ON it.itemTypeID = i.itemTypeID
+                WHERE i.itemID = ? AND i.requestID = ?
+                LIMIT 1
+            ";
+            $stmt = mysqli_prepare($conn, $itemSql);
+            mysqli_stmt_bind_param($stmt, "ii", $itemID, $requestID);
+            mysqli_stmt_execute($stmt);
+            $itemResult = mysqli_stmt_get_result($stmt);
+            $itemRow = mysqli_fetch_assoc($itemResult);
 
-        if ($centreRow['status'] !== 'Active') {
-            throw new Exception('Collection centre is not active and cannot accept items.');
-        }
+            if (!$itemRow) {
+                throw new Exception("Item ID $itemID not found in this request.");
+            }
 
-        $centreAcceptedTypes = [];
-        $acceptedTypeSql = "
-            SELECT itemTypeID
-            FROM tblcentre_accepted_type
-            WHERE centreID = ?
-        ";
-        $stmt = mysqli_prepare($conn, $acceptedTypeSql);
-        mysqli_stmt_bind_param($stmt, "i", $centreID);
-        mysqli_stmt_execute($stmt);
-        $acceptedTypeResult = mysqli_stmt_get_result($stmt);
+            $itemTypeID = (int)$itemRow['itemTypeID'];
+            $itemName = strtolower(trim($itemRow['name']));
 
-        while ($acceptedRow = mysqli_fetch_assoc($acceptedTypeResult)) {
-            $centreAcceptedTypes[] = (int)$acceptedRow['itemTypeID'];
-        }
-
-        foreach ($requestItemTypes as $index => $typeID) {
-            $itemName = $requestItemNames[$index] ?? '';
-
+            // Skip validation for "other electronics"
             if ($itemName === 'other electronics') {
                 continue;
             }
 
-            if (!in_array($typeID, $centreAcceptedTypes, true)) {
-                throw new Exception("Selected collection centre does not accept '{$itemName}'.");
+            // Check if centre accepts this item type
+            $checkCentreSql = "
+                SELECT 1
+                FROM tblcentre_accepted_type
+                WHERE centreID = ? AND itemTypeID = ?
+            ";
+            $stmt = mysqli_prepare($conn, $checkCentreSql);
+            mysqli_stmt_bind_param($stmt, "ii", $centreID, $itemTypeID);
+            mysqli_stmt_execute($stmt);
+            $accepts = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+
+            if (!$accepts) {
+                $centreNameSql = "SELECT name FROM tblcentre WHERE centreID = ?";
+                $stmt = mysqli_prepare($conn, $centreNameSql);
+                mysqli_stmt_bind_param($stmt, "i", $centreID);
+                mysqli_stmt_execute($stmt);
+                $centreRow = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+                $centreName = $centreRow['name'] ?? "Centre #$centreID";
+                throw new Exception("Centre '$centreName' does not accept '$itemName'.");
             }
         }
 
+        // --- Insert job ---
+        $insertJobSql = "
+            INSERT INTO tbljob (
+                requestID,
+                collectorID,
+                vehicleID,
+                scheduledDate,
+                scheduledTime,
+                status
+            ) VALUES (?, ?, ?, ?, ?, 'Pending')
+        ";
+        $stmt = mysqli_prepare($conn, $insertJobSql);
+        mysqli_stmt_bind_param($stmt, "iiiss", $requestID, $collectorID, $vehicleID, $scheduledDate, $scheduledTime);
+
+        if (!mysqli_stmt_execute($stmt)) {
+            throw new Exception('Failed to create job.');
+        }
+
+        $jobID = mysqli_insert_id($conn);
+
+        // --- Update each item's centreID ---
+        foreach ($itemCentres as $itemCentre) {
+            $itemID = (int)$itemCentre['itemID'];
+            $centreID = (int)$itemCentre['centreID'];
+
+            $updateItemSql = "UPDATE tblitem SET centreID = ? WHERE itemID = ?";
+            $stmt = mysqli_prepare($conn, $updateItemSql);
+            mysqli_stmt_bind_param($stmt, "ii", $centreID, $itemID);
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception("Failed to update centre for item $itemID.");
+            }
+        }
+
+        // --- Logging (unchanged but with minor message tweak) ---
         $collectorName = 'Collector ID ' . $collectorID;
         $collectorInfoSql = "
             SELECT u.fullname
@@ -280,49 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $plateNum = $vehicleInfoRow['plateNum'];
         }
 
-        $centreName = $centreRow['name'];
-
-        $insertJobSql = "
-            INSERT INTO tbljob (
-                requestID,
-                collectorID,
-                vehicleID,
-                scheduledDate,
-                scheduledTime,
-                status
-            ) VALUES (?, ?, ?, ?, ?, 'Pending')
-        ";
-        $stmt = mysqli_prepare($conn, $insertJobSql);
-        mysqli_stmt_bind_param($stmt, "iiiss", $requestID, $collectorID, $vehicleID, $scheduledDate, $scheduledTime);
-
-        if (!mysqli_stmt_execute($stmt)) {
-            throw new Exception('Failed to create job.');
-        }
-
-        $jobID = mysqli_insert_id($conn);
-
-        // $updateRequestSql = "
-        //     UPDATE tblcollection_request
-        //     SET status = 'Scheduled'
-        //     WHERE requestID = ?
-        // ";
-        // $stmt = mysqli_prepare($conn, $updateRequestSql);
-        // mysqli_stmt_bind_param($stmt, "i", $requestID);
-
-        // if (!mysqli_stmt_execute($stmt)) {
-        //     throw new Exception('Failed to update request status.');
-        // }
-
-        $updateItemsSql = "
-            UPDATE tblitem
-            SET centreID = ?
-            WHERE requestID = ?
-        ";
-        $stmt = mysqli_prepare($conn, $updateItemsSql);
-        mysqli_stmt_bind_param($stmt, "ii", $centreID, $requestID);
-        mysqli_stmt_execute($stmt);
-
-        $assignmentDescription = "Assigned to {$collectorName}, Vehicle {$plateNum}, {$centreName}";
+        $assignmentDescription = "Assigned to {$collectorName}, Vehicle {$plateNum}, multiple centres";
         if ($notes !== '') {
             $assignmentDescription .= " | Notes: " . $notes;
         }
@@ -335,32 +312,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 type,
                 action,
                 description
-            ) VALUES (?, NULL, ?, 'Request', 'Assignment', ?)
+            ) VALUES (?, ?, ?, 'Request', 'Assignment', ?)
         ";
         $stmt = mysqli_prepare($conn, $logRequestAssignmentSql);
-        mysqli_stmt_bind_param($stmt, "iis", $requestID, $adminUserID, $assignmentDescription);
+        mysqli_stmt_bind_param($stmt, "iiis", $requestID, $jobID, $adminUserID, $assignmentDescription);
 
         if (!mysqli_stmt_execute($stmt)) {
             throw new Exception('Failed to log request assignment.');
         }
-
-        // $requestStatusDescription = "Changed from Approved to Scheduled";
-        // $logRequestStatusSql = "
-        //     INSERT INTO tblactivity_log (
-        //         requestID,
-        //         jobID,
-        //         userID,
-        //         type,
-        //         action,
-        //         description
-        //     ) VALUES (?, ?, ?, 'Request', 'Status Change', ?)
-        // ";
-        // $stmt = mysqli_prepare($conn, $logRequestStatusSql);
-        // mysqli_stmt_bind_param($stmt, "iiis", $requestID, $jobID, $adminUserID, $requestStatusDescription);
-
-        // if (!mysqli_stmt_execute($stmt)) {
-        //     throw new Exception('Failed to log request status change.');
-        // }
 
         $jobCreateDescription = "Job awaiting collector acceptance";
         $logJobCreateSql = "
@@ -392,6 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// --- Fetch approved requests without jobs (unchanged but with itemID added) ---
 $requests = [];
 $requestSql = "
     SELECT 
@@ -413,7 +373,6 @@ $requestSql = "
         AND j.status NOT IN ('Cancelled', 'Rejected')
     WHERE cr.status = 'Approved'
     AND j.jobID IS NULL
-      AND j.jobID IS NULL
     GROUP BY 
         cr.requestID,
         u.fullname,
@@ -434,7 +393,7 @@ if ($requestResult) {
         $itemDetails = [];
 
         $itemTypeSql = "
-            SELECT it.itemTypeID, it.name
+            SELECT i.itemID, it.itemTypeID, it.name
             FROM tblitem i
             INNER JOIN tblitem_type it
                 ON it.itemTypeID = i.itemTypeID
@@ -447,6 +406,7 @@ if ($requestResult) {
             while ($itemRow = mysqli_fetch_assoc($itemTypeResult)) {
                 $items[] = $itemRow['name'];
                 $itemDetails[] = [
+                    'itemID' => (int)$itemRow['itemID'],
                     'itemTypeID' => (int)$itemRow['itemTypeID'],
                     'name' => $itemRow['name']
                 ];
@@ -485,6 +445,7 @@ if ($requestResult) {
     }
 }
 
+// --- Collectors (unchanged) ---
 $collectors = [];
 $collectorSql = "
     SELECT 
@@ -537,6 +498,7 @@ if ($collectorJobResult) {
     }
 }
 
+// --- Vehicles (unchanged) ---
 $vehicles = [];
 $vehicleSql = "
     SELECT
@@ -621,6 +583,7 @@ if ($vehicleJobResult) {
     }
 }
 
+// --- Centres (capacity removed) ---
 $centres = [];
 $centreSql = "
     SELECT
@@ -825,17 +788,10 @@ if ($timelineResult) {
                     <div class="vehicle-status-hint" id="vehicleHint"></div>
                 </div>
 
+                <!-- per‑item centre selection -->
                 <div class="form-section">
-                    <h3>Collection Centre</h3>
-                    <div class="assign-item">
-                        <div class="custom-dropdown" id="centreDropdown">
-                            <div class="custom-dropdown-select centre-select-field">
-                                <span id="selectedCentreText">Select a collection centre</span>
-                                <span class="arrow"><i class="fas fa-chevron-down"></i></span>
-                            </div>
-                            <div class="custom-dropdown-menu" id="centreMenu"></div>
-                        </div>
-                    </div>
+                    <h3>Select Collection Centres per Item</h3>
+                    <div id="itemCentreSelectors"></div>
                 </div>
 
                 <div class="form-section">
@@ -933,15 +889,15 @@ if ($timelineResult) {
 <script src="../../javascript/mainScript.js"></script>
 
 <script>
-window.requestsData = <?php echo json_encode($requests, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-window.collectorsData = <?php echo json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-window.collectorScheduledJobsData = <?php echo json_encode($collectorScheduledJobs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-window.vehiclesData = <?php echo json_encode($vehicles, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-window.vehicleMaintenanceData = <?php echo json_encode($vehicleMaintenance, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-window.vehicleScheduledJobsData = <?php echo json_encode($vehicleScheduledJobs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-window.centresData = <?php echo json_encode($centres, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-window.centreAcceptedTypesData = <?php echo json_encode($centreAcceptedTypesData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-window.recentAssignmentsData = <?php echo json_encode($recentAssignments, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.requestsData = <?php echo json_encode($requests, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.collectorsData = <?php echo json_encode($collectors, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.collectorScheduledJobsData = <?php echo json_encode($collectorScheduledJobs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.vehiclesData = <?php echo json_encode($vehicles, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.vehicleMaintenanceData = <?php echo json_encode($vehicleMaintenance, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.vehicleScheduledJobsData = <?php echo json_encode($vehicleScheduledJobs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.centresData = <?php echo json_encode($centres, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.centreAcceptedTypesData = <?php echo json_encode($centreAcceptedTypesData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.recentAssignmentsData = <?php echo json_encode($recentAssignments, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 </script>
 
 <script src="../../javascript/aOperations.js?v=<?php echo time(); ?>"></script>

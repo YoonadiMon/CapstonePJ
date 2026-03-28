@@ -1201,6 +1201,36 @@
     font-weight: 700;
 }
 
+/* Styles for per‑item centre selectors */
+.item-centre-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+}
+.item-name {
+    min-width: 130px;
+    font-weight: 500;
+}
+.centre-select-wrapper {
+    flex: 2;
+    min-width: 200px;
+}
+.centre-select {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border-radius: 30px;
+    border: 1px solid var(--BlueGray);
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+.centre-warning {
+    flex: 1;
+    font-size: 0.75rem;
+}
+
 @media (max-width: 900px) {
     .maintenance-vehicle-grid {
         grid-template-columns: 1fr;
