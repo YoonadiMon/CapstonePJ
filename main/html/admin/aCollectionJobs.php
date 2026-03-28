@@ -160,7 +160,6 @@ foreach ($handoverRows as $row) {
     ];
 }
 
-// Delayed Jobs
 $delayedSql = "
     SELECT
         j.jobID,
@@ -200,8 +199,14 @@ $delayedSql = "
     LEFT JOIN tblvehicle v ON v.vehicleID = j.vehicleID
     WHERE j.status IN ('Pending', 'Scheduled', 'Ongoing')
       AND CONCAT(j.scheduledDate, ' ', j.scheduledTime) < NOW()
+      AND NOT EXISTS (
+          SELECT 1 FROM tblissue i 
+          WHERE i.jobID = j.jobID 
+          AND i.status IN ('Open', 'Assigned')
+      )
     ORDER BY delayMinutes DESC, j.scheduledDate ASC, j.scheduledTime ASC
 ";
+
 $delayedRows = queryAll($conn, $delayedSql);
 
 $delayedJobs = [];
@@ -467,7 +472,104 @@ $jsData = [
     'pendingDropoffLookup' => $pendingDropoffLookup,
     'centresAvailable' => count($centreRows)
 ];
+
+if (isset($_GET['fetch_data']) && $_GET['fetch_data'] == '1') {
+    header('Content-Type: application/json');
+    echo json_encode($jsData);
+    exit;
+}
+
+// issue submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_issue'])) {
+    header('Content-Type: application/json');
+    
+    // validate input
+    $jobId = isset($_POST['jobId']) ? intval($_POST['jobId']) : 0;
+    $subject = isset($_POST['subject']) ? trim($_POST['subject']) : '';
+    $issueType = isset($_POST['issueType']) ? trim($_POST['issueType']) : '';
+    $severity = isset($_POST['severity']) ? trim($_POST['severity']) : '';
+    $description = isset($_POST['description']) ? trim($_POST['description']) : '';
+    $reportedBy = $_SESSION['userID'];
+    
+    // Validation
+    $errors = [];
+    
+    if (empty($subject)) $errors[] = 'Subject is required';
+    if (empty($severity)) $errors[] = 'Severity is required';
+    if (empty($description)) $errors[] = 'Description is required';
+    
+    // Validate Job ID and get requestID
+    $requestId = 0;
+    if ($jobId <= 0) {
+        $errors[] = 'Invalid Job ID';
+    } else {
+        $checkJobSql = "SELECT jobID, requestID, status FROM tbljob WHERE jobID = ?";
+        $checkStmt = mysqli_prepare($conn, $checkJobSql);
+        mysqli_stmt_bind_param($checkStmt, "i", $jobId);
+        mysqli_stmt_execute($checkStmt);
+        $jobResult = mysqli_stmt_get_result($checkStmt);
+        $jobExists = mysqli_fetch_assoc($jobResult);
+        mysqli_stmt_close($checkStmt);
+        
+        if (!$jobExists) {
+            $errors[] = 'Job ID does not exist in the system';
+        } else {
+            if (in_array($jobExists['status'], ['Completed', 'Cancelled', 'Rejected'])) {
+                $errors[] = 'Cannot report issue for ' . strtolower($jobExists['status']) . ' jobs';
+            }
+            // Get the requestID from the job
+            $requestId = $jobExists['requestID'];
+        }
+    }
+    
+    // "Other" issue type
+    $storedIssueType = $issueType;
+    if ($issueType === 'Other') {
+        $customIssue = isset($_POST['otherIssueText']) ? trim($_POST['otherIssueText']) : '';
+        if (empty($customIssue)) {
+            $errors[] = 'Please specify the issue type';
+        } else {
+            // $description = "$customIssue\n\n" . $description;
+            $storedIssueType = 'Other';
+        }
+    } else {
+        if (empty($issueType)) {
+            $errors[] = 'Issue type is required';
+        }
+    }
+    
+    if (empty($errors)) {
+        // Insert with requestID from the job
+        $sql = "INSERT INTO tblissue (jobID, requestID, subject, issueType, severity, description, reportedBy, reportedAt, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 'Open')";
+        
+        $stmt = mysqli_prepare($conn, $sql);
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "iissssi", $jobId, $requestId, $subject, $storedIssueType, $severity, $description, $reportedBy);
+            
+            if (mysqli_stmt_execute($stmt)) {
+                $issueId = mysqli_insert_id($conn);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Issue reported successfully',
+                    'issueId' => $issueId
+                ]);
+                exit;
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Database error: ' . mysqli_stmt_error($stmt)]);
+                exit;
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . mysqli_error($conn)]);
+            exit;
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => implode(', ', $errors)]);
+        exit;
+    }
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -483,11 +585,9 @@ $jsData = [
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     
-    <!-- Leaflet 1.9.4 - Stable version without CSP issues -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Leaflet Routing Machine (compatible with Leaflet 1.9.4) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 </head>
@@ -762,7 +862,7 @@ $jsData = [
         </div>
     </div>
 
-    <!-- Report Issue Modal - Updated to match database schema -->
+    <!-- Report Issue Modal  -->
     <div class="report-issue-modal" id="reportIssueModal">
         <div class="report-issue-content">
             <div class="report-issue-header">
@@ -773,10 +873,10 @@ $jsData = [
             <form id="reportIssueForm">
                 <div class="report-issue-body">
                     <div class="issue-form-group">
-                        <label for="issueJobId">
-                            <i class="fas fa-briefcase"></i> Job ID
-                        </label>
-                        <input type="text" id="issueJobId" name="jobId" readonly>
+                    <label for="issueJobId">
+                    <i class="fas fa-briefcase"></i> Job ID
+                </label>
+                <input type="text" id="issueJobId" name="jobId" readonly>
                     </div>
 
                     <div class="issue-form-group">
@@ -856,8 +956,24 @@ $jsData = [
         </div>
     </div>
 
-    
+<!-- Success Popup Modal -->
+<div class="success-popup-modal" id="successPopupModal">
+    <div class="success-popup-content">
+        <div class="success-popup-header">
+            <h3><i class="fas fa-check-circle" style="color: #2ecc71;"></i> Issue Submitted Successfully!</h3>
+            <button class="success-popup-close" id="closeSuccessPopup">&times;</button>
+        </div>
+        <div class="success-popup-body">
+        </div>
+        <div class="success-popup-footer">
+            <button class="btn-primary" id="goToIssuesBtn">
+                <i class="fas fa-exclamation-circle"></i> Go to Issues
+            </button>
+        </div>
+    </div>
+</div>
 
+    
     <script src="../../javascript/mainScript.js"></script>
     <script src="../../javascript/aCollectionJobs.js?v=<?php echo time(); ?>"></script>
 

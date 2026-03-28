@@ -1,3 +1,29 @@
+function formatJobId(id) {
+    if (typeof id === 'number') {
+        return 'JOB' + String(id).padStart(3, '0');
+    }
+    if (typeof id === 'string') {
+        if (id.startsWith('JOB')) return id;
+        var num = parseInt(id, 10);
+        if (!isNaN(num)) {
+            return 'JOB' + String(num).padStart(3, '0');
+        }
+    }
+    return id;
+}
+
+function extractNumericJobId(jobId) {
+    if (typeof jobId === 'number') return jobId;
+    if (typeof jobId === 'string') {
+        if (jobId.startsWith('JOB')) {
+            return parseInt(jobId.substring(3), 10);
+        }
+        var num = parseInt(jobId, 10);
+        if (!isNaN(num)) return num;
+    }
+    return 0;
+}
+
 var map = null;
 var markersLayer = null;
 var routeLayer = null;
@@ -31,6 +57,8 @@ var collectionJobsData = window.collectionJobsData || {
     pendingDropoffLookup: {},
     centresAvailable: 0
 };
+
+var isSubmitting = false;
 
 var mapLayersVisible = true;
 
@@ -437,42 +465,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    if (reportIssueForm) {
-        reportIssueForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            var issueJobId = document.getElementById('issueJobId');
-            var issueRequestId = document.getElementById('issueRequestId');
-            var issueSubject = document.getElementById('issueSubject');
-            var issueDescription = document.getElementById('issueDescription');
-            var issueTypeSelect = document.getElementById('issueType');
-            var severityRadio = document.querySelector('input[name="severity"]:checked');
-
-            var selectedIssue = issueTypeSelect ? issueTypeSelect.value : '';
-            if (selectedIssue === 'Other') {
-                selectedIssue = otherIssueText ? otherIssueText.value.trim() : '';
-            }
-
-            var formData = {
-                jobId: issueJobId ? issueJobId.value : '',
-                requestId: issueRequestId ? issueRequestId.value : '',
-                subject: issueSubject ? issueSubject.value.trim() : '',
-                issueType: selectedIssue,
-                severity: severityRadio ? severityRadio.value : '',
-                description: issueDescription ? issueDescription.value.trim() : ''
-            };
-
-            if (!formData.subject || !formData.issueType || !formData.severity || !formData.description) {
-                alert('Please complete all fields.');
-                return;
-            }
-
-            console.log('Issue form submitted:', formData);
-            alert('Issue reported successfully.');
-            closeReportIssueModal();
-        });
-    }
 
     var assignHandoverForm = document.getElementById('assignHandoverForm');
     if (assignHandoverForm) {
@@ -511,6 +503,152 @@ document.addEventListener('DOMContentLoaded', function() {
         progressContainer.innerHTML = '<div id="routeProgressBar" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s ease;"></div>';
         routeInfoBox.appendChild(progressContainer);
     }
+
+var successPopup = document.getElementById('successPopupModal');
+var closeSuccessPopup = document.getElementById('closeSuccessPopup');
+var closeSuccessPopupBtn = document.getElementById('closeSuccessPopupBtn');
+var goToIssuesBtn = document.getElementById('goToIssuesBtn');
+
+function closeSuccessPopupModal() {
+    if (successPopup) {
+        successPopup.classList.remove('active');
+        successPopup.removeAttribute('data-job-id');
+    }
+}
+
+if (closeSuccessPopup) {
+    closeSuccessPopup.addEventListener('click', closeSuccessPopupModal);
+}
+
+if (closeSuccessPopupBtn) {
+    closeSuccessPopupBtn.addEventListener('click', closeSuccessPopupModal);
+}
+
+if (goToIssuesBtn) {
+    goToIssuesBtn.addEventListener('click', function() {
+        var jobId = successPopup ? successPopup.getAttribute('data-job-id') : '';
+        if (jobId) {
+            window.location.href = 'aIssue.php?jobID=' + encodeURIComponent(jobId);
+        } else {
+            window.location.href = 'aIssue.php';
+        }
+    });
+}
+
+if (successPopup) {
+    successPopup.addEventListener('click', function(e) {
+        if (e.target === successPopup) {
+            closeSuccessPopupModal();
+        }
+    });
+}
+
+    if (reportIssueForm) {
+        reportIssueForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            var issueJobId = document.getElementById('issueJobId');
+            var issueSubject = document.getElementById('issueSubject');
+            var issueDescription = document.getElementById('issueDescription');
+            var issueTypeSelect = document.getElementById('issueType');
+            var severityRadio = document.querySelector('input[name="severity"]:checked');
+            var otherIssueTextElem = document.getElementById('otherIssueText');
+            
+            var selectedIssue = issueTypeSelect ? issueTypeSelect.value : '';
+            
+            if (!severityRadio) {
+                alert('Please select a severity level');
+                return;
+            }
+            
+            var formData = new FormData();
+            formData.append('submit_issue', '1');
+            
+            var numericJobId = issueJobId ? (issueJobId.getAttribute('data-numeric-id') || extractNumericJobId(issueJobId.value)) : 0;
+            formData.append('jobId', numericJobId);
+            
+            formData.append('subject', issueSubject ? issueSubject.value.trim() : '');
+            formData.append('issueType', selectedIssue);
+            formData.append('severity', severityRadio.value);
+            formData.append('description', issueDescription ? issueDescription.value.trim() : '');
+            
+            if (selectedIssue === 'Other') {
+                var customIssue = otherIssueTextElem ? otherIssueTextElem.value.trim() : '';
+                if (!customIssue) {
+                    alert('Please specify the issue type');
+                    return;
+                }
+                formData.append('otherIssueText', customIssue);
+            } else if (!selectedIssue) {
+                alert('Please select an issue type');
+                return;
+            }
+            
+            if (!formData.get('subject') || !formData.get('description')) {
+                alert('Please complete all required fields.');
+                return;
+            }
+            
+            var submitBtn = reportIssueForm.querySelector('button[type="submit"]');
+            var originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            
+            try {
+                var response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                var result = await response.json();
+                
+                if (result.success) {
+                    closeReportIssueModal();
+                    
+                    try {
+                        const refreshResponse = await fetch(window.location.href + '?fetch_data=1');
+                        const freshData = await refreshResponse.json();
+                        
+                        window.collectionJobsData = freshData;
+                        
+                        loadAllData();
+                        
+                    } catch (refreshError) {
+                        console.error('Failed to refresh data:', refreshError);
+                        window.location.reload();
+                    }
+                    
+                    reportIssueForm.reset();
+                    
+                    var priorityOptions = document.querySelectorAll('.priority-option');
+                    for (var i = 0; i < priorityOptions.length; i++) {
+                        priorityOptions[i].classList.remove('selected');
+                    }
+                    
+                    var otherIssueGroupElem = document.getElementById('otherIssueGroup');
+                    if (otherIssueGroupElem) otherIssueGroupElem.style.display = 'none';
+               
+                    var successPopup = document.getElementById('successPopupModal');
+
+                    if (successPopup) {
+                        successPopup.classList.add('active');
+                        successPopup.setAttribute('data-job-id', numericJobId);
+
+                    }
+                    
+                } else {
+                    alert('Error: ' + result.message);
+                }
+                
+            } catch (error) {
+                console.error('Error submitting issue:', error);
+                alert('Failed to submit issue. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        });
+    }
 });
 
 function loadAllData() {
@@ -544,7 +682,7 @@ function displayHandoverJobs(jobs) {
     var html = '';
     for (var i = 0; i < jobs.length; i++) {
         var job = jobs[i];
-        html += '<div class="panel-item"><div class="item-info"><i class="fas fa-route"></i><div><strong>' + escapeHtml(job.id || '') + '</strong><small>' + escapeHtml(job.location || '-') + '</small></div><span class="item-reason">' + escapeHtml(job.reason || '-') + '</span></div><div class="item-actions"><button class="btn-icon" onclick="goToIssuePage(\'' + escapeJs(job.jobID || '') + '\')" title="Go to issue page"><i class="fas fa-exclamation-circle"></i></button><button class="btn-icon" onclick="viewJobDetails(\'' + escapeJs(job.id || '') + '\')" title="View details"><i class="fas fa-eye"></i></button></div></div>';
+        html += '<div class="panel-item"><div class="item-info"><i class="fas fa-route"></i><div><strong>' + escapeHtml(job.id || '') + '</strong><small>' + escapeHtml(job.location || '-') + '</small></div><span class="item-reason">' + escapeHtml(job.reason || '-') + '</span></div><div class="item-actions"><button class="btn-icon" onclick="openReportIssueModal(\'' + escapeJs(job.jobID || '') + '\')" title="Report Issue"><i class="fas fa-exclamation-circle"></i></button><button class="btn-icon" onclick="viewJobDetails(\'' + escapeJs(job.id || '') + '\')" title="View details"><i class="fas fa-eye"></i></button></div></div>';
     }
     handoverList.innerHTML = html;
 }
@@ -570,7 +708,37 @@ function displayDelayedJobs(jobs) {
     var html = '';
     for (var i = 0; i < jobs.length; i++) {
         var job = jobs[i];
-        html += '<div class="panel-item"><div class="item-info"><i class="fas fa-clock"></i><div><strong>' + escapeHtml(job.id || '') + '</strong><small>' + escapeHtml(job.location || '-') + '</small></div><span class="item-reason">' + escapeHtml(job.reason || '-') + (job.delay ? ' (' + escapeHtml(job.delay) + ')' : '') + '</span></div><div class="item-actions"><button class="btn-icon" onclick="openReportIssueModal(\'' + escapeJs(job.id || '') + '\')" title="Report issue"><i class="fas fa-flag"></i></button><button class="btn-icon" onclick="viewJobDetails(\'' + escapeJs(job.id || '') + '\')" title="View details"><i class="fas fa-eye"></i></button></div></div>';
+        
+        var statusText = '';
+        if (job.reason) {
+            statusText = job.reason;
+            if (job.delay) {
+                statusText += ' (' + job.delay + ')';
+            }
+        } else if (job.delay) {
+            statusText = job.delay;
+        }
+        
+        html += '<div class="panel-item">' +
+                    '<div class="item-info" style="flex: 1;">' +
+                        '<i class="fas fa-clock"></i>' +
+                        '<div style="flex: 1;">' +
+                            '<div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem;">' +
+                                '<strong style="font-size: 0.85rem; line-height: 1.3;">' + escapeHtml(job.id || '') + '</strong>' +
+                                '<span class="item-reason" style="margin: 0; line-height: 1.3;">' + escapeHtml(statusText) + '</span>' +
+                            '</div>' +
+                            '<small style="color: var(--Gray); font-size: 0.7rem; display: block; margin-top: 0.25rem;">' + escapeHtml(job.location || '-') + '</small>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="item-actions">' +
+                        '<button class="btn-icon" onclick="openReportIssueModal(\'' + escapeJs(job.jobID || '') + '\')" title="Report issue">' +
+                        '<i class="fas fa-exclamation-circle"></i>' +
+                        '</button>' +
+                        '<button class="btn-icon" onclick="viewJobDetails(\'' + escapeJs(job.id || '') + '\')" title="View details">' +
+                            '<i class="fas fa-eye"></i>' +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
     }
     delayedList.innerHTML = html;
 }
@@ -613,7 +781,42 @@ function displayPendingDropoffJobs(jobs) {
     var html = '';
     for (var j = 0; j < jobs.length; j++) {
         var dropoffJob = jobs[j];
-        html += '<div class="dropoff-item"><div class="dropoff-header"><span class="dropoff-id">' + escapeHtml(dropoffJob.id || '') + '</span><span class="dropoff-status">Failed Drop-off</span></div><div class="dropoff-details"><div class="dropoff-detail"><span class="dropoff-detail-label">Collector</span><span class="dropoff-detail-value">' + escapeHtml(dropoffJob.collector || '-') + '</span></div><div class="dropoff-detail"><span class="dropoff-detail-label">Items</span><span class="dropoff-detail-value">' + escapeHtml(dropoffJob.items || '-') + '</span></div><div class="dropoff-detail"><span class="dropoff-detail-label">Original Centre</span><span class="dropoff-detail-value">' + escapeHtml(dropoffJob.originalCentre || '-') + '</span></div><div class="dropoff-detail"><span class="dropoff-detail-label">Time</span><span class="dropoff-detail-value">' + escapeHtml(dropoffJob.time || '-') + '</span></div></div><div class="dropoff-fail-reason"><i class="fas fa-exclamation-circle"></i><span>' + escapeHtml(dropoffJob.failReason || '-') + '</span></div><div class="dropoff-actions"><button class="btn-reassign-centre" onclick="goToIssuePage(\'' + escapeJs(dropoffJob.jobID || '') + '\')"><i class="fas fa-exclamation-circle"></i> Go to Issue</button><button class="btn-icon" onclick="viewFailedDropoffDetails(\'' + escapeJs(dropoffJob.id || '') + '\')" title="View details"><i class="fas fa-eye"></i></button></div></div>';
+        html += '<div class="dropoff-item">' +
+                    '<div class="dropoff-header">' +
+                        '<span class="dropoff-id">' + escapeHtml(dropoffJob.id || '') + '</span>' +
+                        '<span class="dropoff-status">Failed Drop-off</span>' +
+                    '</div>' +
+                    '<div class="dropoff-details">' +
+                        '<div class="dropoff-detail">' +
+                            '<span class="dropoff-detail-label">Collector</span>' +
+                            '<span class="dropoff-detail-value">' + escapeHtml(dropoffJob.collector || '-') + '</span>' +
+                        '</div>' +
+                        '<div class="dropoff-detail">' +
+                            '<span class="dropoff-detail-label">Items</span>' +
+                            '<span class="dropoff-detail-value">' + escapeHtml(dropoffJob.items || '-') + '</span>' +
+                        '</div>' +
+                        '<div class="dropoff-detail">' +
+                            '<span class="dropoff-detail-label">Original Centre</span>' +
+                            '<span class="dropoff-detail-value">' + escapeHtml(dropoffJob.originalCentre || '-') + '</span>' +
+                        '</div>' +
+                        '<div class="dropoff-detail">' +
+                            '<span class="dropoff-detail-label">Time</span>' +
+                            '<span class="dropoff-detail-value">' + escapeHtml(dropoffJob.time || '-') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="dropoff-fail-reason">' +
+                        '<i class="fas fa-exclamation-circle"></i>' +
+                        '<span>' + escapeHtml(dropoffJob.failReason || '-') + '</span>' +
+                    '</div>' +
+                    '<div class="dropoff-actions">' +
+                        '<button class="btn-reassign-centre" onclick="openReportIssueModal(\'' + escapeJs(dropoffJob.jobID || '') + '\')">' +
+                            '<i class="fas fa-exclamation-circle"></i> Report Issue' +
+                        '</button>' +
+                        '<button class="btn-icon" onclick="viewFailedDropoffDetails(\'' + escapeJs(dropoffJob.id || '') + '\')" title="View details">' +
+                            '<i class="fas fa-eye"></i>' +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
     }
     pendingDropoffList.innerHTML = html;
 }
@@ -768,6 +971,8 @@ async function startGPSSimulationForCollector(collectorId) {
     await startGPSSimulation(collector);
 }
 
+
+
 function centerMapOnAll() {
     selectedCollectorId = null;
     stopSimulation();
@@ -855,9 +1060,21 @@ function getDelayedJobById(jobId) {
 }
 
 function openReportIssueModal(jobId) {
-    var job = (collectionJobsData.handoverLookup || {})[jobId] || 
-                (collectionJobsData.delayedLookup || {})[jobId] || 
-                (collectionJobsData.pendingDropoffLookup || {})[jobId];
+    var formattedJobId = formatJobId(jobId);
+    var numericJobId = extractNumericJobId(jobId);
+    
+    var job = (collectionJobsData.handoverLookup || {})[formattedJobId] || 
+              (collectionJobsData.delayedLookup || {})[formattedJobId] || 
+              (collectionJobsData.pendingDropoffLookup || {})[formattedJobId];
+    
+    if (!job) {
+        var allJobs = [
+            ...(collectionJobsData.handoverJobs || []),
+            ...(collectionJobsData.delayedJobs || []),
+            ...(collectionJobsData.pendingDropoffJobs || [])
+        ];
+        job = allJobs.find(j => j.jobID == numericJobId);
+    }
     
     var modal = document.getElementById('reportIssueModal');
     var form = document.getElementById('reportIssueForm');
@@ -868,7 +1085,7 @@ function openReportIssueModal(jobId) {
     var otherIssueTextElem = document.getElementById('otherIssueText');
 
     if (!job) {
-        console.error('Job not found:', jobId);
+        console.error('Job not found for ID:', jobId);
         alert('Job details not found. Please try again.');
         return;
     }
@@ -891,12 +1108,17 @@ function openReportIssueModal(jobId) {
         otherIssueTextElem.value = '';
     }
 
-    if (issueJobId) issueJobId.value = job.id || '';
-    if (issueRequestId) {
-        issueRequestId.value = job.requestID ? 'REQ' + String(job.requestID).padStart(3, '0') : '';
+    if (issueJobId) {
+        issueJobId.value = formattedJobId;
+        issueJobId.setAttribute('data-numeric-id', numericJobId);
     }
+    
+    if (issueRequestId && job.requestID) {
+        issueRequestId.value = 'REQ' + String(job.requestID).padStart(3, '0');
+    }
+    
     if (issueSubject) {
-        issueSubject.placeholder = 'Issue with ' + (job.id || '');
+        issueSubject.placeholder = 'Issue with ' + formattedJobId;
         issueSubject.value = '';
     }
 
@@ -910,14 +1132,49 @@ function closeReportIssueModal() {
     var otherIssueTextElem = document.getElementById('otherIssueText');
 
     if (modal) modal.classList.remove('active');
-    if (form) form.reset();
+    
+    if (form) {
+        form.reset(); 
+       
+        var issueJobId = document.getElementById('issueJobId');
+        if (issueJobId) {
+            issueJobId.value = '';
+            issueJobId.removeAttribute('data-numeric-id');
+        }
+        
+        var issueRequestId = document.getElementById('issueRequestId');
+        if (issueRequestId) {
+            issueRequestId.value = '';
+        }
+        
+        var issueSubject = document.getElementById('issueSubject');
+        if (issueSubject) {
+            issueSubject.value = '';
+        }
+        
+        var issueDescription = document.getElementById('issueDescription');
+        if (issueDescription) {
+            issueDescription.value = '';
+        }
+        
+        var issueTypeSelect = document.getElementById('issueType');
+        if (issueTypeSelect) {
+            issueTypeSelect.value = '';
+        }
+    }
 
     var priorityOptions = document.querySelectorAll('.priority-option');
     for (var i = 0; i < priorityOptions.length; i++) {
         priorityOptions[i].classList.remove('selected');
+        var radio = priorityOptions[i].querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = false;
+        }
     }
 
-    if (otherIssueGroupElem) otherIssueGroupElem.style.display = 'none';
+    if (otherIssueGroupElem) {
+        otherIssueGroupElem.style.display = 'none';
+    }
     if (otherIssueTextElem) {
         otherIssueTextElem.removeAttribute('required');
         otherIssueTextElem.value = '';
@@ -1044,11 +1301,6 @@ function viewFailedDropoffDetails(jobId) {
     if (jobDetailsModal) jobDetailsModal.classList.add('show');
 }
 
-function goToIssuePage(jobId) {
-    if (!jobId) return;
-    window.location.href = 'aIssue.php?jobID=' + encodeURIComponent(jobId);
-}
-
 function getInitials(name) {
     var parts = String(name || '').trim().split(/\s+/).filter(function(p) { return p.length > 0; });
     if (!parts.length) return 'NA';
@@ -1093,7 +1345,6 @@ function goBackToJobs() {
     window.location.href = '../../html/admin/aJobs.php';
 }
 
-window.goToIssuePage = goToIssuePage;
 window.openReportIssueModal = openReportIssueModal;
 window.closeReportIssueModal = closeReportIssueModal;
 window.viewFailedDropoffDetails = viewFailedDropoffDetails;
