@@ -731,6 +731,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $conn->query("UPDATE tbljob SET status='Cancelled', rejectionReason='$escapedReason' WHERE jobID=$jobID");
             }
             $conn->query("UPDATE tblcollection_request SET status='Rejected', rejectionReason='$escapedReason' WHERE requestID=$requestID");
+
+            $conn->query("UPDATE tblitem SET status='Cancelled' WHERE requestID=$requestID AND status NOT IN ('Processed','Recycled')");
+            $itemCount = $conn->affected_rows;
+            if ($itemCount > 0) {
+                logActivity($conn, $userID, 'Item', 'Status Change', "All $itemCount pending/collected items cancelled for request #$requestID (cancelled via issue).", $requestID, $jobID > 0 ? $jobID : null);
+            }
+
             $conn->commit();
             $_SESSION['successMsg'] = 'Request and job cancelled successfully.';
 
@@ -891,6 +898,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     logActivity($conn, $userID, 'Issue', 'Provider Suspended - Job Cancelled', "Issue #$issueID: job #$linkedJobIDForReq cancelled due to provider suspension.", $linkedRequestID, $linkedJobIDForReq);
                 }
                 $conn->query("UPDATE tblcollection_request SET status='Rejected', rejectionReason='Provider suspended via issue #$issueID' WHERE requestID=$linkedRequestID");
+                // Cancel items for this request
+                $conn->query("UPDATE tblitem SET status='Cancelled' WHERE requestID=$linkedRequestID AND status NOT IN ('Processed','Recycled')");
+                logActivity($conn, $userID, 'Item', 'Status Change', "Items cancelled for request #$linkedRequestID due to provider suspension.", $linkedRequestID, null);
                 logActivity($conn, $userID, 'Issue', 'Provider Suspended - Request Cancelled', "Issue #$issueID: current request #$linkedRequestID cancelled due to provider suspension.", $linkedRequestID, null);
             }
 
@@ -908,16 +918,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($oStatus === 'Pending') {
                     // Pending → Rejected
                     $conn->query("UPDATE tblcollection_request SET status='Rejected', rejectionReason='Provider suspended' WHERE requestID=$oRID");
+                    // Cancel items for this request
+                    $conn->query("UPDATE tblitem SET status='Cancelled' WHERE requestID=$oRID AND status NOT IN ('Processed','Recycled')");
+                    logActivity($conn, $userID, 'Item', 'Status Change', "Items cancelled for pending request #$oRID due to provider suspension.", $oRID, null);
                     logActivity($conn, $userID, 'Issue', 'Provider Suspended - Request Rejected', "Issue #$issueID: pending request #$oRID rejected due to provider suspension.", $oRID, null);
                 } else {
                     // Approved / Scheduled → Rejected; cancel their active jobs too
                     $conn->query("UPDATE tblcollection_request SET status='Rejected', rejectionReason='Provider suspended' WHERE requestID=$oRID");
+                    // Cancel items for this request
+                    $conn->query("UPDATE tblitem SET status='Cancelled' WHERE requestID=$oRID AND status NOT IN ('Processed','Recycled')");
                     $relJobRes = $conn->query("SELECT jobID FROM tbljob WHERE requestID=$oRID AND status IN ('Pending','Scheduled','Ongoing')");
                     while ($rj = $relJobRes->fetch_assoc()) {
                         $rjID = (int)$rj['jobID'];
                         $conn->query("UPDATE tbljob SET status='Cancelled', rejectionReason='Provider suspended via issue #$issueID' WHERE jobID=$rjID");
                         logActivity($conn, $userID, 'Issue', 'Provider Suspended - Job Cancelled', "Issue #$issueID: job #$rjID cancelled due to provider suspension.", $oRID, $rjID);
                     }
+                    logActivity($conn, $userID, 'Item', 'Status Change', "Items cancelled for request #$oRID due to provider suspension.", $oRID, null);
                     logActivity($conn, $userID, 'Issue', 'Provider Suspended - Request Cancelled', "Issue #$issueID: approved/scheduled request #$oRID cancelled due to provider suspension.", $oRID, null);
                 }
             }
