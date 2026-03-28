@@ -1139,7 +1139,7 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
         </div>
 
         <?php if ($message): ?>
-        <div class="alert <?= $messageType === 'success' ? 'alert-success' : 'alert-error' ?>">
+        <div class="alert <?= $messageType === 'success' ? 'alert-success' : 'alert-error' ?>" id="inlineAlert" style="margin: 1rem 0;">
             <?= sanitize($message) ?>
         </div>
         <?php endif; ?>
@@ -1511,6 +1511,14 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
             t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:' + (colors[type] || colors.success) + ';color:#fff;padding:10px 18px;border-radius:24px;font-size:0.82rem;font-family:Inter,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;animation:toastIn .25s ease;';
             t.innerHTML = '<span style="font-weight:700">' + (type === 'success' ? '✓' : '✕') + '</span> ' + msg;
             document.body.appendChild(t);
+            const inlineAlert = document.getElementById('inlineAlert');
+            if (inlineAlert) {
+                setTimeout(function () {
+                    inlineAlert.style.transition = 'opacity 0.25s ease';
+                    inlineAlert.style.opacity = '0';
+                    setTimeout(function () { inlineAlert.style.display = 'none'; }, 250);
+                }, 3000);
+            }
             setTimeout(function () {
                 t.style.animation = 'toastOut .25s ease forwards';
                 setTimeout(function () { t.remove(); }, 250);
