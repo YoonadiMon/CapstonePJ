@@ -417,9 +417,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var reportIssueForm = document.getElementById('reportIssueForm');
     var closeReportIssueModalBtn = document.getElementById('closeReportIssueModal');
     var cancelReportIssueBtn = document.getElementById('cancelReportIssueBtn');
-    var issueType = document.getElementById('issueType');
-    var otherIssueGroup = document.getElementById('otherIssueGroup');
-    var otherIssueText = document.getElementById('otherIssueText');
 
     if (closeReportIssueModalBtn) {
         closeReportIssueModalBtn.addEventListener('click', closeReportIssueModal);
@@ -451,50 +448,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (issueType) {
-        issueType.addEventListener('change', function() {
-            if (this.value === 'Other') {
-                if (otherIssueGroup) otherIssueGroup.style.display = 'block';
-                if (otherIssueText) otherIssueText.setAttribute('required', 'required');
-            } else {
-                if (otherIssueGroup) otherIssueGroup.style.display = 'none';
-                if (otherIssueText) {
-                    otherIssueText.removeAttribute('required');
-                    otherIssueText.value = '';
-                }
-            }
-        });
-    }
-
     var assignHandoverForm = document.getElementById('assignHandoverForm');
     if (assignHandoverForm) {
         assignHandoverForm.addEventListener('submit', function(e) {
             e.preventDefault();
             var handoverJobId = document.getElementById('handoverJobId');
-            alert('Handover assigned for ' + (handoverJobId ? handoverJobId.value : ''));
+            // alert('Handover assigned for ' + (handoverJobId ? handoverJobId.value : ''));
             closeAssignHandoverModal();
         });
     }
 
-    var reassignJobForm = document.getElementById('reassignJobForm');
-    if (reassignJobForm) {
-        reassignJobForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            var reassignJobId = document.getElementById('reassignJobId');
-            alert('Job reassigned for ' + (reassignJobId ? reassignJobId.value : ''));
-            closeReassignJobModal();
-        });
-    }
+    // var reassignJobForm = document.getElementById('reassignJobForm');
+    // if (reassignJobForm) {
+    //     reassignJobForm.addEventListener('submit', function(e) {
+    //         e.preventDefault();
+    //         var reassignJobId = document.getElementById('reassignJobId');
+    //         // alert('Job reassigned for ' + (reassignJobId ? reassignJobId.value : ''));
+    //         closeReassignJobModal();
+    //     });
+    // }
 
-    var reassignCentreForm = document.getElementById('reassignCentreForm');
-    if (reassignCentreForm) {
-        reassignCentreForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            var reassignCentreJobId = document.getElementById('reassignCentreJobId');
-            alert('Collection centre reassigned for ' + (reassignCentreJobId ? reassignCentreJobId.value : ''));
-            closeReassignCentreModal();
-        });
-    }
+    // var reassignCentreForm = document.getElementById('reassignCentreForm');
+    // if (reassignCentreForm) {
+    //     reassignCentreForm.addEventListener('submit', function(e) {
+    //         e.preventDefault();
+    //         var reassignCentreJobId = document.getElementById('reassignCentreJobId');
+    //         // alert('Collection centre reassigned for ' + (reassignCentreJobId ? reassignCentreJobId.value : ''));
+    //         closeReassignCentreModal();
+    //     });
+    // }
     
     var routeInfoBox = document.getElementById('routeInfoBox');
     if (routeInfoBox && !document.getElementById('routeProgressBar')) {
@@ -504,44 +486,44 @@ document.addEventListener('DOMContentLoaded', function() {
         routeInfoBox.appendChild(progressContainer);
     }
 
-var successPopup = document.getElementById('successPopupModal');
-var closeSuccessPopup = document.getElementById('closeSuccessPopup');
-var closeSuccessPopupBtn = document.getElementById('closeSuccessPopupBtn');
-var goToIssuesBtn = document.getElementById('goToIssuesBtn');
+    var successPopup = document.getElementById('successPopupModal');
+    var closeSuccessPopup = document.getElementById('closeSuccessPopup');
+    var closeSuccessPopupBtn = document.getElementById('closeSuccessPopupBtn');
+    var goToIssuesBtn = document.getElementById('goToIssuesBtn');
 
-function closeSuccessPopupModal() {
-    if (successPopup) {
-        successPopup.classList.remove('active');
-        successPopup.removeAttribute('data-job-id');
+    function closeSuccessPopupModal() {
+        if (successPopup) {
+            successPopup.classList.remove('active');
+            successPopup.removeAttribute('data-job-id');
+        }
     }
-}
 
-if (closeSuccessPopup) {
-    closeSuccessPopup.addEventListener('click', closeSuccessPopupModal);
-}
+    if (closeSuccessPopup) {
+        closeSuccessPopup.addEventListener('click', closeSuccessPopupModal);
+    }
 
-if (closeSuccessPopupBtn) {
-    closeSuccessPopupBtn.addEventListener('click', closeSuccessPopupModal);
-}
+    if (closeSuccessPopupBtn) {
+        closeSuccessPopupBtn.addEventListener('click', closeSuccessPopupModal);
+    }
 
-if (goToIssuesBtn) {
-    goToIssuesBtn.addEventListener('click', function() {
-        var jobId = successPopup ? successPopup.getAttribute('data-job-id') : '';
-        if (jobId) {
-            window.location.href = 'aIssue.php?jobID=' + encodeURIComponent(jobId);
-        } else {
-            window.location.href = 'aIssue.php';
-        }
-    });
-}
+    if (goToIssuesBtn) {
+        goToIssuesBtn.addEventListener('click', function() {
+            var jobId = successPopup ? successPopup.getAttribute('data-job-id') : '';
+            if (jobId) {
+                window.location.href = 'aIssue.php?jobID=' + encodeURIComponent(jobId);
+            } else {
+                window.location.href = 'aIssue.php';
+            }
+        });
+    }
 
-if (successPopup) {
-    successPopup.addEventListener('click', function(e) {
-        if (e.target === successPopup) {
-            closeSuccessPopupModal();
-        }
-    });
-}
+    if (successPopup) {
+        successPopup.addEventListener('click', function(e) {
+            if (e.target === successPopup) {
+                closeSuccessPopupModal();
+            }
+        });
+    }
 
     if (reportIssueForm) {
         reportIssueForm.addEventListener('submit', async function(e) {
@@ -557,7 +539,7 @@ if (successPopup) {
             var selectedIssue = issueTypeSelect ? issueTypeSelect.value : '';
             
             if (!severityRadio) {
-                alert('Please select a severity level');
+                // alert('Please select a severity level');
                 return;
             }
             
@@ -572,20 +554,8 @@ if (successPopup) {
             formData.append('severity', severityRadio.value);
             formData.append('description', issueDescription ? issueDescription.value.trim() : '');
             
-            if (selectedIssue === 'Other') {
-                var customIssue = otherIssueTextElem ? otherIssueTextElem.value.trim() : '';
-                if (!customIssue) {
-                    alert('Please specify the issue type');
-                    return;
-                }
-                formData.append('otherIssueText', customIssue);
-            } else if (!selectedIssue) {
-                alert('Please select an issue type');
-                return;
-            }
-            
-            if (!formData.get('subject') || !formData.get('description')) {
-                alert('Please complete all required fields.');
+            if (!selectedIssue) {
+                // alert('Please select an issue type');
                 return;
             }
             
@@ -606,43 +576,45 @@ if (successPopup) {
                     closeReportIssueModal();
                     
                     try {
-                        const refreshResponse = await fetch(window.location.href + '?fetch_data=1');
+                        // Force refresh the page data
+                        const refreshResponse = await fetch(window.location.href + '?fetch_data=1&t=' + Date.now());
                         const freshData = await refreshResponse.json();
                         
+                        // Update the global data object
                         window.collectionJobsData = freshData;
                         
+                        // Reload all UI components with fresh data
                         loadAllData();
+                        
+                        // Show success popup
+                        if (successPopup) {
+                            successPopup.classList.add('active');
+                            successPopup.setAttribute('data-job-id', numericJobId);
+                        }
                         
                     } catch (refreshError) {
                         console.error('Failed to refresh data:', refreshError);
+                        // Fallback: reload the page
                         window.location.reload();
                     }
                     
                     reportIssueForm.reset();
                     
-                    var priorityOptions = document.querySelectorAll('.priority-option');
-                    for (var i = 0; i < priorityOptions.length; i++) {
-                        priorityOptions[i].classList.remove('selected');
+                    var priorityOptionsList = document.querySelectorAll('.priority-option');
+                    for (var i = 0; i < priorityOptionsList.length; i++) {
+                        priorityOptionsList[i].classList.remove('selected');
                     }
                     
                     var otherIssueGroupElem = document.getElementById('otherIssueGroup');
                     if (otherIssueGroupElem) otherIssueGroupElem.style.display = 'none';
-               
-                    var successPopup = document.getElementById('successPopupModal');
-
-                    if (successPopup) {
-                        successPopup.classList.add('active');
-                        successPopup.setAttribute('data-job-id', numericJobId);
-
-                    }
                     
                 } else {
-                    alert('Error: ' + result.message);
+                    // alert('Error: ' + result.message);
                 }
                 
             } catch (error) {
                 console.error('Error submitting issue:', error);
-                alert('Failed to submit issue. Please try again.');
+                // alert('Failed to submit issue. Please try again.');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
@@ -930,11 +902,11 @@ function updateMapMarkers() {
 }
 
 function notifyCollector(jobId) {
-    alert('Notification sent for job ' + jobId);
+    // alert('Notification sent for job ' + jobId);
 }
 
 function contactCollector(jobId) {
-    alert('Contacting collector for job ' + jobId);
+    // alert('Contacting collector for job ' + jobId);
 }
 
 function selectCollector(collectorId) {
@@ -1086,7 +1058,7 @@ function openReportIssueModal(jobId) {
 
     if (!job) {
         console.error('Job not found for ID:', jobId);
-        alert('Job details not found. Please try again.');
+        // alert('Job details not found. Please try again.');
         return;
     }
 
@@ -1233,49 +1205,49 @@ function closeJobDetailsModal() {
     if (jobDetailsModal) jobDetailsModal.classList.remove('show');
 }
 
-function reassignJob(jobId) {
-    var job = (collectionJobsData.delayedLookup || {})[jobId];
-    if (!job) return;
+// function reassignJob(jobId) {
+//     var job = (collectionJobsData.delayedLookup || {})[jobId];
+//     if (!job) return;
 
-    var reassignJobId = document.getElementById('reassignJobId');
-    var reassignCurrentCollector = document.getElementById('reassignCurrentCollector');
-    var reassignDelayReason = document.getElementById('reassignDelayReason');
+//     var reassignJobId = document.getElementById('reassignJobId');
+//     var reassignCurrentCollector = document.getElementById('reassignCurrentCollector');
+//     var reassignDelayReason = document.getElementById('reassignDelayReason');
     
-    if (reassignJobId) reassignJobId.value = job.id || '';
-    if (reassignCurrentCollector) reassignCurrentCollector.value = job.collector || '';
-    if (reassignDelayReason) reassignDelayReason.value = (job.reason || '-') + (job.delay ? ' (' + job.delay + ')' : '');
+//     if (reassignJobId) reassignJobId.value = job.id || '';
+//     if (reassignCurrentCollector) reassignCurrentCollector.value = job.collector || '';
+//     if (reassignDelayReason) reassignDelayReason.value = (job.reason || '-') + (job.delay ? ' (' + job.delay + ')' : '');
 
-    var reassignJobModal = document.getElementById('reassignJobModal');
-    if (reassignJobModal) reassignJobModal.classList.add('show');
-}
+//     var reassignJobModal = document.getElementById('reassignJobModal');
+//     if (reassignJobModal) reassignJobModal.classList.add('show');
+// }
 
-function closeReassignJobModal() {
-    var reassignJobModal = document.getElementById('reassignJobModal');
-    if (reassignJobModal) reassignJobModal.classList.remove('show');
-}
+// function closeReassignJobModal() {
+//     var reassignJobModal = document.getElementById('reassignJobModal');
+//     if (reassignJobModal) reassignJobModal.classList.remove('show');
+// }
 
-function reassignCentre(jobId) {
-    var job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
-    if (!job) return;
+// function reassignCentre(jobId) {
+//     var job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
+//     if (!job) return;
 
-    var reassignCentreJobId = document.getElementById('reassignCentreJobId');
-    var reassignCentreCollector = document.getElementById('reassignCentreCollector');
-    var reassignCentreOriginal = document.getElementById('reassignCentreOriginal');
-    var reassignCentreReason = document.getElementById('reassignCentreReason');
+//     var reassignCentreJobId = document.getElementById('reassignCentreJobId');
+//     var reassignCentreCollector = document.getElementById('reassignCentreCollector');
+//     var reassignCentreOriginal = document.getElementById('reassignCentreOriginal');
+//     var reassignCentreReason = document.getElementById('reassignCentreReason');
     
-    if (reassignCentreJobId) reassignCentreJobId.value = job.id || '';
-    if (reassignCentreCollector) reassignCentreCollector.value = job.collector || '';
-    if (reassignCentreOriginal) reassignCentreOriginal.value = job.originalCentre || '';
-    if (reassignCentreReason) reassignCentreReason.value = job.failReason || '';
+//     if (reassignCentreJobId) reassignCentreJobId.value = job.id || '';
+//     if (reassignCentreCollector) reassignCentreCollector.value = job.collector || '';
+//     if (reassignCentreOriginal) reassignCentreOriginal.value = job.originalCentre || '';
+//     if (reassignCentreReason) reassignCentreReason.value = job.failReason || '';
 
-    var reassignCentreModal = document.getElementById('reassignCentreModal');
-    if (reassignCentreModal) reassignCentreModal.classList.add('show');
-}
+//     var reassignCentreModal = document.getElementById('reassignCentreModal');
+//     if (reassignCentreModal) reassignCentreModal.classList.add('show');
+// }
 
-function closeReassignCentreModal() {
-    var reassignCentreModal = document.getElementById('reassignCentreModal');
-    if (reassignCentreModal) reassignCentreModal.classList.remove('show');
-}
+// function closeReassignCentreModal() {
+//     var reassignCentreModal = document.getElementById('reassignCentreModal');
+//     if (reassignCentreModal) reassignCentreModal.classList.remove('show');
+// }
 
 function viewFailedDropoffDetails(jobId) {
     var job = (collectionJobsData.pendingDropoffLookup || {})[jobId];
@@ -1331,11 +1303,11 @@ window.closeAssignHandoverModal = closeAssignHandoverModal;
 window.viewJobDetails = viewJobDetails;
 window.closeJobDetailsModal = closeJobDetailsModal;
 window.notifyCollector = notifyCollector;
-window.reassignJob = reassignJob;
-window.closeReassignJobModal = closeReassignJobModal;
-window.reassignCentre = reassignCentre;
-window.closeReassignCentreModal = closeReassignCentreModal;
-window.contactCollector = contactCollector;
+// window.reassignJob = reassignJob;
+// window.closeReassignJobModal = closeReassignJobModal;
+// window.reassignCentre = reassignCentre;
+// window.closeReassignCentreModal = closeReassignCentreModal;
+// window.contactCollector = contactCollector;
 window.selectCollector = selectCollector;
 window.centerMapOnAll = centerMapOnAll;
 window.toggleMapLayers = toggleMapLayers;

@@ -523,20 +523,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_issue'])) {
     }
     
     // "Other" issue type
-    $storedIssueType = $issueType;
-    if ($issueType === 'Other') {
-        $customIssue = isset($_POST['otherIssueText']) ? trim($_POST['otherIssueText']) : '';
-        if (empty($customIssue)) {
-            $errors[] = 'Please specify the issue type';
-        } else {
-            // $description = "$customIssue\n\n" . $description;
-            $storedIssueType = 'Other';
-        }
-    } else {
-        if (empty($issueType)) {
-            $errors[] = 'Issue type is required';
-        }
+    if (empty($issueType)) {
+        $errors[] = 'Issue type is required';
     }
+    $storedIssueType = $issueType;
     
     if (empty($errors)) {
         // Insert with requestID from the job
@@ -905,13 +895,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_issue'])) {
                             <option value="Technical">Technical</option>
                             <option value="Other">Other</option>
                         </select>
-                    </div>
-
-                    <div class="issue-form-group" id="otherIssueGroup" style="display: none;">
-                        <label for="otherIssueText">
-                            <i class="fas fa-pen"></i> Specify Issue
-                        </label>
-                        <input type="text" id="otherIssueText" name="otherIssueText" placeholder="Type the issue here...">
                     </div>
 
                     <div class="issue-form-group">
