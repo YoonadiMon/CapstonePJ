@@ -36,7 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $collectedAllowed = ['Cancelled'];
     $final            = ['Processed', 'Recycled', 'Cancelled'];
 
-    $checkStmt = $conn->prepare("SELECT status, requestID FROM tblitem WHERE itemID = ?");
+    // Fetch current status, requestID, and itemTypeID
+    $checkStmt = $conn->prepare("SELECT status, requestID, itemTypeID FROM tblitem WHERE itemID = ?");
     $checkStmt->bind_param('i', $itemID);
     $checkStmt->execute();
     $checkRes = $checkStmt->get_result()->fetch_assoc();
@@ -45,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if ($checkRes) {
         $currentStatus = $checkRes['status'];
         $requestID     = (int)$checkRes['requestID'];
+        $itemTypeID    = (int)$checkRes['itemTypeID'];
         $validTransition = false;
 
         if ($currentStatus === 'Received' && in_array($newStatus, $adminAllowed)) {
@@ -60,7 +62,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $updStmt->execute();
             $updStmt->close();
 
-            // Log the change
+            //  ADD POINTS FOR PROCESSED/RECYCLED ITEMS
+            if (in_array($newStatus, ['Processed', 'Recycled'])) {
+                $pointsStmt = $conn->prepare("SELECT recycle_points FROM tblitem_type WHERE itemTypeID = ?");
+                $pointsStmt->bind_param('i', $itemTypeID);
+                $pointsStmt->execute();
+                $pointsRow = $pointsStmt->get_result()->fetch_assoc();
+                $pointsStmt->close();
+
+                if ($pointsRow && $pointsRow['recycle_points'] > 0) {
+                    $pointsToAdd = (int)$pointsRow['recycle_points'];
+
+                    $providerStmt = $conn->prepare("SELECT providerID FROM tblcollection_request WHERE requestID = ?");
+                    $providerStmt->bind_param('i', $requestID);
+                    $providerStmt->execute();
+                    $providerRow = $providerStmt->get_result()->fetch_assoc();
+                    $providerStmt->close();
+
+                    if ($providerRow) {
+                        $providerID = (int)$providerRow['providerID'];
+
+                        // 3. Update provider points
+                        $updatePoints = $conn->prepare("UPDATE tblprovider SET point = point + ? WHERE providerID = ?");
+                        $updatePoints->bind_param('ii', $pointsToAdd, $providerID);
+                        $updatePoints->execute();
+                        $updatePoints->close();
+
+                        // 4. Log the points addition
+                        $logDescPoints = "Provider (ID: $providerID) awarded $pointsToAdd points for item #$itemID ($newStatus).";
+                        logActivity($conn, $userID, 'Points', 'Awarded', $logDescPoints, $requestID);
+                    }
+                }
+            }
+            // Log the status change
             $itemNameStmt = $conn->prepare("SELECT it.description, itype.name FROM tblitem it JOIN tblitem_type itype ON it.itemTypeID = itype.itemTypeID WHERE it.itemID = ?");
             $itemNameStmt->bind_param('i', $itemID);
             $itemNameStmt->execute();
