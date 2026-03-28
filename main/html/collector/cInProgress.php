@@ -128,13 +128,7 @@ if (isset($_GET['action'])) {
             $upd2->execute();
             $upd2->close();
 
-            $upd3 = $conn->prepare("UPDATE tbljob SET status='Picked Up' WHERE jobID=?");
-            $upd3->bind_param('i', $jobID);
-            $upd3->execute();
-            $upd3->close();
-
             logActivity($conn, $requestID, $jobID, $userID, 'Request', 'Status Change', 'Changed from Ongoing to Collected');
-            logActivity($conn, $requestID, $jobID, $userID, 'Job', 'Status Change', 'Changed from Ongoing to Picked Up');
         }
 
         echo json_encode(['success'=>true, 'allDelivered'=>($remaining==0)]);
@@ -158,7 +152,7 @@ if (isset($_GET['action'])) {
         $upd2->close();
 
         logActivity($conn, $requestID, $jobID, $userID, 'Job', 'Returned', 'Returned to base, journey completed');
-        logActivity($conn, $requestID, $jobID, $userID, 'Job', 'Status Change', 'Changed from Picked Up to Completed');
+        logActivity($conn, $requestID, $jobID, $userID, 'Job', 'Status Change', 'Changed from Ongoing to Completed');
         logActivity($conn, $requestID, $jobID, $userID, 'Job', 'Completed', null);
 
         echo json_encode(['success'=>true]);
@@ -227,7 +221,7 @@ $jobQuery = $conn->prepare(
      INNER JOIN tblvehicle v             ON v.vehicleID    = j.vehicleID
      WHERE j.collectorID = ?
        AND j.status NOT IN ('Pending', 'Rejected')
-     ORDER BY FIELD(j.status, 'Ongoing', 'Picked Up', 'Scheduled', 'Cancelled', 'Completed'), j.scheduledDate ASC
+     ORDER BY FIELD(j.status, 'Ongoing', 'Scheduled', 'Cancelled', 'Completed'), j.scheduledDate ASC
      LIMIT 1"
 );
 $jobQuery->bind_param('i', $collectorID);
