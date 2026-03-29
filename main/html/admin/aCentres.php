@@ -233,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         SELECT COUNT(*) AS cnt FROM tblitem i
                         JOIN tblcollection_request r ON i.requestID = r.requestID
                         WHERE i.centreID = ?
-                        AND i.status IN ('Pending', 'Collected', 'Received', 'Processed')
+                        AND i.status IN ('Pending', 'Collected', 'Received')
                     ");
                     $activeItemStmt->bind_param('i', $centreID);
                     $activeItemStmt->execute();
