@@ -70,6 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
         $user = $result->fetch_assoc();
 
         if (password_verify($password, $user['password'])) {
+
+            // Update lastLogin in database
+            $updateStmt = $conn->prepare("UPDATE tblusers SET lastLogin = NOW() WHERE userID = ?");
+            $updateStmt->bind_param("i", $user['userID']);
+            $updateStmt->execute();
+            $updateStmt->close();
+
             $_SESSION['userID'] = $user['userID'];
             $_SESSION['userType'] = $user['userType'];
             $_SESSION['fullname'] = $user['fullname'];
