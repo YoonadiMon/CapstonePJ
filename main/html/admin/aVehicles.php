@@ -94,6 +94,26 @@ $successMsg = $_SESSION['successMsg'] ?? '';
 $errorMsg   = $_SESSION['errorMsg']   ?? '';
 unset($_SESSION['successMsg'], $_SESSION['errorMsg']);
 
+function isPlateNumDuplicate(mysqli $conn, string $plateNum, ?int $excludeID = null): bool {
+    $sql = "SELECT COUNT(*) as cnt FROM tblvehicle WHERE plateNum = ?";
+    $params = [$plateNum];
+    if ($excludeID !== null) {
+        $sql .= " AND vehicleID != ?";
+        $params[] = $excludeID;
+    }
+    $stmt = $conn->prepare($sql);
+    if ($excludeID !== null) {
+        $stmt->bind_param('si', $params[0], $params[1]);
+    } else {
+        $stmt->bind_param('s', $params[0]);
+    }
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res->fetch_assoc();
+    $stmt->close();
+    return ($row['cnt'] > 0);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$conn) {
         $_SESSION['errorMsg'] = 'Database connection failed.';
@@ -109,6 +129,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $type     = trim($_POST['type']     ?? '');
         $capacity = floatval($_POST['capacity'] ?? 0);
         $status   = $_POST['status'] ?? 'Available';
+
+        // Check duplicate plate number
+        if (isPlateNumDuplicate($conn, $plateNum)) {
+            $_SESSION['errorMsg'] = "A vehicle with plate number '$plateNum' already exists.";
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        }
  
         $allowed = ['Available','Inactive'];
         if (!in_array($status, $allowed)) $status = 'Available';
@@ -138,6 +165,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $currentStatus = $cur['status'] ?? 'Available';
  
         $statusError = '';
+
+        // Check duplicate plate number (excluding current vehicle)
+    if (isPlateNumDuplicate($conn, $plateNum, $id)) {
+        $_SESSION['errorMsg'] = "Another vehicle already has plate number '$plateNum'.";
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
  
         // Block: 'In Use' and 'Maintenance' cannot be set manually
         if ($newStatus === 'In Use') {
@@ -214,11 +248,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $startDate   = $_POST['startDate'] ?? '';
         $endDate     = !empty($_POST['endDate']) ? $_POST['endDate'] : null;
         $description = trim($_POST['description'] ?? '');
+
+        $today = date('Y-m-d');
+        if ($startDate <= $today) {
+            $_SESSION['errorMsg'] = 'Maintenance start date cannot be in the past.';
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        }
+        if ($endDate !== null && $endDate <= $startDate) {
+            $_SESSION['errorMsg'] = 'End date must be after start date.';
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        }
  
         $allowedTypes = ['Routine','Repair','Inspection'];
         if (!in_array($mtype, $allowedTypes)) $mtype = 'Routine';
-
-        // Conflict check 1: vehicle already has a job on startDate
+        
         $escapedStart = $conn->real_escape_string($startDate);
         $jobConflict = $conn->query("
             SELECT 1 FROM tbljob
@@ -233,7 +278,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: ' . $_SERVER['PHP_SELF']); exit;
         }
 
-        // Conflict check 2: overlapping active maintenance already exists
         if ($endDate) {
             $escapedEnd = $conn->real_escape_string($endDate);
             $maintConflict = $conn->query("
@@ -527,6 +571,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $model    = trim($_POST['model']    ?? '');
         $type     = trim($_POST['type']     ?? '');
         $capacity = floatval($_POST['capacity'] ?? 0);
+
+        // Check duplicate plate number (excluding current vehicle)
+        if (isPlateNumDuplicate($conn, $plateNum, $id)) {
+            $_SESSION['errorMsg'] = "Another vehicle already has plate number '$plateNum'.";
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        }
 
         $conn->begin_transaction();
         try {
