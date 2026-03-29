@@ -769,6 +769,14 @@ switch($userType) {
                     <a href="../../html/admin/aRequests.php">Collection Requests</a><br>
                     <a href="../../html/admin/aJobs.php">Collection Jobs</a>
                 </div>
+                <div>
+                    <b>System Operation</b><br>
+                    <a href="../../html/admin/aProviders.php">Providers</a><br>
+                    <a href="../../html/admin/aCollectors.php">Collectors</a><br>
+                    <a href="../../html/admin/aVehicles.php">Vehicles</a><br>
+                    <a href="../../html/admin/aCentres.php">Collection Centres</a><br>
+                    <a href="../../html/admin/aItemProcessing.php">Item Processing</a>
+                </div>
                 <div><b>Proxy</b><br>
                     <a href="Profile.php">Edit Profile</a><br>
                     <a href="Setting.php">Setting</a>
