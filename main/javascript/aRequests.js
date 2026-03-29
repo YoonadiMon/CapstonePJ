@@ -282,26 +282,35 @@ if (approveBtn) {
                 body: formData
             });
 
-            const text = await response.text();
+            const data = await response.json();
 
-            // If PHP redirects, fetch may return redirected HTML.
-            // We only need to know approval succeeded, so treat a normal response as success.
-            if (!response.ok) {
-                throw new Error('Failed to approve request.');
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Failed to approve request.');
             }
 
-            // remove from current requests list immediately
+            const approvedRequestId = currentRequest.dbID;
+
+            const index = requests.findIndex(r => Number(r.dbID) === Number(currentRequest.dbID));
+            if (index !== -1) {
+                requests.splice(index, 1);
+            }
+
             if (Array.isArray(window.requestsData)) {
-                const index = window.requestsData.findIndex(r => String(r.id) === String(currentRequest.dbID));
-                if (index !== -1) {
-                    window.requestsData.splice(index, 1);
+                const globalIndex = window.requestsData.findIndex(
+                    r => Number(r.dbID) === Number(currentRequest.dbID)
+                );
+                if (globalIndex !== -1) {
+                    window.requestsData.splice(globalIndex, 1);
                 }
             }
 
-            // refresh requests UI
-            filterRequests(true);
+            detailStatus.className = 'big-status approved';
+            detailStatus.textContent = 'approved';
 
-            const approvedRequestId = currentRequest.dbID;
+            if (approveBtn) approveBtn.style.display = 'none';
+            if (rejectBtn) rejectBtn.style.display = 'none';
+
+            filterRequests();
 
             const modalOverlay = document.createElement('div');
             modalOverlay.className = 'approve-modal-overlay';
@@ -316,12 +325,11 @@ if (approveBtn) {
 
                     <div class="approve-modal-body">
                         <p><strong>#REQ${String(approvedRequestId).padStart(3, '0')}</strong> has been approved successfully.</p>
-                        <p>Do you want to go to Operations to schedule it now?</p>
                     </div>
 
                     <div class="approve-modal-footer">
                         <button class="btn btn-primary" id="goToOperationsBtn">
-                            <i class="fas fa-arrow-right"></i> Go to Scheduling
+                            <i class="fas fa-arrow-right"></i> Assign Request
                         </button>
                     </div>
                 </div>
@@ -333,6 +341,9 @@ if (approveBtn) {
                 if (document.body.contains(modalOverlay)) {
                     document.body.removeChild(modalOverlay);
                 }
+
+                currentRequest = null;
+                showList();
             };
 
             document.getElementById('closeApproveModal')?.addEventListener('click', closeApproveModal);
@@ -348,7 +359,7 @@ if (approveBtn) {
             });
 
         } catch (error) {
-            alert(error.message || 'Failed to approve request.');
+            // alert(error.message || 'Failed to approve request.');
         }
     });
 }
@@ -389,7 +400,7 @@ if (approveBtn) {
                     const reason = document.getElementById('rejectionReason').value.trim();
 
                     if (!reason) {
-                        alert('Please enter a rejection reason');
+                        // alert('Please enter a rejection reason');
                         return;
                     }
 
