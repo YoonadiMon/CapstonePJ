@@ -1542,12 +1542,12 @@ if ($result) {
             today.setHours(0, 0, 0, 0);
             const daysDiff = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
             
-            let dayNotice = '';
-            if (daysDiff === 10) {
-                dayNotice = ' (Earliest available)';
-            } else if (daysDiff > 10) {
-                dayNotice = ` (in ${daysDiff} days)`;
-            }
+            // let dayNotice = '';
+            // if (daysDiff === 10) {
+            //     dayNotice = ' (Earliest available)';
+            // } else if (daysDiff > 10) {
+            //     dayNotice = ` (in ${daysDiff} days)`;
+            // }
             
             const formattedDate = selectedDate.toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -1555,7 +1555,7 @@ if ($result) {
                 month: 'long',
                 day: 'numeric'
             });
-            document.getElementById('summaryDate').textContent = formattedDate + dayNotice;
+            document.getElementById('summaryDate').textContent = formattedDate;
         } else {
             document.getElementById('summaryDate').textContent = 'Not set';
         }
