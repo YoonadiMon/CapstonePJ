@@ -743,10 +743,10 @@ $issuesJson = json_encode($issues, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
 
             list.innerHTML = issues.map(issue => {
                 const linkedReq = issue.requestID
-                    ? `<a class="linked-id" href="../../html/admin/aRequestDetail.php?id=${issue.requestID}" onclick="event.stopPropagation()">REQ #${issue.requestID}</a>`
+                    ? `<a class="linked-id" href="../../html/admin/aCollectionRequests.php" onclick="event.stopPropagation()">REQ #${issue.requestID}</a>`
                     : "";
                 const linkedJob = issue.jobID
-                    ? `<a class="linked-id" href="../../html/admin/aJobDetail.php?id=${issue.jobID}" onclick="event.stopPropagation()">JOB #${issue.jobID}</a>`
+                    ? `<a class="linked-id" href="../../html/admin/aJobs.php" onclick="event.stopPropagation()">JOB #${issue.jobID}</a>`
                     : "";
 
                 // CSS class keys match DB ENUM values (capitalised)
