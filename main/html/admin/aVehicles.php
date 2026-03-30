@@ -1981,7 +1981,7 @@ $maintStatusClass = [
                         <select id="edit-type" name="type">
                             <option value="Van">Van</option>
                             <option value="Truck">Truck</option>
-                            <option value="Car">Car</option>
+                            <option value="Pickup">Pickup</option>
                             <option value="Lorry">Lorry</option>
                             <option value="Other">Other</option>
                         </select>
