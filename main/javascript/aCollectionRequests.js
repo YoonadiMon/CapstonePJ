@@ -619,28 +619,7 @@ function updateActionButtons(request) {
             `;
         }
     } 
-
-    else if (request.status === 'completed') {
-        if (request.jobID) {
-            buttons = `
-                <button class="detail-btn primary" onclick="window.location.href='../../html/admin/aReport.php?request=${encodeURIComponent(request.id)}'">
-                    <i class="fas fa-file-alt"></i> View Report
-                </button>
-                <button class="detail-btn secondary" onclick="viewCompletionDetails('${request.id}')">
-                    <i class="fas fa-clipboard-list"></i> Details
-                </button>
-            `;
-        } else {
-            buttons = `
-                <button class="detail-btn primary" onclick="window.location.href='../../html/admin/aReport.php?request=${encodeURIComponent(request.id)}'">
-                    <i class="fas fa-file-alt"></i> View Report
-                </button>
-                <button class="detail-btn secondary" onclick="viewCompletionDetails('${request.id}')">
-                    <i class="fas fa-clipboard-list"></i> Details
-                </button>
-            `;
-        }
-    }
+    
     else if (request.status === 'cancelled' || request.status === 'rejected') {
         buttons = ``;
     }
