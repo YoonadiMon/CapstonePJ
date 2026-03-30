@@ -44,12 +44,32 @@ $conn->query("
       )
 ");
 
+// Auto update Maintenance Status -> Completed: when endDate has passed
+$conn->query("
+    UPDATE tblmaintenance m
+    SET m.status = 'Completed'
+    WHERE m.status = 'In Progress'
+      AND m.endDate IS NOT NULL
+      AND m.endDate <= CURDATE()
+");
+
 // Auto update: Maintenance Status -> In Progress: when today reaches the startDate
 $conn->query("
     UPDATE tblmaintenance m
     SET m.status = 'In Progress'
     WHERE m.status = 'Scheduled'
       AND m.startDate <= CURDATE()
+      AND NOT EXISTS (
+          SELECT 1 FROM tbljob j
+          WHERE j.vehicleID = m.vehicleID
+            AND j.scheduledDate = m.startDate
+            AND j.status IN ('Pending','Scheduled','Ongoing')
+      )
+      AND NOT EXISTS (
+          SELECT 1 FROM tblvehicle v
+          WHERE v.vehicleID = m.vehicleID
+            AND v.status = 'In Use'
+      )
 ");
 
 // Auto-update: Mark Maintenance when a scheduled/in progress record's startDate has arrived
@@ -61,7 +81,7 @@ $conn->query("
         AND EXISTS (
             SELECT 1 FROM tblmaintenance m
             WHERE m.vehicleID = v.vehicleID
-            AND m.status IN ('Scheduled','In Progress')
+            AND m.status = 'In Progress'
             AND m.startDate <= CURDATE()
         )
 ");
@@ -167,11 +187,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $statusError = '';
 
         // Check duplicate plate number (excluding current vehicle)
-    if (isPlateNumDuplicate($conn, $plateNum, $id)) {
-        $_SESSION['errorMsg'] = "Another vehicle already has plate number '$plateNum'.";
-        header('Location: ' . $_SERVER['PHP_SELF']);
-        exit;
-    }
+        if (isPlateNumDuplicate($conn, $plateNum, $id)) {
+            $_SESSION['errorMsg'] = "Another vehicle already has plate number '$plateNum'.";
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        }
  
         // Block: 'In Use' and 'Maintenance' cannot be set manually
         if ($newStatus === 'In Use') {
@@ -250,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = trim($_POST['description'] ?? '');
 
         $today = date('Y-m-d');
-        if ($startDate <= $today) {
+        if ($startDate < $today) {
             $_SESSION['errorMsg'] = 'Maintenance start date cannot be in the past.';
             header('Location: ' . $_SERVER['PHP_SELF']);
             exit;
@@ -265,16 +285,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($mtype, $allowedTypes)) $mtype = 'Routine';
         
         $escapedStart = $conn->real_escape_string($startDate);
-        $jobConflict = $conn->query("
-            SELECT 1 FROM tbljob
-            WHERE vehicleID = $vehicleID
-              AND scheduledDate = '$escapedStart'
-              AND status IN ('Pending','Scheduled','Ongoing')
-            LIMIT 1
-        ")->num_rows > 0;
+        $escapedEnd   = $endDate ? $conn->real_escape_string($endDate) : null;
+
+        // Check for conflicting jobs on any day between startDate and endDate (or on startDate if no endDate)
+        if ($endDate) {
+            $jobConflict = $conn->query("
+                SELECT 1 FROM tbljob
+                WHERE vehicleID = $vehicleID
+                AND scheduledDate BETWEEN '$escapedStart' AND '$escapedEnd'
+                AND status IN ('Pending','Scheduled','Ongoing')
+                LIMIT 1
+            ")->num_rows > 0;
+        } else {
+            $jobConflict = $conn->query("
+                SELECT 1 FROM tbljob
+                WHERE vehicleID = $vehicleID
+                AND scheduledDate = '$escapedStart'
+                AND status IN ('Pending','Scheduled','Ongoing')
+                LIMIT 1
+            ")->num_rows > 0;
+        }
 
         if ($jobConflict) {
-            $_SESSION['errorMsg'] = 'Cannot schedule maintenance: this vehicle already has a job on ' . date('d/m/Y', strtotime($startDate)) . '.';
+            $_SESSION['errorMsg'] = 'Cannot schedule maintenance: this vehicle already has a job on one or more days within the selected date range.';
             header('Location: ' . $_SERVER['PHP_SELF']); exit;
         }
 
@@ -331,14 +364,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: ' . $_SERVER['PHP_SELF']); exit;
         }
 
-        // Fetch current maintenance record to validate transition
-        $mRow = $conn->query("SELECT status, vehicleID FROM tblmaintenance WHERE maintenanceID=$maintenanceID")->fetch_assoc();
+        $mRow = $conn->query("SELECT status, vehicleID, startDate FROM tblmaintenance WHERE maintenanceID=$maintenanceID")->fetch_assoc();
         if (!$mRow) {
             $_SESSION['errorMsg'] = 'Maintenance record not found.';
             header('Location: ' . $_SERVER['PHP_SELF']); exit;
         }
         $curMStatus = $mRow['status'];
         $vid        = (int)$mRow['vehicleID'];
+        $startDate  = $mRow['startDate'];
+
+        if ($newMStatus === 'In Progress') {
+            // Start date must be today or earlier
+            if (strtotime($startDate) > strtotime(date('Y-m-d'))) {
+                $_SESSION['errorMsg'] = 'Cannot set to "In Progress" because the maintenance start date is in the future.';
+                header('Location: ' . $_SERVER['PHP_SELF']); exit;
+            }
+
+            // No conflicting job on the same day
+            $jobConflict = $conn->query("
+                SELECT 1 FROM tbljob
+                WHERE vehicleID = $vid
+                AND scheduledDate = '$startDate'
+                AND status IN ('Pending','Scheduled','Ongoing')
+                LIMIT 1
+            ")->num_rows > 0;
+
+            // Vehicle must not be already "In Use"
+            $vehicleInUse = $conn->query("SELECT status FROM tblvehicle WHERE vehicleID=$vid")->fetch_assoc()['status'] === 'In Use';
+
+            if ($jobConflict || $vehicleInUse) {
+                $_SESSION['errorMsg'] = 'Cannot set to "In Progress" because the vehicle is busy or has a job on this date.';
+                header('Location: ' . $_SERVER['PHP_SELF']); exit;
+            }
+        }
 
         // Validate forward-only transitions
         $validTransitions = [
@@ -353,12 +411,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("UPDATE tblmaintenance SET status=? WHERE maintenanceID=?");
         $stmt->bind_param('si', $newMStatus, $maintenanceID);
         if ($stmt->execute() && $stmt->affected_rows > 0) {
+            // If we set to "In Progress", immediately mark the vehicle as Maintenance
+            if ($newMStatus === 'In Progress') {
+                $conn->query("UPDATE tblvehicle SET status='Maintenance' WHERE vehicleID=$vid AND status='Available'");
+            }
             // If Completed or Cancelled, check if vehicle can revert to Available
             if (in_array($newMStatus, ['Completed','Cancelled'])) {
                 $stillActive = $conn->query("
                     SELECT 1 FROM tblmaintenance
                     WHERE vehicleID = $vid
-                      AND status IN ('Scheduled','In Progress')
+                    AND status IN ('Scheduled','In Progress')
                     LIMIT 1
                 ")->num_rows > 0;
                 if (!$stillActive) {
@@ -366,7 +428,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         UPDATE tblvehicle
                         SET status = 'Available'
                         WHERE vehicleID = $vid
-                          AND status = 'Maintenance'
+                        AND status = 'Maintenance'
                     ");
                 }
             }
@@ -2165,10 +2227,11 @@ $maintStatusClass = [
 
             // Only show valid forward transitions in the dropdown
             const sel = document.getElementById('emstatus-status');
-            const allowed = MAINT_TRANSITIONS[m.status] || [];
-            sel.innerHTML = allowed.map(s =>
-                `<option value="${s}">${s}</option>`
-            ).join('');
+            let allowed = MAINT_TRANSITIONS[m.status] || [];
+            if (m.status === 'Scheduled' && new Date(m.startDate) > new Date()) {
+                allowed = allowed.filter(s => s !== 'In Progress');
+            }
+            sel.innerHTML = allowed.map(s => `<option value="${s}">${s}</option>`).join('');
 
             closeModal('maintenanceViewModal');
             openModal('editMaintenanceStatusModal');
