@@ -2596,7 +2596,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                                 </option>
                                 <?php foreach ($activeCentres as $centre): ?>
                                     <?php if ((int)$centre['centreID'] === (int)$item['centreID']) continue; ?>
-                                    <?php $accepted = in_array((int)$item['itemTypeID'], $centre['_acceptedTypes']); ?>
+                                    <?php $accepted = centreAcceptsItemType($conn, (int)$item['itemTypeID'], (int)$centre['centreID']); ?>
                                     <option value="<?php echo $centre['centreID']; ?>"
                                         <?php echo !$accepted ? 'disabled' : ''; ?>>
                                         <?php echo sanitize($centre['name']); ?>
@@ -2733,7 +2733,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                         <select class="form-select" name="centre_assignment[<?php echo $item['itemID']; ?>]" required>
                             <option value="">-- Select Centre --</option>
                             <?php foreach ($activeCentres as $centre): ?>
-                                <?php $accepted = in_array((int)$item['itemTypeID'], $centre['_acceptedTypes']); ?>
+                                <?php $accepted = centreAcceptsItemType($conn, (int)$item['itemTypeID'], (int)$centre['centreID']); ?>
                                 <option value="<?php echo $centre['centreID']; ?>"
                                     <?php echo ((int)$item['centreID'] === (int)$centre['centreID']) ? 'selected' : ''; ?>
                                     <?php echo !$accepted ? 'disabled' : ''; ?>>
