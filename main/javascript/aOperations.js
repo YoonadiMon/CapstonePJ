@@ -1030,22 +1030,24 @@ async function confirmAssignment() {
     const confirmBtn = document.getElementById('confirmAssignmentBtn');
 
     if (!selectedRequest) {
-        // alert('Please select a request.');
-        return;
-    }
-    if (!collector) {
-        // alert('Please select a collector.');
-        return;
-    }
-    if (!vehicle) {
-        // alert('Please select a vehicle.');
-        return;
-    }
-    if (!datetime) {
-        // alert('Please select a scheduled date and time.');
-        return;
-    }
+    showCollectorError('Please select a request.');
+    return;
+}
 
+if (!collector) {
+    showCollectorError('Please select a collector.');
+    return;
+}
+
+if (!vehicle) {
+    showCollectorError('Please select a vehicle.');
+    return;
+}
+
+if (!datetime) {
+    showCollectorError('Please select a scheduled date and time.');
+    return;
+}
     const selectedDateOnly = datetime.split('T')[0];
 
     // Validate collector availability again
@@ -1056,9 +1058,9 @@ async function confirmAssignment() {
     }
     const collectorReason = getCollectorReason(collectorObj, selectedDateOnly);
     if (collectorReason) {
-        // alert(`Collector unavailable: ${collectorReason}`);
-        return;
-    }
+    showCollectorError(`Collector unavailable: ${collectorReason}`);
+    return;
+}
 
     // Validate vehicle availability again
     const vehicleObj = getVehicles().find(v => String(v.id) === String(vehicle));
@@ -1068,9 +1070,9 @@ async function confirmAssignment() {
     }
     const vehicleReason = getVehicleReason(vehicleObj, selectedDateOnly);
     if (vehicleReason) {
-        // alert(`Vehicle unavailable: ${vehicleReason}`);
-        return;
-    }
+    showCollectorError(`Vehicle unavailable: ${vehicleReason}`);
+    return;
+}
 
     // Gather item‑centre selections
     const itemSelections = [];
@@ -1080,11 +1082,11 @@ async function confirmAssignment() {
     for (const row of itemRows) {
         const select = row.querySelector('.centre-select');
         const centreId = select.value;
-        if (!centreId) {
-            // alert('Please select a centre for all items.');
-            allValid = false;
-            break;
-        }
+       if (!centreId) {
+    showCollectorError('Please select a centre for all items.');
+    allValid = false;
+    break;
+}
         const itemId = row.dataset.itemId;
         itemSelections.push({ itemID: parseInt(itemId), centreID: parseInt(centreId) });
     }
@@ -1155,7 +1157,7 @@ async function confirmAssignment() {
         filterRequests();
         checkRequiredFields();
     } catch (error) {
-        // alert(error.message || 'Error saving assignment.');
+        showCollectorError(error.message || 'Error saving assignment.');
     } finally {
         if (confirmBtn) {
             confirmBtn.innerHTML = originalBtnText;
