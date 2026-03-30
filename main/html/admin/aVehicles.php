@@ -1158,7 +1158,7 @@ $maintStatusClass = [
 
         .maint-scheduled { 
             background: var(--LowMainBlue); 
-            color: var(--DarkerMainBlue); 
+            color: var(--White); 
         }
 
         .maint-in-progress { 
