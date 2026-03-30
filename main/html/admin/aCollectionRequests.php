@@ -132,7 +132,6 @@ while ($row = mysqli_fetch_assoc($result)) {
         'address' => $row['pickupAddress'] . ', ' . $row['pickupPostcode'] . ' ' . $row['pickupState'],
         'description' => $row['itemDescriptions'] ?: 'No description provided',
         'brand' => $row['brands'] ?: '-',
-        'condition' => $row['itemStatuses'] ?: '-',
         'assignedCollector' => $row['collectorName'] ?: null,
         'assignedVehicle' => !empty($row['plateNum']) ? (($row['vehicleType'] ?: 'Vehicle') . ' - ' . $row['plateNum']) : null,
         'rejectionReason' => $row['rejectionReason'] ?: null,
@@ -218,20 +217,18 @@ while ($row = mysqli_fetch_assoc($result)) {
     <hr>
 
     <main>
-        <div class="ops-page-header">
-        <h1 class="ops-title">Collection Requests</h1>
-    </div>
+         <div class="ops-page-header">
+            <h1 class="ops-title">Collection Requests</h1>
+        </div>
 
-    <div class="back-btn-container">
-    <a href="../../html/admin/aRequests.php" class="page-back-btn">
-        <i class="fas fa-arrow-left"></i>
-        <span>Back</span>    
-    </a>
-</div>
-</div>
+        <div class="back-btn-container">
+            <a href="../../html/admin/aRequests.php" class="page-back-btn">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back</span>
+            </a>
+        </div>
 
         <div class="dashboard-container">
-            <!-- Left Sidebar -->
             <div class="dashboard-sidebar">
                 <div class="sidebar-header"></div>
 
@@ -314,7 +311,6 @@ while ($row = mysqli_fetch_assoc($result)) {
                 </div>
             </div>
 
-            <!-- Main Content -->
             <div class="dashboard-main">
                 <div class="main-header">
                     <div class="header-search">
@@ -328,7 +324,6 @@ while ($row = mysqli_fetch_assoc($result)) {
                     </div>
                 </div>
 
-                <!-- List View -->
                 <div id="collectionListView" class="view-section">
                     <div class="results-bar">
                         <div class="results-info">
@@ -426,19 +421,12 @@ while ($row = mysqli_fetch_assoc($result)) {
                     </div>
                 </div>
 
-                <!-- Detail View -->
                 <div id="collectionDetailView" class="view-section hidden">
                     <div class="detail-container">
                         <div class="detail-nav">
                             <button class="back-btn" id="backToListBtn">
                                 <i class="fas fa-arrow-left"></i> Back
                             </button>
-
-                            <div class="detail-actions">
-                                <button class="detail-action-btn" id="printDetailBtn">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </div>
                         </div>
 
                         <div class="detail-hero">
@@ -492,22 +480,15 @@ while ($row = mysqli_fetch_assoc($result)) {
                                 </div>
 
                                 <div class="detail-card">
-                                    <h3><i class="fas fa-align-left"></i> Description</h3>
-                                    <p id="detailDescription">
-                                        Old desktop computer setup, printer needs repair. All items are in working condition but outdated.
-                                    </p>
-                                </div>
-
-                                <div class="detail-card">
-                                    <h3><i class="fas fa-tag"></i> Details</h3>
+                                    <h3><i class="fas fa-tag"></i> Item Details</h3>
                                     <div class="details-grid">
                                         <div>
                                             <span class="details-label">Brand/Model</span>
-                                            <span class="details-value" id="detailBrand">HP Pavilion, Canon Pixma</span>
+                                            <span class="details-value" id="detailBrand">-</span>
                                         </div>
                                         <div>
-                                            <span class="details-label">Condition</span>
-                                            <span class="details-value" id="detailCondition">Working but outdated</span>
+                                            <span class="details-label">Description</span>
+                                            <span class="details-value" id="detailDescription">No description provided</span>
                                         </div>
                                     </div>
                                 </div>

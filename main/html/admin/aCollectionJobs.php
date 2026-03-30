@@ -518,10 +518,21 @@ foreach ($activeCollectorRows as $row) {
     $centreCoords = null;
     
     if ($hasActiveJob && !empty($pickupFullAddress)) {
+
+    if (!empty($row['pickupPostcode']) && !empty($row['pickupState'])) {
         $pickupCoords = geocodeByPostcode($row['pickupPostcode'], $row['pickupState']);
-        // For centres, postcode+state comes from tblcentre
-        $centreCoords = geocodeByPostcode($row['centrePostcode'], $row['centreState']);
+    } else {
+
+        $pickupCoords = ['lat' => 3.1390, 'lng' => 101.6869];
     }
+
+    if (!empty($row['centrePostcode']) && !empty($row['centreState'])) {
+        $centreCoords = geocodeByPostcode($row['centrePostcode'], $row['centreState']);
+    } else {
+        // fallback
+        $centreCoords = ['lat' => 3.1390, 'lng' => 101.6869];
+    }
+}
     
     // Fetch all centres for this request (for routing)
     $allCentres = [];

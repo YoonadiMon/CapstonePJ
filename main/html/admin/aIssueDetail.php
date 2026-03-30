@@ -984,8 +984,16 @@ if (!empty($issueRow['jobID'])) $jobRow = $conn->query("
     WHERE j.jobID = {$issueRow['jobID']}
 ")->fetch_assoc();
 
+// Check if the linked job is cancelled
+$jobCancelled = false;
+if ($jobRow && in_array($jobRow['status'], ['Cancelled'])) {
+    $jobCancelled = true;
+}
+
 // Fetch linked request (always, since requestID is NOT NULL)
 $reqRow = $conn->query("SELECT * FROM tblcollection_request WHERE requestID={$issueRow['requestID']}")->fetch_assoc();
+
+$requestCancelled = ($reqRow && in_array($reqRow['status'], ['Rejected', 'Cancelled']));
 
 $pendingJobForReq = null;
 if ($reqRow) {
@@ -2333,8 +2341,16 @@ $canAct         = $isAssigned && $isAssignedToMe;
                             <!-- Pickup NOT done: reschedule, reassign collector, reassign vehicle, cancel -->
                             <div class="action-section-label">Pickup Not Yet Completed — Available Actions</div>
                             <div class="action-group">
-                                <button class="btn-warning" onclick="openModal('modalReschedule')">Reschedule Collection</button>
-                                <button class="btn-danger"  onclick="openModal('modalCancelRequest')">Cancel Request</button>
+                                <button class="btn-warning<?php echo ($requestCancelled || $jobCancelled) ? ' btn-disabled' : ''; ?>"
+                                    onclick="openModal('modalReschedule')"
+                                    <?php if ($requestCancelled || $jobCancelled) echo 'disabled title="Request or job is already cancelled."'; ?>>
+                                    Reschedule Collection
+                                </button>
+                                <button class="btn-danger<?php echo ($requestCancelled || $jobCancelled) ? ' btn-disabled' : ''; ?>"
+                                    onclick="openModal('modalCancelRequest')"
+                                    <?php if ($requestCancelled || $jobCancelled) echo 'disabled title="Request or job is already cancelled."'; ?>>
+                                    Cancel Request
+                                </button>
                             </div>
 
                         <?php elseif ($pickupDone && !$dropoffDone): ?>
@@ -2366,8 +2382,16 @@ $canAct         = $isAssigned && $isAssignedToMe;
                         <!-- Request only — no job linked -->
                         <div class="action-section-label">Request-Only Issue — Available Actions</div>
                         <div class="action-group">
-                            <button class="btn-warning" onclick="openModal('modalRescheduleRequest')">Reschedule Request</button>
-                            <button class="btn-danger" onclick="openModal('modalCancelRequest')">Cancel Request</button>
+                            <button class="btn-warning<?php echo $requestCancelled ? ' btn-disabled' : ''; ?>"
+                                onclick="openModal('modalRescheduleRequest')"
+                                <?php if ($requestCancelled) echo 'disabled title="Request is already cancelled."'; ?>>
+                                Reschedule Request
+                            </button>
+                            <button class="btn-danger<?php echo $requestCancelled ? ' btn-disabled' : ''; ?>"
+                                onclick="openModal('modalCancelRequest')"
+                                <?php if ($requestCancelled) echo 'disabled title="Request is already cancelled."'; ?>>
+                                Cancel Request
+                            </button>
                         </div>
 
                     <?php else: ?>
@@ -2572,7 +2596,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                                 </option>
                                 <?php foreach ($activeCentres as $centre): ?>
                                     <?php if ((int)$centre['centreID'] === (int)$item['centreID']) continue; ?>
-                                    <?php $accepted = in_array((int)$item['itemTypeID'], $centre['_acceptedTypes']); ?>
+                                    <?php $accepted = centreAcceptsItemType($conn, (int)$item['itemTypeID'], (int)$centre['centreID']); ?>
                                     <option value="<?php echo $centre['centreID']; ?>"
                                         <?php echo !$accepted ? 'disabled' : ''; ?>>
                                         <?php echo sanitize($centre['name']); ?>
@@ -2709,7 +2733,7 @@ $canAct         = $isAssigned && $isAssignedToMe;
                         <select class="form-select" name="centre_assignment[<?php echo $item['itemID']; ?>]" required>
                             <option value="">-- Select Centre --</option>
                             <?php foreach ($activeCentres as $centre): ?>
-                                <?php $accepted = in_array((int)$item['itemTypeID'], $centre['_acceptedTypes']); ?>
+                                <?php $accepted = centreAcceptsItemType($conn, (int)$item['itemTypeID'], (int)$centre['centreID']); ?>
                                 <option value="<?php echo $centre['centreID']; ?>"
                                     <?php echo ((int)$item['centreID'] === (int)$centre['centreID']) ? 'selected' : ''; ?>
                                     <?php echo !$accepted ? 'disabled' : ''; ?>>

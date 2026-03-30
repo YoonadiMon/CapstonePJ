@@ -1097,7 +1097,7 @@ if ($hasJob) {
             $returnSessionKey    = 'session' . ($centreCount + 2);
             $lastCentreName      = !empty($itemsByCentre) ? end($itemsByCentre)['centreName'] : $job['pickupAddress'];
             $allCentresCompleted = count($completedCentres) === count($itemsByCentre);
-            $returnActive        = ($pickupCompleted && $allCentresCompleted && !$returnCompleted && !$isCancelled && !$hasPendingIssue);
+            $returnActive        = ($journeyStarted && $pickupCompleted && $allCentresCompleted && !$returnCompleted && !$isCancelled && !$hasPendingIssue);
             $returnCardStatus    = $returnCompleted ? 'completed-card' : ($returnActive ? 'active-card' : 'locked');
             ?>
             <div class="job-card <?= $returnCardStatus ?>" id="card-<?= $returnSessionKey ?>">

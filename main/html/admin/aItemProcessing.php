@@ -32,8 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $itemID    = (int)$_POST['itemID'];
     $newStatus = sanitize($_POST['newStatus']);
 
-    $adminAllowed     = ['Processed', 'Recycled'];
-    $collectedAllowed = ['Cancelled'];
+    $adminAllowed     = ['Processed', 'Recycled', 'Cancelled'];
     $final            = ['Processed', 'Recycled', 'Cancelled'];
 
     // Fetch current status, requestID, and itemTypeID
@@ -51,10 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         if ($currentStatus === 'Received' && in_array($newStatus, $adminAllowed)) {
             $validTransition = true;
-        } elseif ($currentStatus === 'Collected' && in_array($newStatus, $collectedAllowed)) {
-            $validTransition = true;
         }
-
         if ($validTransition) {
             // Perform update
             $updStmt = $conn->prepare("UPDATE tblitem SET status = ? WHERE itemID = ?");
@@ -1358,26 +1354,14 @@ $finalStatuses = ['Processed', 'Recycled', 'Cancelled'];
                                             <select name="newStatus" class="status-select" id="sel-<?= $item['itemID'] ?>">
                                                 <option value="Processed">Processed</option>
                                                 <option value="Recycled">Recycled</option>
+                                                <option value="Cancelled">Cancelled</option>
                                             </select>
                                             <button type="submit" class="btn-save-status">
                                                 <img src="../../assets/images/check-icon-white.svg" alt="">
                                                 Save
                                             </button>
                                         </form>
-                                        <?php elseif ($item['itemStatus'] === 'Collected'): ?>
-                                            <form method="POST" class="status-change-form" onsubmit="return handleStatusSubmit(event, this, <?= $item['itemID'] ?>, '<?= sanitize($item['description']) ?>')">
-                                                <input type="hidden" name="action" value="update_status">
-                                                <input type="hidden" name="itemID" value="<?= $item['itemID'] ?>">
-                                                <span class="status-change-label">Change Status:</span>
-                                                <select name="newStatus" class="status-select" id="sel-<?= $item['itemID'] ?>">
-                                                    <option value="Cancelled">Cancelled</option>
-                                                </select>
-                                                <button type="submit" class="btn-save-status">
-                                                    <img src="../../assets/images/check-icon-white.svg" alt="">
-                                                    Save
-                                                </button>
-                                            </form>
-                                        <?php else: ?>
+                                        
                                         <span class="finalised-note">
                                             Status is <strong><?= sanitize($item['itemStatus']) ?></strong> - managed by the system. Available once item is Received.
                                         </span>

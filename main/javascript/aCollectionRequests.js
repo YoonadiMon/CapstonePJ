@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const detailItemsList = document.getElementById('detailItemsList');
     const detailDescription = document.getElementById('detailDescription');
     const detailBrand = document.getElementById('detailBrand');
-    const detailCondition = document.getElementById('detailCondition');
+
     const detailAddress = document.getElementById('detailAddress');
     const mapLink = document.getElementById('mapLink');
     const timelineSteps = document.getElementById('timelineSteps');
@@ -440,7 +440,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (detailDescription) detailDescription.textContent = request.description || 'No description provided';
         if (detailBrand) detailBrand.textContent = request.brand || 'Various';
-        if (detailCondition) detailCondition.textContent = request.condition || 'Not specified';
         if (detailAddress) detailAddress.textContent = request.address;
         if (mapLink) mapLink.href = `https://maps.google.com/?q=${encodeURIComponent(request.address)}`;
 
@@ -620,27 +619,6 @@ function updateActionButtons(request) {
         }
     } 
 
-    else if (request.status === 'completed') {
-        if (request.jobID) {
-            buttons = `
-                <button class="detail-btn primary" onclick="window.location.href='../../html/admin/aReport.php?request=${encodeURIComponent(request.id)}'">
-                    <i class="fas fa-file-alt"></i> View Report
-                </button>
-                <button class="detail-btn secondary" onclick="viewCompletionDetails('${request.id}')">
-                    <i class="fas fa-clipboard-list"></i> Details
-                </button>
-            `;
-        } else {
-            buttons = `
-                <button class="detail-btn primary" onclick="window.location.href='../../html/admin/aReport.php?request=${encodeURIComponent(request.id)}'">
-                    <i class="fas fa-file-alt"></i> View Report
-                </button>
-                <button class="detail-btn secondary" onclick="viewCompletionDetails('${request.id}')">
-                    <i class="fas fa-clipboard-list"></i> Details
-                </button>
-            `;
-        }
-    }
     else if (request.status === 'cancelled' || request.status === 'rejected') {
         buttons = ``;
     }
@@ -697,23 +675,22 @@ function updateActionButtons(request) {
     window.contactCollector = function (reqId) {
         const request = collectionRequests.find(r => r.id === reqId);
         if (!request) return;
-        alert(`Contacting collector: ${request.assignedCollector || request.collector || 'Not assigned'}`);
     };
 
     window.contactProvider = function (reqId) {
         const request = collectionRequests.find(r => r.id === reqId);
         if (!request) return;
-        alert(`Contacting provider: ${request.provider}\nPhone: ${request.providerContact}`);
+        // alert(`Contacting provider: ${request.provider}\nPhone: ${request.providerContact}`);
     };
 
     window.viewCompletionDetails = function (reqId) {
         const request = collectionRequests.find(r => r.id === reqId);
         if (!request) return;
-        alert(`Completion Details:\nDate: ${request.completedDate}\nCollector: ${request.collector}\nNotes: ${request.completionNotes}`);
+    //     alert(`Completion Details:\nDate: ${request.completedDate}\nCollector: ${request.collector}\nNotes: ${request.completionNotes}`);
     };
 
     window.viewHistory = function (reqId) {
-        alert(`Viewing history for request #${reqId}`);
+        // alert(`Viewing history for request #${reqId}`);
     };
 
     window.filterByStatus = function (status) {
