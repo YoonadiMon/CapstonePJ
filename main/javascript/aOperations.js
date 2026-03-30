@@ -69,6 +69,35 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function showCollectorError(message) {
+    let notif = document.getElementById('collectorErrorNotif');
+
+    if (!notif) {
+        notif = document.createElement('div');
+        notif.id = 'collectorErrorNotif';
+
+        notif.style.position = 'fixed';
+        notif.style.top = '20px';
+        notif.style.right = '20px';
+        notif.style.background = '#e74c3c';
+        notif.style.color = '#fff';
+        notif.style.padding = '10px 14px';
+        notif.style.borderRadius = '10px';
+        notif.style.fontSize = '0.85rem';
+        notif.style.boxShadow = '0 6px 15px rgba(0,0,0,0.15)';
+        notif.style.zIndex = '9999';
+
+        document.body.appendChild(notif);
+    }
+
+    notif.textContent = message;
+    notif.style.display = 'block';
+
+    setTimeout(() => {
+        notif.style.display = 'none';
+    }, 2500);
+}
+
 function formatRequestCode(id) {
     if (!id && id !== 0) return '';
     return `#REQ${String(id).padStart(3, '0')}`;
@@ -785,14 +814,15 @@ function selectCollectorFromModal(collectorId, collectorName) {
     const selectedDateOnly = getSelectedDateOnly();
 
     if (!collector) {
-        alert('Selected collector not found.');
+        // alert('Selected collector not found.');
         return;
     }
 
     const reason = getCollectorReason(collector, selectedDateOnly);
     if (reason) {
-        alert(`This collector cannot be selected: ${reason}`);
+        showCollectorError(`This collector cannot be selected: ${reason}`);
         return;
+
     }
 
     const selectedCollectorText = document.getElementById('selectedCollectorText');
@@ -963,13 +993,13 @@ function selectVehicleFromModal(vehicleId, vehicleName) {
     const vehicle = getVehicles().find(v => String(v.id) === String(vehicleId));
 
     if (!vehicle) {
-        alert('Selected vehicle not found.');
+        // alert('Selected vehicle not found.');
         return;
     }
 
     const reason = getVehicleReason(vehicle, selectedDateOnly);
     if (reason) {
-        alert(`This vehicle cannot be selected: ${reason}`);
+        // alert(`This vehicle cannot be selected: ${reason}`);
         return;
     }
 
@@ -1000,19 +1030,19 @@ async function confirmAssignment() {
     const confirmBtn = document.getElementById('confirmAssignmentBtn');
 
     if (!selectedRequest) {
-        alert('Please select a request.');
+        // alert('Please select a request.');
         return;
     }
     if (!collector) {
-        alert('Please select a collector.');
+        // alert('Please select a collector.');
         return;
     }
     if (!vehicle) {
-        alert('Please select a vehicle.');
+        // alert('Please select a vehicle.');
         return;
     }
     if (!datetime) {
-        alert('Please select a scheduled date and time.');
+        // alert('Please select a scheduled date and time.');
         return;
     }
 
@@ -1021,24 +1051,24 @@ async function confirmAssignment() {
     // Validate collector availability again
     const collectorObj = getCollectors().find(c => String(c.id) === String(collector));
     if (!collectorObj) {
-        alert('Selected collector not found.');
+        // alert('Selected collector not found.');
         return;
     }
     const collectorReason = getCollectorReason(collectorObj, selectedDateOnly);
     if (collectorReason) {
-        alert(`Collector unavailable: ${collectorReason}`);
+        // alert(`Collector unavailable: ${collectorReason}`);
         return;
     }
 
     // Validate vehicle availability again
     const vehicleObj = getVehicles().find(v => String(v.id) === String(vehicle));
     if (!vehicleObj) {
-        alert('Selected vehicle not found.');
+        // alert('Selected vehicle not found.');
         return;
     }
     const vehicleReason = getVehicleReason(vehicleObj, selectedDateOnly);
     if (vehicleReason) {
-        alert(`Vehicle unavailable: ${vehicleReason}`);
+        // alert(`Vehicle unavailable: ${vehicleReason}`);
         return;
     }
 
@@ -1051,7 +1081,7 @@ async function confirmAssignment() {
         const select = row.querySelector('.centre-select');
         const centreId = select.value;
         if (!centreId) {
-            alert('Please select a centre for all items.');
+            // alert('Please select a centre for all items.');
             allValid = false;
             break;
         }
@@ -1125,7 +1155,7 @@ async function confirmAssignment() {
         filterRequests();
         checkRequiredFields();
     } catch (error) {
-        alert(error.message || 'Error saving assignment.');
+        // alert(error.message || 'Error saving assignment.');
     } finally {
         if (confirmBtn) {
             confirmBtn.innerHTML = originalBtnText;
