@@ -433,11 +433,6 @@ while ($row = mysqli_fetch_assoc($result)) {
                             <button class="back-btn" id="backToListBtn">
                                 <i class="fas fa-arrow-left"></i> Back
                             </button>
-
-                            <div class="detail-actions">
-                                <button class="detail-action-btn" id="printDetailBtn">
-                                    <i class="fas fa-print"></i>
-                                </button>
                             </div>
                         </div>
 
