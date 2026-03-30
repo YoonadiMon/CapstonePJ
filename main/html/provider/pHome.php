@@ -57,6 +57,7 @@
     // Fetch provided item statistics
     $allItemStats = [];
     $approvedItemStats = [];
+    $completedItemStats = [];
     $pendingItemStats = [];
 
     $sql = "SELECT * FROM tblprovider p JOIN tblcollection_request cr ON p.providerID = cr.providerID
@@ -111,6 +112,48 @@
             while ($row = mysqli_fetch_assoc($result)) {
 
                 $approvedItemStats[] = [
+                    'requestID' => $row['requestID'] ?? 'N/A',
+                    'pickupAddress' => $row['pickupAddress'] ?? 'N/A',
+                    'pickupState' => $row['pickupState'] ?? 'N/A',
+                    'pickupPostcode' => $row['pickupPostcode'] ?? 'N/A',
+                    'preferredDateTime' => $row['preferredDateTime'] ?? 'N/A',
+                    'status' => $row['status'] ?? 'N/A',
+                    'createdAt' => $row['createdAt'] ?? 'N/A',
+                    'rejectionReason' => $row['rejectionReason'] ?? 'N/A',
+
+                    'itemID' => $row['itemID'] ?? 'N/A',
+                    'centreID' => $row['centreID'] ?? 'N/A',
+                    'itemTypeID' => $row['itemTypeID'] ?? 'N/A',
+                    'description' => $row['description'] ?? 'N/A',
+                    'model' => $row['model'] ?? 'N/A',
+                    'brand' => $row['brand'] ?? 'N/A',
+                    'weight' => $row['weight'] ?? 'N/A',
+                    'length' => $row['length'] ?? 'N/A',
+                    'width' => $row['width'] ?? 0,
+                    'height' => $row['height'] ?? 0,
+                    'image' => $row['image'] ?? 'N/A',
+                    'itemStatus' => $row['status'] ?? 'N/A',
+                    'itemName' => $row['name'] ?? 'N/A',
+                    'itemRecyclePoints' => $row['recycle_points'] ?? 0
+                ];
+            }
+        } else {
+            error_log("DB Notice - No records found for provider ID: $provider_id");
+        }
+    } else {
+        error_log("DB Error - Query failed: " . mysqli_error($conn));
+    }
+
+    $sql = "SELECT * FROM tblprovider p JOIN tblcollection_request cr ON p.providerID = cr.providerID
+                                        JOIN tblitem i ON cr.requestID = i.requestID
+                                        JOIN tblitem_type it ON i.itemTypeID = it.itemTypeID 
+                                        WHERE p.providerID = '$provider_id' and cr.status = 'Completed'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<script>console.log('DB Success - Completed item stats row: " . json_encode($row) . "');</script>";
+                $completedItemStats[] = [
                     'requestID' => $row['requestID'] ?? 'N/A',
                     'pickupAddress' => $row['pickupAddress'] ?? 'N/A',
                     'pickupState' => $row['pickupState'] ?? 'N/A',
@@ -903,7 +946,10 @@
 
                 foreach ($approvedItemStats as $item) {
                     $totalWeight += (float) $item['weight'];
-                }
+                };
+                foreach ($completedItemStats as $item) {
+                    $totalWeight += (float) $item['weight'];
+                };
 
                 echo $totalWeight;
                 ?> kg</div>
