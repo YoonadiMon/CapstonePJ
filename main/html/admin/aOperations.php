@@ -480,7 +480,7 @@ $collectorJobSql = "
     SELECT jobID, collectorID, scheduledDate, status
     FROM tbljob
     WHERE collectorID IS NOT NULL
-      AND status IN ('Scheduled', 'Pending', 'Ongoing')
+      AND status IN ('Scheduled', 'Pending')
 ";
 $collectorJobResult = mysqli_query($conn, $collectorJobSql);
 

@@ -58,6 +58,15 @@ function getSelectedRequest() {
     return getRequests().find(r => String(r.id) === String(requestId)) || null;
 }
 
+function requireSelectedRequest(message = 'Please select a request first.') {
+    const selectedRequest = getSelectedRequest();
+    if (!selectedRequest) {
+        showCollectorError(message);
+        return false;
+    }
+    return true;
+}
+
 function getSelectedDateOnly() {
     const datetime = document.getElementById('scheduledDateTime')?.value || '';
     return datetime ? datetime.split('T')[0] : '';
@@ -1237,15 +1246,32 @@ function setupEventListeners() {
     document.getElementById('requestFilter')?.addEventListener('change', filterRequests);
     document.getElementById('requestSearch')?.addEventListener('input', filterRequests);
 
-    document.getElementById('scheduledDateTime')?.addEventListener('change', function () {
-        refreshSelectionsAfterDateChange();
-    });
+    document.getElementById('scheduledDateTime')?.addEventListener('focus', function () {
+    if (!requireSelectedRequest('Please select a request before choosing a schedule.')) {
+        this.blur();
+    }
+});
+
+document.getElementById('scheduledDateTime')?.addEventListener('change', function () {
+    if (!requireSelectedRequest('Please select a request before choosing a schedule.')) {
+        this.value = '';
+        return;
+    }
+    refreshSelectionsAfterDateChange();
+});
 
     document.getElementById('confirmAssignmentBtn')?.addEventListener('click', confirmAssignment);
     document.getElementById('resetAssignmentBtn')?.addEventListener('click', () => resetAssignmentForm(true));
 
-    document.getElementById('viewCollectorAvailability')?.addEventListener('click', openCollectorAvailabilityModal);
-    document.getElementById('viewVehicleStatus')?.addEventListener('click', openVehicleMaintenanceModal);
+   document.getElementById('viewCollectorAvailability')?.addEventListener('click', function () {
+    if (!requireSelectedRequest('Please select a request before assigning a collector.')) return;
+    openCollectorAvailabilityModal();
+});
+
+    document.getElementById('viewVehicleStatus')?.addEventListener('click', function () {
+    if (!requireSelectedRequest('Please select a request before assigning a vehicle.')) return;
+    openVehicleMaintenanceModal();
+});
     document.getElementById('closeVehicleMaintenanceModal')?.addEventListener('click', closeVehicleMaintenanceModal);
 
     document.getElementById('vehicleMaintenanceModal')?.addEventListener('click', function (e) {
