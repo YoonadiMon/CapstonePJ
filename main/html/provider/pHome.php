@@ -934,7 +934,7 @@
 
         <section class="ph-stats-bar">
             <div class="ph-stats-card">
-                <div class="ph-stats-label">Total Submissions</div>
+                <div class="ph-stats-label">Total Items Submissions</div>
                 <div class="ph-stats-value" id="statSubmissions"><?php echo count($allItemsStats)?></div>
             </div>
             <div class="ph-stats-divider"></div>
