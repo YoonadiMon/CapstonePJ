@@ -313,6 +313,8 @@ function getCollectorReason(collector, selectedDateOnly) {
     return '';
 }
 
+
+
 function getVehicleReason(vehicle, selectedDateOnly) {
     const vehicleStatus = String(vehicle.status || '').toLowerCase();
 
@@ -681,17 +683,18 @@ function renderAllCollectorsAvailability(selectedDate = null) {
                     : [];
 
                 const scheduledJobs = jobs
-                    .filter(job => {
-                        const status = String(job.status || '').toLowerCase();
-                        return status === 'scheduled' || status === 'pending';
-                    })
-                    .sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate));
+    
+                .filter(job => {
+                    const status = String(job.status || '').toLowerCase();
+                    return status === 'scheduled' || status === 'pending';
+                })
+                .sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate));
+                    
 
                 return `
                     <div class="collector-availability-card available">
                         <div class="collector-header">
                             <div class="collector-name">
-                                <span class="status-dot green"></span>
                                 ${escapeHtml(collector.name)}
                             </div>
                             <div class="collector-stats">
@@ -710,7 +713,7 @@ function renderAllCollectorsAvailability(selectedDate = null) {
                                     ${scheduledJobs.map(job => `
                                         <div class="scheduled-job-item">
                                             <div class="job-id-display">
-                                                <span class="job-id-mini">Job #${String(job.jobID).padStart(3, '0')}</span>
+                                                <span class="job-id-mini">#JOB${String(job.jobID).padStart(3, '0')}</span>
                                                 <span class="job-date-simple">${formatDate(job.scheduledDate)}</span>
                                                 <span class="job-status-mini">${escapeHtml(job.status || '-')}</span>
                                             </div>
@@ -814,7 +817,7 @@ function selectCollectorFromModal(collectorId, collectorName) {
     const selectedDateOnly = getSelectedDateOnly();
 
     if (!collector) {
-        // alert('Selected collector not found.');
+        showCollectorError('Selected collector not found.');
         return;
     }
 
@@ -822,7 +825,6 @@ function selectCollectorFromModal(collectorId, collectorName) {
     if (reason) {
         showCollectorError(`This collector cannot be selected: ${reason}`);
         return;
-
     }
 
     const selectedCollectorText = document.getElementById('selectedCollectorText');

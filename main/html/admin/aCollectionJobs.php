@@ -242,6 +242,7 @@ foreach ($delayedRows as $row) {
         'delay' => formatDelay(max(0, (int)$row['delayMinutes'])),
         'reason' => $row['delayReason'],
         'time' => date('h:i A', strtotime($row['scheduledTime'])),
+        'date' => date('d M Y', strtotime($row['scheduledDate'])),
         'status' => 'Delayed',
         'vehicle' => trim(($row['vehicleType'] ?? '') . ' ' . ($row['plateNum'] ?? ''))
     ];
@@ -473,7 +474,7 @@ function geocodeByState(string $state): array {
         'Pahang'                => ['lat' => 3.8126,  'lng' => 103.3256],
         'Perak'                 => ['lat' => 4.5921,  'lng' => 101.0901],
         'Perlis'                => ['lat' => 6.4449,  'lng' => 100.2048],
-        'Pulau Pinang'          => ['lat' => 5.4141,  'lng' => 100.3288],
+        'Penang'                => ['lat' => 5.4141,  'lng' => 100.3288],
         'Penang'                => ['lat' => 5.4141,  'lng' => 100.3288],
         'Sabah'                 => ['lat' => 5.9788,  'lng' => 116.0753],
         'Sarawak'               => ['lat' => 1.5533,  'lng' => 110.3592],
@@ -986,7 +987,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_issue'])) {
                 <h4>Job Information</h4>
                 <p><strong>Job ID:</strong> <span id="detailsJobId"></span></p>
                 <p><strong>Status:</strong> <span id="detailsStatus"></span></p>
-                <p><strong>Scheduled Time:</strong> <span id="detailsTime"></span></p>
+                <p><strong>Scheduled Date & Time:</strong> <span id="detailsTime"></span></p>
                 <p><strong>Location:</strong> <span id="detailsLocation"></span></p>
             </div>
 
@@ -1004,7 +1005,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_issue'])) {
         </div>
 
         <div class="form-actions">
-            <button type="button" class="btn-secondary" onclick="closeJobDetailsModal()">Close</button>
         </div>
     </div>
 </div>

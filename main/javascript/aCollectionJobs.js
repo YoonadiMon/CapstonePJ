@@ -1188,7 +1188,11 @@ function viewJobDetails(jobId) {
 
     if (detailsJobId) detailsJobId.textContent = job.id || '-';
     if (detailsStatus) detailsStatus.textContent = job.status || '-';
-    if (detailsTime) detailsTime.textContent = job.time || '-';
+    if (detailsTime) {
+    detailsTime.textContent = job.date 
+        ? `${job.date} • ${job.time}` 
+        : (job.time || '-');
+    }
     if (detailsLocation) detailsLocation.textContent = job.location || '-';
     if (detailsCollector) detailsCollector.textContent = job.collector || '-';
     if (detailsVehicle) detailsVehicle.textContent = job.vehicle || '-';
@@ -1262,7 +1266,11 @@ function viewFailedDropoffDetails(jobId) {
 
     if (detailsJobId) detailsJobId.textContent = job.id || '-';
     if (detailsStatus) detailsStatus.textContent = 'Failed Drop-off';
-    if (detailsTime) detailsTime.textContent = job.time || '-';
+    if (detailsTime) {
+    detailsTime.textContent = job.date 
+        ? `${job.date} • ${job.time}` 
+        : (job.time || '-');
+    }
     if (detailsLocation) detailsLocation.textContent = job.originalCentre || '-';
     if (detailsCollector) detailsCollector.textContent = job.collector || '-';
     if (detailsReason) detailsReason.textContent = job.failReason || '-';
