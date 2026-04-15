@@ -1,4 +1,4 @@
-## ⚡ AfterVolt - Track. Collect. Recycle.
+## ⚡ AfterVolt – Track. Collect. Recycle.
 
 <img width="958" height="437" alt="image" src="https://github.com/user-attachments/assets/5c70b79e-c52c-46b8-81b4-ae158b8c69f2" />
 
@@ -45,3 +45,5 @@ Make sure the following modules are started in the XAMPP Control Panel:
 The project will not run correctly if these services are not active.
 
 Additionally, ensure the database `capstonedb` (`capstonedb.sql`) has been imported via phpMyAdmin before testing the system.
+
+- NOTE: The dataset used in this project consists of **dummy data only** and is intended strictly for development, testing, and demonstration purposes.
