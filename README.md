@@ -25,6 +25,15 @@ AfterVolt aims to bridge the gap between users and formal recycling systems by p
 
 ---
 
+## 👨‍💻 Author
+- Ng Xiao Wei (xweii06)
+- Mi Yoonadi Mon (YoonadiMon)
+- Lee Xin Ci (Emma031506)
+- Felisha Khan (felikhan)
+- Tiu Tian Yi (tiutianyi)
+
+---
+
 ## ⚙️ Setup Note (XAMPP Requirement)
 
 Please ensure that **XAMPP is installed and properly configured** on your system before running this project.
